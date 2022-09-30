@@ -1,5 +1,6 @@
-import { input } from "./test";
+import { input, textList } from "./test";
 import transform from "./transform";
+import { AST } from "./transform/getAst";
 
 const throttle = (fn, t) => {
   let timer = null;
@@ -19,12 +20,41 @@ source.addEventListener(
   throttle(function (e) {
     setTimeout(() => {
       result.value = transform(e.target.value);
-    })
+    });
   }, 1000)
 );
 
-window.addEventListener("load", () => {
-  source.value = input;
+const change = (text) => {
+  source.value = text;
   source.focus();
-  result.value = transform(input);
+  result.value = transform(text);
+}
+
+
+mode.addEventListener(
+  'change',
+  (e)=>{
+   AST.selectMethod = e.target.value
+   change(textList[e.target.value] || textList.nullText(e.target.value))
+  }
+)
+
+window.addEventListener("load", () => {
+  const methods = Reflect.ownKeys(AST.prototype)
+    .reverse()
+    .filter((x) => x.startsWith("is"));
+  const Fragment = document.createDocumentFragment()
+
+  for (const x of methods) {
+    const option = document.createElement('option')
+    const text = document.createElement('text')
+    text.textContent = x
+    if (x === AST.selectMethod) {
+      option.selected = true
+    }
+    option.appendChild(text)
+    Fragment.appendChild(option)
+  }
+  mode.appendChild(Fragment)
+  change(textList[AST.selectMethod] || textList.nullText(AST.selectMethod))
 });

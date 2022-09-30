@@ -7,6 +7,11 @@
   <title>Document</title>
 </head>
 <body>
+  <div id="selectWrap">
+    <select id="mode">
+   </select>
+  </div>
+  
    <div id="container">
     <textarea id="source" ></textarea>
     <textarea id="result"></textarea>
@@ -17,8 +22,18 @@
     padding: 0;
     margin: 0;
   }
+  #selectWrap{
+    display: flex;
+    justify-content: center;
+  }
+
+  #selectWrap > select{
+    margin: 10px;
+    min-width: 200px;
+  }
+
   #container{
-    height: 95vh;
+    height: 93vh;
     display: flex;
   }
   #result,

@@ -1,3 +1,7 @@
+
+
+
+
 export const input = `
 const a = 1
 `
@@ -81,3 +85,28 @@ function * a(){
   yield sleep?.()
 }
 `
+export const textList = {
+  nullText: (x) =>  `// 现在测试的是${x}模块，没有对应的测试文本,请自行在下方添加
+   `,
+  isProgram: input,
+  isVariableDeclaration: input3,
+  isObjectExpression: `
+  // 现在测试的是isObjectExpression模块，
+  {a,[c= {x: 2,[d]: 'f'}]: 2, b: 2 + e}
+  `,
+  isArrayExpression:`
+  // 现在测试的是isArrayExpression模块，
+   [
+    [
+      a,
+      [
+        {
+         [d+2]: 2,
+           c: {}
+        }
+      ]
+    ],
+    {}
+   ]
+  `
+}
