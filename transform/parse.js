@@ -59,13 +59,16 @@ export default function parse(str) {
   }
 
   function isDoubleQuotationMark(c) {
-    return (c || str[i]) === "\"";
+    return (c || str[i]) === '"';
   }
 
   function isAntiQuotationMark(c) {
     return (c || str[i]) === "`";
   }
 
+  function isDot(c) {
+    return (c || str[i]) === ".";
+  }
 
   function isNoCharOrNumber(c) {
     return !isChar(c) && !isNumber(c);
@@ -102,7 +105,7 @@ export default function parse(str) {
     const startRow = row;
     let endCol = null;
     let endRow = null;
-    const start = i
+    const start = i;
 
     if (isSlant(str[i]) && isSlant(str[i + 1])) {
       while (isNoEnd() && !isNewLine()) {
@@ -112,13 +115,16 @@ export default function parse(str) {
       }
       endRow = row - 1;
     } else if (isSlant(str[i]) && isAsterisk(str[i + 1])) {
-      while (isNoEnd() && (!(isAsterisk(str[i - 2]) && isSlant(str[i - 1])) || i - 2 <= start + 1 )) {
+      while (
+        isNoEnd() &&
+        (!(isAsterisk(str[i - 2]) && isSlant(str[i - 1])) || i - 2 <= start + 1)
+      ) {
         isNewLine(); // 让row 自动加加
         ret.push(str[i]);
         next();
       }
       if (!(isAsterisk(str[i - 2]) && isSlant(str[i - 1]))) {
-        throw new Error()
+        throw new Error();
       }
       endCol = col - 1;
       endRow = row;
@@ -167,36 +173,45 @@ export default function parse(str) {
     const startRow = row;
     let endCol = null;
     let endRow = null;
-    const start = i
+    const start = i;
 
     if (isSingleQuotationMark()) {
-      while (isNoEnd() && (!isSingleQuotationMark(str[i-1]) || i-1 === start)) {
+      while (
+        isNoEnd() &&
+        (!isSingleQuotationMark(str[i - 1]) || i - 1 === start)
+      ) {
         ret.push(str[i]);
         endCol = col;
         next();
       }
-      if(!isSingleQuotationMark(str[i-1])) {
-        throw new Error()
+      if (!isSingleQuotationMark(str[i - 1])) {
+        throw new Error();
       }
-      endRow = row
+      endRow = row;
     } else if (isDoubleQuotationMark()) {
-      while (isNoEnd() && (!isDoubleQuotationMark(str[i-1]) || i-1 === start)) {
+      while (
+        isNoEnd() &&
+        (!isDoubleQuotationMark(str[i - 1]) || i - 1 === start)
+      ) {
         ret.push(str[i]);
         endCol = col;
         next();
       }
-      if(!isDoubleQuotationMark(str[i-1])) {
-        throw new Error()
+      if (!isDoubleQuotationMark(str[i - 1])) {
+        throw new Error();
       }
       endRow = row;
     } else if (isAntiQuotationMark()) {
-      while (isNoEnd() && (!isAntiQuotationMark(str[i - 1]) || i-1 === start)) {
+      while (
+        isNoEnd() &&
+        (!isAntiQuotationMark(str[i - 1]) || i - 1 === start)
+      ) {
         isNewLine(); // 让row 自动加加
         ret.push(str[i]);
         next();
       }
-      if(!isAntiQuotationMark(str[i-1])) {
-        throw new Error()
+      if (!isAntiQuotationMark(str[i - 1])) {
+        throw new Error();
       }
       endCol = col - 1;
       endRow = row;
@@ -221,9 +236,22 @@ export default function parse(str) {
     const startCol = col;
     const startRow = row;
     const start = i;
-    while (!isSpaceOrIsNewLine() && isNoEnd() && isNum()) {
+    let dot = 0;
+    let sub = 0;
+    let add = 0;
+    while (
+      !isSpaceOrIsNewLine() &&
+      isNoEnd() &&
+      (isNumber() || (isDot() && dot <= 1 && isNumber(str[i - 1])))
+    ) { //todo 还有正负数需要处理，以后再加
+      if (isDot()) {
+        dot++;
+      }
       ret.push(str[i]);
       next();
+    }
+    if (dot > 1) {
+      throw new Error();
     }
     if (ret.length) {
       wordList.push({
@@ -259,19 +287,19 @@ export default function parse(str) {
     }
   }
 
-  try{
+  try {
     while (isNoEnd()) {
-    checkError();
-    checkSpaceOrIsNewLine();
-    checkRemark();
-    checkNum();
-    checkWord();
-    checkString();
-    checkNoCharOrNumber();
-  }
+      checkError();
+      checkSpaceOrIsNewLine();
+      checkRemark();
+      checkNum();
+      checkWord();
+      checkString();
+      checkNoCharOrNumber();
+    }
 
-  return wordList
-  }catch(e){
-    return new Error()
+    return wordList;
+  } catch (e) {
+    return new Error();
   }
 }

@@ -1,4 +1,4 @@
-import { input, textList } from "./test";
+import { textList } from "./test";
 import transform from "./transform";
 import { AST } from "./transform/getAst";
 
