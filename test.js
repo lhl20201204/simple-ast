@@ -12,7 +12,7 @@ function a(){
 const c = [b]
 `
 
-export const input3 = `
+export const isVariableDeclaration = `
 const tt = \`
 try
 write
@@ -105,7 +105,7 @@ export const textList = {
   nullText: (x) =>  `// 现在测试的是${x}模块，没有对应的测试文本,请自行在下方添加
    `,
   isProgram,
-  isVariableDeclaration: input3,
+  isVariableDeclaration,
   isObjectExpression: `
   // 现在测试的是isObjectExpression模块，
   {a,[c= {x: 2,[d]: 'f'}]: 2, b: 2 + e}
@@ -119,12 +119,22 @@ export const textList = {
        {
         [d+2]: 2,
           c: {},
-          d: function(f = 1,q = {x, ...g}){}
+          d: function(f = 1,q = {x, ...g}){
+             if(a){
+               const a =\`
+fljsld;f
+                \`
+             }
+          }
        }
      ]
    ],
    {}
   ]
+  `,
+  isBinaryExpression: `
+  // 现在测试的是isBinaryExpression模块，
+   a + b * c
   `,
   isParams: `
   // 现在测试的是isParams模块，
@@ -132,17 +142,24 @@ export const textList = {
   `,
   isDeclaration: `
   // 现在测试的是isDeclaration模块，
-  const a = [
+  const x,a = [
    {q: {t},x: [b]}
   ],b =2,c =3, d = e = 1
   `,
   isDeclarations: `
   // 现在测试的是isDeclarations模块，
-   a = 1,c=f=b= 2, c=[{x:[]}]
+  x, a = 1,c=f=b= 2, c=[
+    {
+      get [j](){},
+     set [j](){},
+     async * [j](){},
+     async * a(){}
+    }
+   ]
   `,
   isVariableDeclarator: `
   // 现在测试的是isVariableDeclarator模块，
-   a=[{x: 3 * [{a}]}]
+  [c, {x}, ...({dd})]=[{x: 3 * [{a}]}]
   `,
   isFunctionExpression: `
   // 现在测试的是isFunctionExpression模块，
@@ -171,6 +188,61 @@ export const textList = {
   // 现在测试的是isArrowFunctionExpression模块，
   async (fd) => async g => (a={x:()=>({a:[]})},{}) => async 
   function * a () {
+  }
+  `,
+  isArrayPatternElements: `
+  // 现在测试的是isArrayPatternElements模块，
+  a245346rydc=1, affd, {s},[aff, bffff], ...x
+  `,
+  isAssignmentPattern:`
+  // 现在测试的是isAssignmentPattern模块，
+   a= {x, ...f}
+  `,
+  isArrayPattern: `
+  // 现在测试的是isArrayPattern模块，
+   [a245346rydc=1, affd, {s},[aff, bffff], ...x]
+  `,
+  isCallExpression: `
+  // 现在测试的是isCallExpression模块，
+  window?.['console']?.log(q)?.[x]?.({...this?.get()})
+  `,
+  isIfStatement: `
+  // 现在测试的是isIfStatement模块，
+  if(a)
+  a = function () {
+     return f+2
+  }
+   else if (b) {
+     a = !b ? c : d
+   } else if (c) {
+}
+  `,
+  isAssignmentExpression:`
+  // 现在测试的是isAssignmentExpression模块，
+   Todo.prototype.render = (x, y) =>{
+    const a = \`
+    flsjfd
+    \`
+  console.log('hkjljl')
+  }
+  `,
+  isConditionalExpression: `
+  // 现在测试的是isConditionalExpression模块，
+   a ? b: q ? x : d
+  `,
+  isWhileStatement: `
+  // 现在测试的是isWhileStatement模块，
+   while(a)
+    a+=1 + 'dsfadsf'
+  `,
+  isLogicalExpression: `
+  // 现在测试的是isLogicalExpression模块，
+  a > b && c++ < --d !== !g
+  `,
+  isForStatement: `
+  // 现在测试的是isForStatement模块，
+  for(let i = 1; i< 10; i++) {
+    console.log(i)
   }
   `
 }

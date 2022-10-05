@@ -7,6 +7,25 @@ export default function parse(str) {
   let lastRowI = -1;
   const wordList = [];
 
+  const mulSigns = [
+    "=>",
+    "...",
+    "+=",
+    "-=",
+    "*=",
+    "/=",
+    "!=",
+    "!==",
+    "==",
+    "===",
+    ">=",
+    "<=",
+    "&&",
+    "||",
+    '++',
+    '--'
+  ].sort((a, b) => b.length - a.length);
+
   function next() {
     i++;
     col++;
@@ -243,7 +262,8 @@ export default function parse(str) {
       !isSpaceOrIsNewLine() &&
       isNoEnd() &&
       (isNumber() || (isDot() && dot <= 1 && isNumber(str[i - 1])))
-    ) { //todo 还有正负数需要处理，以后再加
+    ) {
+      //todo 还有正负数需要处理，以后再加
       if (isDot()) {
         dot++;
       }
@@ -269,18 +289,33 @@ export default function parse(str) {
 
   function checkNoCharOrNumber() {
     const ret = [];
-    if (!isSpaceOrIsNewLine() && isNoEnd() && isNoCharOrNumber()) {
+    const startCol = col;
+    const startRow = row;
+    const start = i;
+    let flag = false;
+    mulSigns.forEach((x) => {
+      const len = x.length;
+      if (str.slice(i, i + len) === x) {
+        flag = true;
+        new Array(len).fill(0).forEach((x) => {
+          ret.push(str[i]);
+          next();
+        });
+      }
+    });
+
+    if (!flag && !isSpaceOrIsNewLine() && isNoEnd() && isNoCharOrNumber()) {
       ret.push(str[i]);
       next();
     }
     if (ret.length) {
       wordList.push({
         type: "sign",
-        start: i - 1,
+        start,
         end: i - 1,
-        startCol: col - 1,
+        startCol,
         endCol: col - 1,
-        startRow: row,
+        startRow,
         endRow: row,
         value: ret.join(""),
       });
@@ -297,9 +332,9 @@ export default function parse(str) {
       checkString();
       checkNoCharOrNumber();
     }
-
     return wordList;
   } catch (e) {
+    console.error(e);
     return new Error();
   }
 }

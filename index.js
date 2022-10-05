@@ -42,7 +42,7 @@ mode.addEventListener(
 window.addEventListener("load", () => {
   const methods = Reflect.ownKeys(AST.prototype)
     .reverse()
-    .filter((x) => x.startsWith("is"));
+    .filter((x) => x.startsWith("is")).sort();
   const Fragment = document.createDocumentFragment()
 
   for (const x of methods) {
