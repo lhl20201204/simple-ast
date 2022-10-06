@@ -1,5 +1,5 @@
 import parse from "./parse";
-const testingmodule = "isDeclarations";
+const testingmodule = "isClassDeclaration";
 const DICTS = {
   WORD: "word",
   SIGN: "sign",
@@ -44,6 +44,12 @@ const KEYWORD = {
   RETURN: "return",
   ELSE: "else",
   WHILE: "while",
+  CLASS: "class",
+  EXTENDS: "extends",
+  STATIC: "static",
+  AWAIT: 'await',
+  NEW: 'new',
+  YIELD: 'yield',
 };
 const KEYWORDLIST = [];
 for (const attr in KEYWORD) {
@@ -75,22 +81,26 @@ const UpdateOperators = ["++", "--"];
 
 const REGS = {
   funcExpression:
-    /^(async\$)?function\$(\*\$)?([\w]*?\$)?\(\$?(\$([\s\S]*?)?\$)?\)\$\{\$?(\$([\s\S]*?)\$)?\}$/,
+    /^(async\$)?function\$(\*\$)?([\w]+?\$)?\(\$?(\$([\s\S]*?)?\$)?\)\$\{\$?(\$([\s\S]*?)\$)?\}$/,
   funcDeclaration:
-    /^(async\$)?function\$(\*\$)?([\w]*?\$)\(\$?(\$([\s\S]*?)?\$)?\)\$\{\$?(\$([\s\S]*?)\$)?\}$/,
+    /^(async\$)?function\$(\*\$)?([\w]+?\$)\(\$?(\$([\s\S]*?)?\$)?\)\$\{\$?(\$([\s\S]*?)\$)?\}$/,
   arrowFuncExpression:
     /^(async\$)?((\(\$?(\$([\s\S]*?)?\$)?\))|([\w]*?))\$=>\$([\s\S]*?)$/,
   callExpression: /\(\$?(\$([\s\S]*?)?\$)?\)$/,
   memberExpression: /\.\$|\[\$([\s\S]*?)\$\]/,
   ifStatement:
-    /^if\$\(\$?(\$([\s\S]*?)?\$)?\)\$(\{\$?(\$([\s\S]*?)\$)?\})?([\s\S]*?)?$/,
-  conditionExpression: /^([\s\S]*?)\$\?\$([\s\S]*?)\$\:\$([\s\S]*?)$/,
+    /^if\$\(\$?(\$([\s\S]+?)?\$)?\)\$(\{\$?(\$([\s\S]*?)\$)?\})?([\s\S]*?)?$/,
+  conditionExpression: /^([\s\S]+?)\$\?\$([\s\S]+?)\$\:\$([\s\S]+?)$/,
   whileStatement:
-    /^while\$\(\$?(\$([\s\S]*?)?\$)?\)\$(\{\$?(\$([\s\S]*?)\$)?\})?([\s\S]*?)?$/,
+    /^while\$\(\$?(\$([\s\S]+?)?\$)?\)\$(\{\$?(\$([\s\S]*?)\$)?\})?([\s\S]*?)?$/,
   forStatement:
     /^for\$\(\$?(\$([\s\S]*?)?\$)?\;\$?(\$([\s\S]*?)?\$)?\;\$?(\$([\s\S]*?)?\$)?\$?\)\$(\{\$?(\$([\s\S]*?)\$)?\})?([\s\S]*?)?$/,
   shortHandMethodProperty:
     /\(\$?(\$([\s\S]*?)?\$)?\)\$\{\$?(\$([\s\S]*?)\$)?\}$/,
+  classExpression:
+    /^class\$([\w]+?\$(extends\$[\s\S]+?\$)?)?\{\$?(\$([\s\S]*?)\$)?\}$/,
+  classDeclaration:
+    /^class\$[\w]+?\$(extends\$[\s\S]+?\$)?\{\$?(\$([\s\S]*?)\$)?\}$/,
 };
 
 export class AST {
@@ -167,7 +177,7 @@ export class AST {
       return null;
     }
 
-    for (let i = start; i <= end; i++) {
+    for (let i = end; i >= start; i--) {
       if (!fn(i)) {
         continue;
       }
@@ -317,6 +327,30 @@ export class AST {
 
   isWhileKeyWord(i) {
     return this.list[i]?.value === KEYWORD.WHILE;
+  }
+
+  isClassKeyWord(i) {
+    return this.list[i]?.value === KEYWORD.CLASS;
+  }
+
+  isExtendsKeyWord(i) {
+    return this.list[i]?.value === KEYWORD.EXTENDS;
+  }
+
+  isStaticKeyWord(i) {
+    return this.list[i]?.value === KEYWORD.STATIC;
+  }
+
+  isAwaitKeyWord(i) {
+    return this.list[i]?.value === KEYWORD.AWAIT;
+  }
+
+  isNewKeyWord(i) {
+    return this.list[i]?.value === KEYWORD.NEW;
+  }
+
+  isYieldKeyWord(i) {
+    return this.list[i]?.value === KEYWORD.YIELD;
   }
 
   noSequenceOrHasParenthesis(x, s, e) {
@@ -618,8 +652,7 @@ export class AST {
     return (
       this.isCommonProperty(start, end) ||
       this.isAssignmentProperty(start, end) ||
-      this.isSpreadElement(start, end) ||
-      this.isShortHandMethodProperty(start, end)
+      this.isSpreadElement(start, end)
     );
   }
 
@@ -842,7 +875,14 @@ export class AST {
     return null;
   }
 
-  isClassDeclaration(start, end) {}
+  isClassDeclaration(start, end) {
+    return this.isCommonClass(
+      start,
+      end,
+      REGS.classDeclaration,
+      "ClassDeclaration"
+    );
+  }
 
   isFunctionDeclaration(start, end) {
     return this.isCommonFunction(
@@ -853,11 +893,198 @@ export class AST {
     );
   }
 
-  isClassBody(start, end) {}
+  isPropertyDefinition(start, end) {
+    const ss = start;
+    const ee = end;
+    let isStatic = this.isStaticKeyWord(start) || false;
+    if (isStatic) {
+      start++;
+    }
 
-  isPropertyDefinition(start, end) {}
+    while (this.isSemicolon(end) && start < end) {
+      end--;
+    }
 
-  isMethodDefinition(start, end) {}
+    const key = this.isIdentifier(start);
+
+    if (start === end) {
+      if (key) {
+        return {
+          type: "PropertyDefinition",
+          ...this.getStartEnd(ss, ee),
+          static: isStatic,
+          computed: false,
+          key,
+          value: null,
+        };
+      }
+    }
+
+    if (!this.hasSign(start, end, this.isEqual)) {
+      return null;
+    }
+
+    if (this.isMidLeftParenthesis(start)) {
+      for (let i = start + 1; i <= end; i++) {
+        if (!this.isMidRightParenthesis(i) || !this.isEqual(i + 1)) {
+          continue;
+        }
+        const key = this.isExpression(start + 1, i - 1);
+        if (!key) {
+          continue;
+        }
+        const value = this.isExpression(i + 2, end);
+        if (value) {
+          return {
+            type: "PropertyDefinition",
+            ...this.getStartEnd(ss, ee),
+            static: isStatic,
+            computed: true,
+            key,
+            value,
+          };
+        }
+      }
+    } else if (key && this.isEqual(start + 1)) {
+      const value = this.isExpression(start + 2, end);
+      if (value) {
+        return {
+          type: "PropertyDefinition",
+          ...this.getStartEnd(ss, ee),
+          static: isStatic,
+          computed: false,
+          key,
+          value,
+        };
+      }
+    }
+    return null;
+  }
+
+  isMethodDefinition(start, end) {
+    if (!this.get(start, end).match(REGS.shortHandMethodProperty)) {
+      return null;
+    }
+
+    const ss = start;
+    let isStatic = this.isStaticKeyWord(start) || false;
+    if (isStatic) {
+      start++;
+    }
+
+    while (this.isSemicolon(end) && start < end) {
+      end--;
+    }
+
+    let kind = "method";
+    let isAsync = false;
+    let generator = false;
+    if (["set", "get"].includes(this.list[start]?.value)) {
+      kind = this.list[start]?.value;
+      start++;
+    } else {
+      if (this.isAsyncKeyWord(start)) {
+        isAsync = true;
+        start++;
+        if (this.isAsterisk(start)) {
+          generator = true;
+          start++;
+        }
+      } else if (this.isAsterisk(start)) {
+        generator = true;
+        start++;
+      }
+    }
+
+    let computed = false;
+    let id = this.isIdentifier(start);
+    if (!id) {
+      const first = this.isMidLeftParenthesis(start);
+      if (first) {
+        for (let i = start + 1; i <= end; i++) {
+          if (!this.isMidRightParenthesis(i)) {
+            continue;
+          }
+          const left = this.isExpression(start + 1, i - 1);
+          if (!left) {
+            continue;
+          }
+          computed = true;
+          if (this.isLeftParenthesis(i + 1)) {
+            const value = this.isObjectPropertyNotIdFunctionBody(
+              i + 1,
+              end,
+              isAsync,
+              generator
+            );
+            if (value) {
+              return {
+                type: "MethodDefinition",
+                ...this.getStartEnd(ss, end),
+                static: isStatic,
+                computed,
+                key: left,
+                kind,
+                value,
+              };
+            }
+          }
+        }
+      }
+      return null;
+    }
+    const value = this.isObjectPropertyNotIdFunctionBody(
+      start + 1,
+      end,
+      isAsync,
+      generator
+    ); // todo
+    if (value) {
+      return {
+        type: "MethodDefinition",
+        ...this.getStartEnd(ss, end),
+        static: isStatic,
+        computed,
+        key: id,
+        kind,
+        value,
+      };
+    }
+  }
+
+  isClassBodyDefinition(start, end) {
+    return (
+      this.isPropertyDefinition(start, end) ||
+      this.isMethodDefinition(start, end)
+    );
+  }
+
+  isClassBodyContent(start, end) {
+    if (start > end) {
+      return [];
+    }
+    return this.rightDfs(
+      start,
+      end,
+      this.isClassBodyDefinition,
+      this.isClassBodyContent,
+      (left, right) => [left, ...(right ? right : [])]
+    );
+  }
+
+  isClassBody(start, end) {
+    if (!this.isBIGLeftParenthesis(start) || !this.isBIGRightParenthesis(end)) {
+      return null;
+    }
+    const body = this.isClassBodyContent(start + 1, end - 1);
+    if (body) {
+      return {
+        type: "ClassBody",
+        ...this.getStartEnd(start, end),
+        body,
+      };
+    }
+  }
 
   // 表达式
 
@@ -868,23 +1095,98 @@ export class AST {
     return (
       (start === end && (this.isLiteral(start) || this.isIdentifier(start))) ||
       this.isAssignmentExpression(start, end) ||
+      this.isYieldExpression(start, end) ||
+      this.isClassExpression(start, end) ||
       this.isConditionalExpression(start, end) ||
       this.isUpdateExpression(start, end) ||
       this.isUnaryExpression(start, end) ||
       this.isLogicalExpression(start, end) ||
       this.isObjectExpression(start, end) ||
       this.isBinaryExpression(start, end) ||
-      this.isFunctionExpression(start, end) ||
+      this.isFunctionExpression(start, end) || 
+      this.isArrowFunctionExpression(start, end) ||
+      this.isAwaitExpression(start, end) ||
       this.isCallExpression(start, end) ||
       this.isMemberExpression(start, end) ||
-      this.isArrowFunctionExpression(start, end) ||
       this.isNewExpression(start, end) ||
       this.isArrayExpression(start, end) ||
-      this.isAwaitExpression(start, end) ||
       this.isSequenceExpression(start, end) ||
       (this.isLeftParenthesis(start) &&
         this.isRightParenthesis(end) &&
         this.isExpression(start + 1, end - 1))
+    );
+  }
+
+  isYieldExpression(start, end) {
+    if (!this.isYieldKeyWord(start)) {
+      return null;
+    }
+    while (this.isSemicolon(end) && start < end) {
+      end = end - 1;
+    }
+
+    const argument = this.isExpression(start + 1, end);
+    if (argument || start === end) {
+      return {
+        type: "YieldExpression",
+        ...this.getStartEnd(start, end),
+        argument,
+      };
+    }
+  }
+
+  isCommonClass(start, end, regp, type) {
+    if (!this.isClassKeyWord(start) || !this.get(start, end).match(regp)) {
+      return null;
+    }
+    const ss = start;
+    const id = this.isIdentifier(start + 1);
+    let next = start + 1;
+    if (id) {
+      next = start + 2;
+    }
+
+    if (id && this.isExtendsKeyWord(next)) {
+      for (let i = next + 1; i <= end; i++) {
+        if (!this.isBIGLeftParenthesis(i)) {
+          continue;
+        }
+        const superClass = this.isExpression(next + 1, i - 1);
+        if (!superClass) {
+          continue;
+        }
+        const body = this.isClassBody(i, end);
+        if (body) {
+          return {
+            type,
+            ...this.getStartEnd(ss, end),
+            id,
+            superClass,
+            body,
+          };
+        }
+      }
+    } else if (this.isBIGLeftParenthesis(next)) {
+      const body = this.isClassBody(next, end);
+      if (body) {
+        return {
+          type,
+          ...this.getStartEnd(ss, end),
+          id,
+          superClass: null,
+          body,
+        };
+      }
+    }
+    return null;
+  }
+
+  isClassExpression(start, end) {
+    return this.isCommonClass(
+      start,
+      end,
+      REGS.classExpression,
+      "ClassExpression"
     );
   }
 
@@ -1263,7 +1565,6 @@ export class AST {
     const ss = start;
     const handleBody = (params, i, isAsync) => {
       if (this.isBIGLeftParenthesis(i) && this.isBIGRightParenthesis(end)) {
-        // ()=>{}
         const body = this.isBlockStatement(i, end);
         if (params && body) {
           return {
@@ -1323,7 +1624,25 @@ export class AST {
     );
   }
 
-  isNewExpression(start, end) {}
+  isNewExpression(start, end) {
+    if (!this.isNewKeyWord(start)) {
+      return null;
+    }
+    while (this.isSemicolon(end) && start < end) {
+      end = end - 1;
+    }
+
+    const callExpression = this.isCallExpression(start + 1, end);
+
+    if (callExpression) {
+      return {
+        type: "NewExpression",
+        ...this.getStartEnd(start, end),
+        callee:  callExpression.callee,
+        arguments: callExpression.arguments,
+      };
+    }
+  }
 
   isElements(start, end) {
     if (start > end) {
@@ -1356,7 +1675,23 @@ export class AST {
     }
   }
 
-  isAwaitExpression(start, end) {}
+  isAwaitExpression(start, end) {
+    if (!this.isAwaitKeyWord(start)) {
+      return null;
+    }
+    while (this.isSemicolon(end) && start < end) {
+      end = end - 1;
+    }
+
+    const argument = this.isExpression(start + 1, end);
+    if (argument) {
+      return {
+        type: "AwaitExpression",
+        ...this.getStartEnd(start, end),
+        argument,
+      };
+    }
+  }
 
   // 语句
 
@@ -1570,7 +1905,7 @@ export class AST {
     if (!this.isReturnKeyWord(start)) {
       return null;
     }
-    if (this.isSemicolon(end)) {
+    while (this.isSemicolon(end) && start < end) {
       end = end - 1;
     }
 
@@ -1599,7 +1934,8 @@ export class AST {
   isDeclaration(start, end) {
     return (
       this.isVariableDeclaration(start, end) ||
-      this.isFunctionDeclaration(start, end)
+      this.isFunctionDeclaration(start, end) ||
+      this.isClassDeclaration(start, end)
     );
   }
 

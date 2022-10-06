@@ -102,8 +102,12 @@ function * b(){
 }
 `
 export const textList = {
-  nullText: (x) =>  `// 现在测试的是${x}模块，没有对应的测试文本,请自行在下方添加
-   `,
+  getText: function(x) {
+    if(this[x]) {
+      return this[x]
+    }
+    return `// 现在测试的是${x}模块，没有对应的测试文本,请自行在下方添加
+   `},
   isProgram,
   isVariableDeclaration,
   isObjectExpression: `
@@ -243,6 +247,39 @@ fljsld;f
   // 现在测试的是isForStatement模块，
   for(let i = 1; i< 10; i++) {
     console.log(i)
+  }
+  `,
+  isClassExpression: `
+  // 现在测试的是isClassExpression模块，
+  class s extends sd{
+    sdf;
+   static x = class{}
+   [x] =sfsd;
+   static [x+2] ='sdfs';
+   static async * [re+2](a =1){
+    console.log(this.a)
+  }
+
+  static set id(x){
+    return this.id
+  }
+  }
+  `,
+  isClassDeclaration:`
+  // 现在测试的是isClassDeclaration模块，
+  class afsd extends (ppp){
+    consturtor(){
+       this.x =1;
+       (async ()=>{
+           await this.sleep(100)
+       })()
+     }
+     async sleep(x){
+      await new window.Promise(r=>setTimeout(r,x))
+     }
+     * a(){
+       yield x
+     }
   }
   `
 }

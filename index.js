@@ -35,7 +35,7 @@ mode.addEventListener(
   'change',
   (e)=>{
    AST.selectMethod = e.target.value
-   change(textList[e.target.value] || textList.nullText(e.target.value))
+   change(textList.getText(e.target.value))
   }
 )
 
@@ -56,5 +56,5 @@ window.addEventListener("load", () => {
     Fragment.appendChild(option)
   }
   mode.appendChild(Fragment)
-  change(textList[AST.selectMethod] || textList.nullText(AST.selectMethod))
+  change(textList.getText(AST.selectMethod))
 });

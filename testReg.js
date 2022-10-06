@@ -7,6 +7,7 @@ const f = 'console [ x + 2 ]'.replace(/\s/g,'$').match(/\.\$|\[\$(.*?)\$\]/)
 const g = 'if ( g = 1 , { } , a = q = c = { b : [] } , { ac : qqqq , b = 1 , } , q ) { }'.replace(/\s/g,'$').match(/^if\$\(\$?(\$(.*?)?\$)?\)\$\{\$?(\$(.*?)\$)?\}$/)
 const h = 'a ? b : c + `f`'.replace(/\s/g,'$').match(/^([\s\S]*?)\$\?\$([\s\S]*?)\$\:\$([\s\S]*?)$/)
 const i = 'for ( ; ; ) console .log (i)'.replace(/\s/g,'$').match(/^for\$\(\$?(\$([\s\S]*?)?\$)?\;\$?(\$([\s\S]*?)?\$)?\;\$?(\$([\s\S]*?)?\$)?\$?\)\$(\{\$?(\$([\s\S]*?)\$)?\})?([\s\S]*?)?$/)
-
-console.log(i)
+const j = 'class { }'.replace(/\s/g,'$').match(/^class\$([\w]+?\$(extends\$[\w]+?\$)?)?\{\$?(\$([\s\S]*?)\$)?\}$/)
+const k = 'class fadf extends afd { }'.replace(/\s/g,'$').match(/^class\$[\w]+?\$(extends\$[\w]+?\$)?\{\$?(\$([\s\S]*?)\$)?\}$/)
+console.log(k)
 
