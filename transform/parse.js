@@ -23,7 +23,17 @@ export default function parse(str) {
     "&&",
     "||",
     '++',
-    '--'
+    '--',
+    '>>>',
+    '<<',
+    '>>',
+    '%=',
+    '<<=',
+    '>>=',
+    '>>>=',
+    '&=',
+    '^=',
+    '|='
   ].sort((a, b) => b.length - a.length);
 
   function next() {
