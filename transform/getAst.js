@@ -85,7 +85,7 @@ const UnaryOperators = ["!", "~"];
 
 const UpdateOperators = ["++", "--"];
 
-const leftSingleOperators = ['~', '+', '!', '++', '--', 'typeof', 'void', 'delete']
+const leftSingleOperators = ['~', '+', '-', '!', '++', '--', 'typeof', 'void', 'delete']
 
 const rightSingleOperators = ['++', '--']
 
@@ -1350,18 +1350,22 @@ export class AST {
     return this.list[i]?.value
   }
 
+
+
   _getPriorityExpression(start, end, priorityArr, cb) {
     const prioritySet = new Map();
     const signList = []
     priorityArr.forEach((arr, index) => {
       arr.forEach((sign) => {
-        prioritySet.set(sign, index + 1)
+        if (!prioritySet.has(sign)) {
+          prioritySet.set(sign, index + 1)
+        } else {
+          const oldV = _.flatten([prioritySet.get(sign)])
+          prioritySet.set(sign, [...oldV, index + 1])
+        }
         signList.push(sign)
       })
     })
-    const isPriority = (i, j) => {
-      return prioritySet.get(this._getValue(i)) >= prioritySet.get(this._getValue(j))
-    }
     let pre = start;
     let i = start;
     let preSignIndex = -1;
@@ -1369,26 +1373,50 @@ export class AST {
     const opArr = []
 
     const getTopOpArr = () => opArr[opArr.length - 1]
-    const getTopExp = () => expArr[expArr.length -1];
-    // console.log(this._getValue(i), this._getValue(end))
-    const isEndOfRightOperator =  rightSingleOperators.includes(this._getValue(end));
+    const isLeftSign = (i) => (i === 0 || signList.includes(this._getValue(i -1)))
+    const isPriority = (i, j) => {
+      let p1 = prioritySet.get(this._getValue(i));
+      let p2 = prioritySet.get(this._getValue(j));
+      if (Array.isArray(p1)) {
+        if (!isLeftSign(i)) {
+          p1 = p1[0];
+        } else {
+          p1 = p1[1];
+        }
+      }
 
+      if (Array.isArray(p2)) {
+        if (!isLeftSign(j)) {
+          p2 = p2[0];
+        } else {
+          p2 = p2[1]
+        }
+      }
+      return p1 >= p2
+    }
+    const getSignDetail = (i) => {
+      return {
+        ...this.getStartEnd(i, i),
+        isLeftSign: isLeftSign(i),
+      }
+    }
     const merge = (top) => {
       let ret;
-      if (rightSingleOperators.includes(top[0]) || leftSingleOperators.includes(top[0])) {
-        const left = expArr.pop()
-        ret = cb(opArr.pop(), left)
-        if (!ret) {
-          return false
-        }
-        expArr.push(ret)
-        return true
-      } else if (doubleOperators.includes(top[0])) {
+      if (doubleOperators.includes(top[0]) && expArr.length >=2 && opArr.length) {
         const right = expArr.pop()
         const left = expArr.pop()
         ret = cb(opArr.pop(),  left, right)
         if (!ret) {
           return false
+        }
+        expArr.push(ret)
+        return true;
+      } else if ((rightSingleOperators.includes(top[0]) || leftSingleOperators.includes(top[0])) 
+      && expArr.length && opArr.length) {
+        const left = expArr.pop()
+        ret = cb(opArr.pop(), left)
+        if (!ret) {
+          return false;
         }
         expArr.push(ret)
         return true
@@ -1398,7 +1426,6 @@ export class AST {
 
     while (i <= end) {
       const currentSign = this._getValue(i);
-      // console.log(currentSign, i === end && rightSingleOperators.includes(currentSign))
       if (!signList.includes(currentSign)
         || (
           (preSignIndex > -1 && !isPriority(preSignIndex, i))
@@ -1406,67 +1433,36 @@ export class AST {
         i++;
         continue;
       }
-      //  console.log(start, end, currentSign)
       const exp = ((pre <= i - 1) && this.isExpression(pre, i - 1));
       if (exp) {
         preSignIndex = i;
         expArr.push(exp)
-        // 如果是双目运算符
-        if (expArr.length >= 2 && opArr.length >= 1) {
-          const top = getTopOpArr()
-          // 双目运算符 
-          if (doubleOperators.includes(top[0]) && isPriority(top[1], i)) {
-            const right = expArr.pop()
-            const left = expArr.pop()
-            const ret = cb(opArr.pop(),  left, right)
-            if (!ret){
-              return null
-            }
-            expArr.push(ret)
-          } else if (leftSingleOperators.includes(top[0]) && isPriority(top[1], i)) {
-            const left = expArr.pop()
-            const ret = cb(opArr.pop(), left);
-            if (!ret) {
-              return null
-            }
-            expArr.push(ret)
+        let top = getTopOpArr();
+        while(top && expArr.length && opArr.length && isPriority(top[1], i, )){
+          if (!merge(top)) {
+            break;
           }
-        } else if (expArr.length >= 1 && opArr.length >= 1) {
-          const top = getTopOpArr()
-          if (leftSingleOperators.includes(top[0]) && isPriority(top[1], i)) {
-            // 左单目运算符 +a + b
-            const left = expArr.pop()
-            const ret = cb(opArr.pop(), left);
-            if (!ret) {
-              return null
-            }
-            expArr.push(ret)
-          }
+          top = getTopOpArr();
         }
-
-        opArr.push([currentSign, i, this.getStartEnd(i, i)])
+        opArr.push([currentSign, i, getSignDetail(i)])
         pre = i + 1;
       } else if (pre === i) {
         // 左单目运算符 + ! --a
         let top = getTopOpArr()
-        // console.log('enter', currentSign, top)
         // 处理 a++ + --b
         if (rightSingleOperators.includes(top?.[0])) {
           // 前面是一个右单目运算符
           // a++ +b
-          // console.log('当前符号', currentSign, isPriority(top[1], i), expArr.length);
-          while (top && isPriority(top[1], i) && expArr.length >= 1 ) {
+          while (top && isPriority(top[1], i) && expArr.length && opArr.length) {
             if (!merge(top)) {
-              return null
+              break;
             }
             top = getTopOpArr()
           }
-          opArr.push([currentSign, i, this.getStartEnd(i, i)])
+          opArr.push([currentSign, i, getSignDetail(i)])
           pre = i + 1;
         } else if (leftSingleOperators.includes(currentSign)) {
-          // 当前是左目运算符
-          // a + +b
-          opArr.push([currentSign, i, this.getStartEnd(i, i)])
+          opArr.push([currentSign, i, getSignDetail(i)])
           pre = i + 1;
         }
       }
@@ -1478,48 +1474,13 @@ export class AST {
     const exp = this.isExpression(pre, end);
     if (exp) {
       expArr.push(exp)
-      // console.log(getTopOpArr[0]);
     }
-    // 这种情况应该用 while a + --b
-    // C+ A++
-    console.log([...expArr], [...opArr])
-    while (expArr.length && opArr.length) {
-      const top = getTopOpArr()
-      if (doubleOperators.includes(top[0])
-        && expArr.length >= 2
-        && opArr.length >= 1
-      ) {
-        const right = expArr.pop()
-        const left = expArr.pop()
-
-        const ret = cb(opArr.pop(), left, right);
-        if (!ret) {
-          return null;
-        }
-        expArr.push(ret)
-        // console.log('双目',ret);
-        // return ret;
-      } else if (expArr.length >= 1
-        && opArr.length >= 1 && (
-          leftSingleOperators.includes(top[0])
-          || (
-            rightSingleOperators.includes(top[0])
-              )
-        )) {
-        // 处理单目运算符
-        // console.log('结尾', top[0], getTopExp(), (!['++', '--'].includes(top[0]) 
-        // || ['MemberExpression', 'Identifier'].includes(getTopExp().type)))
-        const left = expArr.pop();
-        const ret = cb(opArr.pop(), left)
-        if (!ret) {
-          return null;
-        }
-        expArr.push(ret)
-
-        // return cb(opArr.pop(), left)
-      } else {
+    let top = getTopOpArr();
+    while (top && expArr.length && opArr.length) {
+      if (!merge(top)) {
         break;
       }
+      top = getTopOpArr();
     }
     if (expArr.length === 1 && opArr.length === 0) {
       return expArr[0]
@@ -1544,10 +1505,10 @@ export class AST {
          ['&'],
        ['<<', '>>', '>>>'],
        ['<', '<=', '>', '>='],
-       ['!=', '!', '==='],
+       ['!=', '==='],
        ['+', '-'], 
        ['*', '/', '%'],
-       ['~','!', '+', 'typeof', 'void', 'delete'],
+       ['~','!', '+', '-', 'typeof', 'instanceof', 'void', 'delete'],
         ['++', '--']],
       ([operator, _opi, { start: opiS, end: opiE }], left, right) => {
         if (['|', '&', '+', '-', '*', '/', '%', '^',
@@ -1558,8 +1519,8 @@ export class AST {
             start: left.start,
             end: right.end,
             left,
-            right,
             operator,
+            right,
           }
         } else if (['++', '--'].includes(operator)) {
           const prefix = opiE <= left.start;
@@ -1582,10 +1543,10 @@ export class AST {
             start: left.start,
             end: right.end,
             left,
-            right,
             operator,
+            right,
           }
-        } else if (['!', '+', 'typeof', 'void', 'delete'].includes(operator)) {
+        } else if (['!', '+', '-', 'typeof', 'void', 'instanceof', 'delete'].includes(operator)) {
           return {
             type: "UnaryExpression",
             start: opiS,
@@ -1596,7 +1557,7 @@ export class AST {
           };
         } else {
           // + 号即是双目又是单目
-          if (!['+'].includes(operator)) {
+          if (!['+', '-'].includes(operator)) {
             throw new Error('no result')
           }
         }

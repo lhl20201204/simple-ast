@@ -139,7 +139,9 @@ fljsld;f
   isBinaryExpression: `
   // 现在测试的是isBinaryExpression模块，
   // a + b * c / d - (a + b * c)
-  void a || typeof b++ * (c / d - (a |g && b * !c)) - (b+u|yj.c^y & d %f++)/d[k].g--
+  // void a || typeof b++ * (c / d - (a |g && +(b * !c0))) - (b+u|yj.c^y & d %f++)/(d[k].g--+d&r)
+  // a+b-+c+d
+  -a +b
   `,
   isParams: `
   // 现在测试的是isParams模块，
