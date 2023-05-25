@@ -7,6 +7,11 @@ const DICTS = {
   NUMBER: "number",
   REMARK: "remark",
   STRING: "string",
+  TEMPLATEHEAD: 'templateHead',
+  TEMPLATETAIL: 'templateTail',
+  TEMPLATEBODY: 'templateBody',
+  TEMPLATE: 'template',
+  REGX: 'regx',
 };
 
 const SIGNS = {
@@ -128,10 +133,38 @@ const REGS = {
     /^class\$[\w]+?\$(extends\$[\s\S]+?\$)?\{\$?(\$([\s\S]*?)\$)?\}$/,
 };
 
+const priorityArr = [['||'],
+['&&'],
+['|'],
+['^'],
+['&'],
+['<<', '>>', '>>>'],
+['<', '<=', '>', '>='],
+['!=', '==='],
+['+', '-'],
+['*', '/', '%'],
+['~', '!', '+', '-', 'typeof', 'instanceof', 'void', 'delete'],
+['++', '--']]
+
 export class AST {
   static selectMethod = testingmodule;
   constructor(list) {
     this.list = list;
+    const prioritySet = new Map();
+    const signList = []
+    priorityArr.forEach((arr, index) => {
+      arr.forEach((sign) => {
+        if (!prioritySet.has(sign)) {
+          prioritySet.set(sign, index + 1)
+        } else {
+          const oldV = _.flatten([prioritySet.get(sign)])
+          prioritySet.set(sign, [...oldV, index + 1])
+        }
+        signList.push(sign)
+      })
+    })
+    this.prioritySet = prioritySet;
+    this.signList = signList;
   }
 
   get(start, end, sign = "$") {
@@ -387,7 +420,7 @@ export class AST {
 
   isIdentifier(i) {
     const item = this.list[i] || {};
-    if (item.type === DICTS.WORD && !KEYWORDLIST.includes(item.value)) {
+    if ([DICTS.WORD].includes(item.type) && !KEYWORDLIST.includes(item.value)) {
       return {
         type: "Identifier",
         ...this.getStartEnd(i, i),
@@ -406,9 +439,115 @@ export class AST {
         value: item.value,
         raw: '"' + item.value + '"',
       };
+    } else  if ([DICTS.REGX].includes(item.type)) {
+      return {
+        type: "Literal",
+        ...this.getStartEnd(i, i),
+        value: {},
+        raw: '"' + item.value + '"',
+        regex: {
+          patteren: '"' +item.value.slice?.(1 , -1) + '"',
+          flags: ''
+        }
+      };
     }
     return null;
   }
+
+  isTemplateHead(i) {
+    const item = this.list[i] || {};
+    return [DICTS.TEMPLATEHEAD].includes(item.type)
+  }
+
+  isTemplateBody(i) {
+    const item = this.list[i] || {};
+    return [DICTS.TEMPLATEBODY].includes(item.type)
+  }
+
+  isTemplateTail(i) {
+    const item = this.list[i] || {};
+    return [DICTS.TEMPLATETAIL].includes(item.type)
+  }
+
+  isTemplate(i) {
+    const item = this.list[i] || {};
+    return [DICTS.TEMPLATE].includes(item.type)
+  }
+
+  isTemplateElement(i) {
+    const getValue = (r) => ({
+      raw: `"${r}"`,
+      cooked: `"${r}"`,
+    })
+    if (this.isTemplate(i)) {
+      return {
+        type: 'TemplateElement',
+        ...this.getStartEnd(i, i),
+        value: getValue(this._getValue(i)?.slice?.(1, -1)),
+        tail: true,
+      };
+    } else if (this.isTemplateHead(i) || this.isTemplateBody(i)) {
+      return {
+        type: 'TemplateElement',
+        ...this.getStartEnd(i, i),
+        value: getValue(this._getValue(i)?.slice?.(1, -2)),
+        tail: false,
+      }
+    } else if (this.isTemplateTail(i)) {
+      return {
+        type: 'TemplateElement',
+        ...this.getStartEnd(i, i),
+        value: getValue(this._getValue(i)?.slice?.(1, -1)),
+        tail: true,
+      }
+    }
+    return null;
+  }
+
+  isTemplateLiteral(start, end) {
+    const expressions = []
+    const quasis = [this.isTemplateElement(start)]
+    if (start !== end ) {
+      if (!this.isTemplateHead(start)  || !this.isTemplateTail(end)) {
+        return null
+      }
+      let s = start + 1;
+      for(let i = start+1; i < end; i++) {
+        if (!this.isTemplateBody(i)) {
+          continue;
+        }
+        const left = this.isExpression(s, i-1);
+        if (!left) {
+          return null
+        }
+        quasis.push(this.isTemplateElement(i))
+        s = i+1;
+        expressions.push(left);
+      }
+      const left = this.isExpression(s, end - 1);
+      if (!left) {
+          return null
+      }
+      expressions.push(left);
+      quasis.push(this.isTemplateElement(end))
+      return {
+        type: "TemplateLiteral",
+        ...this.getStartEnd(start, end),
+        expressions,
+        quasis,
+      };
+    }
+    if (this.isTemplate(start)) {
+      return {
+        type: "TemplateLiteral",
+        ...this.getStartEnd(start, end),
+        expressions,
+        quasis,
+      };
+    }
+    return null;
+  }
+
 
   isAssignmentPattern(start, end) {
     const id = this.isIdentifier(start);
@@ -1119,6 +1258,7 @@ export class AST {
     }
     return (
       (start === end && (this.isLiteral(start) || this.isIdentifier(start))) ||
+      this.isTemplateLiteral(start, end) ||
       this.isAssignmentExpression(start, end) ||
       this.isYieldExpression(start, end) ||
       this.isClassExpression(start, end) ||
@@ -1350,22 +1490,12 @@ export class AST {
     return this.list[i]?.value
   }
 
+  _print(s, e) {
+    console.log(_.map(this.list.slice(s, e + 1), 'value').join(''))
+  }
 
-
-  _getPriorityExpression(start, end, priorityArr, cb) {
-    const prioritySet = new Map();
-    const signList = []
-    priorityArr.forEach((arr, index) => {
-      arr.forEach((sign) => {
-        if (!prioritySet.has(sign)) {
-          prioritySet.set(sign, index + 1)
-        } else {
-          const oldV = _.flatten([prioritySet.get(sign)])
-          prioritySet.set(sign, [...oldV, index + 1])
-        }
-        signList.push(sign)
-      })
-    })
+  _getPriorityExpression(start, end, cb) {
+    const { prioritySet, signList } = this;
     let pre = start;
     let i = start;
     let preSignIndex = -1;
@@ -1373,10 +1503,10 @@ export class AST {
     const opArr = []
 
     const getTopOpArr = () => opArr[opArr.length - 1]
-    const isLeftSign = (i) => (i === 0 || signList.includes(this._getValue(i -1)))
-    const isPriority = (i, j) => {
+    const isLeftSign = (i) => leftSingleOperators.includes(this._getValue(i)) && (i === start || (doubleOperators.includes(this._getValue(i - 1)) && !doubleOperators.includes(this._getValue(i + 1))))
+    const isRightSign = (i) => rightSingleOperators.includes(this._getValue(i)) && (i === end || (doubleOperators.includes(this._getValue(i + 1))))
+    const getPriority = (i) => {
       let p1 = prioritySet.get(this._getValue(i));
-      let p2 = prioritySet.get(this._getValue(j));
       if (Array.isArray(p1)) {
         if (!isLeftSign(i)) {
           p1 = p1[0];
@@ -1384,38 +1514,57 @@ export class AST {
           p1 = p1[1];
         }
       }
-
-      if (Array.isArray(p2)) {
-        if (!isLeftSign(j)) {
-          p2 = p2[0];
-        } else {
-          p2 = p2[1]
-        }
-      }
-      return p1 >= p2
+      return p1;
+    }
+    const isPriority = (i, j) => {
+      return getPriority(i) >= getPriority(j)
     }
     const getSignDetail = (i) => {
       return {
         ...this.getStartEnd(i, i),
         isLeftSign: isLeftSign(i),
+        isRightSign: isRightSign(i),
+        priority: getPriority(i)
       }
     }
     const merge = (top) => {
       let ret;
-      if (doubleOperators.includes(top[0]) && expArr.length >=2 && opArr.length) {
+      // console.log(top)
+      // + 优先级有俩种，需要特殊处理
+      if (doubleOperators.includes(top[0])
+        && expArr.length >= 2
+        && opArr.length
+        && !top[2].isLeftSign
+        && !top[2].isRightSign
+      ) {
         const right = expArr.pop()
         const left = expArr.pop()
-        ret = cb(opArr.pop(),  left, right)
+        const op = opArr.pop();
+        ret = cb(op, left, right)
         if (!ret) {
+          expArr.push(left)
+          expArr.push(right)
+          opArr.push(op)
           return false
         }
         expArr.push(ret)
         return true;
-      } else if ((rightSingleOperators.includes(top[0]) || leftSingleOperators.includes(top[0])) 
-      && expArr.length && opArr.length) {
+      } else if (
+        expArr.length && opArr.length &&
+        ((rightSingleOperators.includes(top[0])
+          && top[2].isRightSign
+        )
+          || (
+            leftSingleOperators.includes(top[0])
+            && top[2].isLeftSign
+          ))
+      ) {
         const left = expArr.pop()
-        ret = cb(opArr.pop(), left)
+        const op = opArr.pop();
+        ret = cb(op, left)
         if (!ret) {
+          expArr.push(left)
+          opArr.push(op)
           return false;
         }
         expArr.push(ret)
@@ -1438,7 +1587,7 @@ export class AST {
         preSignIndex = i;
         expArr.push(exp)
         let top = getTopOpArr();
-        while(top && expArr.length && opArr.length && isPriority(top[1], i, )){
+        while (top && expArr.length && opArr.length && isPriority(top[1], i,)) {
           if (!merge(top)) {
             break;
           }
@@ -1471,10 +1620,12 @@ export class AST {
     if (pre === start) {
       return null;
     }
+    // console.log('start', [...expArr], [...opArr]);
     const exp = this.isExpression(pre, end);
     if (exp) {
       expArr.push(exp)
     }
+    // console.log('end', [...expArr], [...opArr])
     let top = getTopOpArr();
     while (top && expArr.length && opArr.length) {
       if (!merge(top)) {
@@ -1498,22 +1649,10 @@ export class AST {
     return this._getPriorityExpression(
       start,
       end,
-      [['||'], 
-       ['&&'],
-        ['|'],
-        ['^'],
-         ['&'],
-       ['<<', '>>', '>>>'],
-       ['<', '<=', '>', '>='],
-       ['!=', '==='],
-       ['+', '-'], 
-       ['*', '/', '%'],
-       ['~','!', '+', '-', 'typeof', 'instanceof', 'void', 'delete'],
-        ['++', '--']],
       ([operator, _opi, { start: opiS, end: opiE }], left, right) => {
         if (['|', '&', '+', '-', '*', '/', '%', '^',
-        '<<', '>>', '>>>', '<', '<=', '>', '>=',
-        '!=', '==='].includes(operator) && right) {
+          '<<', '>>', '>>>', '<', '<=', '>', '>=',
+          '!=', '==='].includes(operator) && right) {
           return {
             type: "BinaryExpression",
             start: left.start,
@@ -1525,11 +1664,11 @@ export class AST {
         } else if (['++', '--'].includes(operator)) {
           const prefix = opiE <= left.start;
           function isChainOptional(x) {
-            return x.type === 'MemberExpression' && ( x.optional || isChainOptional(x.object))
+            return x.type === 'MemberExpression' && (x.optional || isChainOptional(x.object))
           }
           return ['Identifier', 'MemberExpression'].includes(left.type)
-          && !isChainOptional(left)
-           && {
+            && !isChainOptional(left)
+            && {
             type: "UpdateExpression",
             start: prefix ? opiS : left.start,
             end: prefix ? left.end : opiE,
