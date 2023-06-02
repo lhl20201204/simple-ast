@@ -3,13 +3,24 @@
 
 
 export const isProgram = `
-const a = 1
-
-function a(){
- const x =1
+/*var g = console.log
+let a = -8
+const f = ['hello_'];
+const b = { [f + 'world']: a, f, fn(){
+  console.log(this.f)
+}}
+const c = 3 + '0' * 6
+function gf(gf,...args){
+  return (gf + args[0]) * args[1];
 }
-
-const c = [b]
+const d = gf(1, 2, 3) + c * (a + 2 *7);
+g('这是自己的console.log',d);
+*/
+const f = { a: 1};
+const b = { f, fn(){
+  console.log(this, this.f)
+}}
+b.fn();
 `
 
 export const isVariableDeclaration = `
@@ -112,7 +123,13 @@ export const textList = {
   isVariableDeclaration,
   isObjectExpression: `
   // 现在测试的是isObjectExpression模块，
-  {a,[c= {x: 2,[d]: 'f'}]: 2, b: 2 + e}
+  //{a,[c= {x: 2,[d]: 'f'}]: 2, b: 2 + e}
+  { 
+    f: 1,
+    fn(){
+      console.log(this.f)
+    }
+   }
   `,
   isArrayExpression:`
   // 现在测试的是isArrayExpression模块，
@@ -147,9 +164,10 @@ fljsld;f
   //a+ '12\\\\g\\\'' // 预期是对的
   // a+ "12\\\\g\\\\\"" // 预期是错的
   // a+ "12\\\\g\\\"" // 预期是对的
-  b  + \`1$\{a\}1$\{b\}11\$\{\`3333\` + \`444\${() => { return 555 }}666\`\}22\${
-    ()=>{ return '\\\}'}
-  }333\` * 555 / \/\`hhh\`\/ // 预期是对的
+  // b  + \`1$\{a\}1$\{b\}11\$\{\`3333\` + \`444\${() => { return 555 }}666\`\}22\${
+  //   ()=>{ return '\\\}'}
+  // }333\` * 555 / \/\`hhh\`\/ // 预期是对的
+    a+b*c
   `,
   isParams: `
   // 现在测试的是isParams模块，
@@ -188,11 +206,15 @@ fljsld;f
   `,
   isFunctionDeclaration: `
   // 现在测试的是isFunctionDeclaration模块，
-    async function * _f1h(x=[{}], q= {x:[], ...y}) {
+  /* async function * _f1h(x=[{}], q= {x:[], ...y}) {
       const a = 1
       async function * x(a) {
          let b = {}
       }
+    }
+  */
+   function a(a=1, c =hhhh = { p, ttt} = {p: a + 2, ttt: 555}) {
+
    }
   `,
   isObjectPattern: `
@@ -219,7 +241,8 @@ fljsld;f
   `,
   isCallExpression: `
   // 现在测试的是isCallExpression模块，
-  window?.['console']?.log(q)?.[x]?.({...this?.get()})
+  // window?.['console']?.log(q)?.[x]?.({...this?.get()})
+  gf(1, 2, 3)
   `,
   isIfStatement: `
   // 现在测试的是isIfStatement模块，
@@ -292,5 +315,9 @@ fljsld;f
        yield x
      }
   }
+  `,
+  isParamsItem: `
+  // 现在测试的是isParamsItem模块，没有对应的测试文本,请自行在下方添加
+  c =hhhh = { p, ttt} = {p: a + 2, ttt: 555}
   `
 }

@@ -1,6 +1,9 @@
 import parse from "./parse";
 import _ from 'lodash';
-const testingmodule = "isBinaryExpression";
+
+const test = ["isProgram", "isObjectExpression"]
+const testingmodule = test[0];
+
 const DICTS = {
   WORD: "word",
   SIGN: "sign",
@@ -148,6 +151,9 @@ const priorityArr = [['||'],
 
 export class AST {
   static selectMethod = testingmodule;
+
+  static testingCode = '';
+
   constructor(list) {
     this.list = list;
     const prioritySet = new Map();
@@ -432,14 +438,23 @@ export class AST {
 
   isLiteral(i) {
     const item = this.list[i] || {};
-    if ([DICTS.NUMBER, DICTS.STRING].includes(item.type)) {
+    if ([DICTS.NUMBER].includes(item.type)) {
       return {
         type: "Literal",
         ...this.getStartEnd(i, i),
         value: item.value,
-        raw: '"' + item.value + '"',
+        raw: `${item.value}`,
+        valueType: 'number',
       };
-    } else  if ([DICTS.REGX].includes(item.type)) {
+    } else if ([DICTS.STRING].includes(item.type)) {
+      return {
+        type: "Literal",
+        ...this.getStartEnd(i, i),
+        value: (item.value).slice(1, -1),
+        raw:  item.value,
+        valueType: 'string',
+      };
+    }else  if ([DICTS.REGX].includes(item.type)) {
       return {
         type: "Literal",
         ...this.getStartEnd(i, i),
@@ -448,7 +463,8 @@ export class AST {
         regex: {
           patteren: '"' +item.value.slice?.(1 , -1) + '"',
           flags: ''
-        }
+        },
+        valueType: 'regx',
       };
     }
     return null;
@@ -550,20 +566,28 @@ export class AST {
 
 
   isAssignmentPattern(start, end) {
-    const id = this.isIdentifier(start);
-    if (end < start + 2 || !id || !this.isEqual(start + 1)) {
-      return null;
-    }
-    const right = this.isExpression(start + 2, end);
-    if (right) {
+    for(let i = start; i<= end; i++) {
+      if (!this.isEqual(i)) {
+        continue;
+      }
+      const left =(i=== start + 1 && this.isIdentifier(start))
+          || this.isObjectPattern(start, i-1)
+          || this.isArrayPattern(start, i -1);
+      if (!left) {
+        continue;
+      }
+      const right = this.isExpression(i+1, end);
+     if (right) {
       return {
         type: "AssignmentPattern",
         ...this.getStartEnd(start, end),
         operators: SIGNS.EQU,
-        left: id,
+        left,
         right,
       };
     }
+    }
+    return null;
   }
 
   isCommonProperty(start, end) {
@@ -577,14 +601,16 @@ export class AST {
         computed: false,
         key: first,
         kind: "init",
-        value: first,
+        value: {
+          ...first
+        },
       };
     } else if (this.hasSign(start, end, this.isCOLON)) {
       if (!first || !this.isCOLON(start + 1)) {
         return null;
       }
       const right = this.isExpression(start + 2, end);
-      if (right) {
+      if (right && right.type !== 'SequenceExpression') {
         return {
           type: "Property",
           ...this.getStartEnd(start, end),
@@ -695,7 +721,7 @@ export class AST {
             isAsync,
             generator
           );
-          if (value) {
+          if (value && value.type !== 'SequenceExpression') {
             return {
               type: "Property",
               ...this.getStartEnd(ss, end),
@@ -714,7 +740,7 @@ export class AST {
         }
 
         const right = this.isExpression(i + 2, end);
-        if (right) {
+        if (right && right.type !== 'SequenceExpression') {
           return {
             type: "Property",
             ...this.getStartEnd(ss, end),
@@ -937,8 +963,25 @@ export class AST {
     return (
       (start === end && this.isIdentifier(start)) ||
       this.isObjectPattern(start, end) ||
-      this.isAssignmentPattern(start, end)
+      this.isArrayPattern(start, end) ||
+      this.isAssignmentPattern(start, end) ||
+      this.isRestElement(start, end)
     );
+  }
+
+  isRestElement(start, end) {
+    if (!this.isSpreadSign(start)) {
+      return null;
+    }
+    const argument = this.isParamsItem(start + 1, end);
+    if (!argument) {
+      return null;
+    }
+    return {
+        type: 'RestElement',
+        ...this.getStartEnd(start, end),
+        argument,
+    } 
   }
 
   isParams(start, end) {
@@ -949,6 +992,7 @@ export class AST {
     if (paramsChild) {
       return [paramsChild];
     }
+    console.log(paramsChild);
     return this.breakUpBySign(
       start,
       end,
@@ -1265,6 +1309,7 @@ export class AST {
       this.isConditionalExpression(start, end) ||
       // this.isUnaryExpression(start, end) ||
       // this.isLogicalExpression(start, end) ||
+      this.isSequenceExpression(start, end) ||
       this.isObjectExpression(start, end) ||
       this.isBinaryExpression(start, end) ||
       // this.isUpdateExpression(start, end) ||
@@ -1275,7 +1320,6 @@ export class AST {
       this.isMemberExpression(start, end) ||
       this.isNewExpression(start, end) ||
       this.isArrayExpression(start, end) ||
-      this.isSequenceExpression(start, end) ||
       (this.isLeftParenthesis(start) &&
         this.isRightParenthesis(end) &&
         this.isExpression(start + 1, end - 1))
@@ -1707,6 +1751,7 @@ export class AST {
     if (!this.get(start, end).match(regp)) {
       return null;
     }
+   
     const ss = start;
     const getFnBody = (start, id, generator, isAsync) => {
       if (!this.isBIGRightParenthesis(end)) {
@@ -1821,13 +1866,16 @@ export class AST {
       }
       const temp =
         this.isMemberExpression(start, i - 1) ||
+        this.isObjectPattern(start, i-1) ||
+        this.isArrayPattern(start, i - 1) ||
         (start === i - 1 && this.isIdentifier(start));
       if (temp) {
-        (id = temp), (next = i);
+        id = temp;
+        next = i;
         break;
       }
     }
-
+    // likaiyihui
     if (!id || !this.isAssignSign(next)) {
       return null;
     }
@@ -2006,19 +2054,24 @@ export class AST {
     }
   }
 
+  isNoSequenceOrHasParenthesisExpression(start, end) {
+    const expression = this.isExpression(start, end);
+    return this.noSequenceOrHasParenthesis(expression, start, end) && expression;
+  }
+
   isElements(start, end) {
     if (start > end) {
       return [];
     }
-    const expression = this.isExpression(start, end);
-    if (expression && this.noSequenceOrHasParenthesis(expression, start, end)) {
+    const expression = this.isNoSequenceOrHasParenthesisExpression(start, end);
+    if (expression) {
       return [expression];
     }
     return this.breakUpBySign(
       start,
       end,
       this.isComma,
-      this.isExpression,
+      this.isNoSequenceOrHasParenthesisExpression,
       this.isElements
     );
   }
@@ -2333,7 +2386,7 @@ export default function getAst(str) {
   }
   const list = wordList.filter((x) => x.type !== DICTS.REMARK);
   const ast = new AST(list);
-
+  AST.testingCode = str;
   try {
     const tree = ast[AST.selectMethod](0, list.length - 1);
     console.log(AST.selectMethod, tree, wordList);
@@ -2341,31 +2394,7 @@ export default function getAst(str) {
       return new Error();
     }
 
-    const writeJSON = (obj, prefix, name) => {
-      const ret = [];
-      const prefixSpace = new Array(prefix)
-        .fill(0)
-        .map((v) => " ")
-        .join("");
-
-      for (const attr in obj) {
-        const t = obj[attr];
-        if (t instanceof Object) {
-          const child = writeJSON(t, prefix + 2, attr);
-          ret.push(
-            prefixSpace +
-            `${attr * 1 == attr ? "" : attr + ": "}` +
-            `${Array.isArray(t) ? "[" : "{"}\n`
-          );
-          ret.push(...child.join(""));
-          ret.push(prefixSpace + `${Array.isArray(t) ? "]," : "},"}\n`);
-        } else {
-          ret.push(prefixSpace + attr + ": " + t + ",\n");
-        }
-      }
-      return ret;
-    };
-    return "{\n" + writeJSON(tree, 2).join("") + "}";
+    return tree;
   } catch (e) {
     console.error(e);
     return new Error();

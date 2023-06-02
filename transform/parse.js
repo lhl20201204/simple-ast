@@ -480,7 +480,7 @@ export default function parse(str) {
         endCol: col - 1,
         startRow,
         endRow: row,
-        value: ret.join(""),
+        value: Number(ret.join("")),
       });
     }
   }
@@ -490,7 +490,12 @@ export default function parse(str) {
     const startCol = col;
     const startRow = row;
     const start = i;
-    if (isSlant() && getTopWord().type === 'sign') {
+    // todo
+    const topWord = getTopWord()
+    if (isSlant() && ((topWord.type === 'sign' 
+      && !isRightParenthesis(topWord.value)
+      && !isRightBrace(topWord.value)
+      && !isRightBracket(topWord.value)) || wordList.length === 0)) {
       ret.push(str[i]);
       next()
       let quit = false;

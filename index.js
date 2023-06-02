@@ -1,6 +1,9 @@
 import { textList } from "./test";
 import transform from "./transform";
 import { AST } from "./transform/getAst";
+import parseAst from "./transform/runtime";
+import { getWindow } from "./transform/runtime/Parse/parseProgram";
+import writeJSON from "./transform/util";
 
 const throttle = (fn, t) => {
   let timer = null;
@@ -15,11 +18,19 @@ const throttle = (fn, t) => {
   };
 };
 
+const write = (text) => {
+  const ast = transform(text);
+  result.value = "{\n" + writeJSON(ast, 2, false).join("") + "}";
+  const win = getWindow();
+  parseAst(ast, win);
+  excute.value = "{\n" + writeJSON(win.toString(), 2, true).join("") + "}";
+}
+
 source.addEventListener(
   "input",
   throttle(function (e) {
     setTimeout(() => {
-      result.value = transform(e.target.value);
+      write(e.target.value)
     });
   }, 1000)
 );
@@ -27,7 +38,7 @@ source.addEventListener(
 const change = (text) => {
   source.value = text;
   source.focus();
-  result.value = transform(text);
+  write(text)
 }
 
 

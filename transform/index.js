@@ -6,6 +6,5 @@ export default function transform(str) {
   if (!checkLegal(ast)) {
     return "no-legal-input";
   }
-
   return ast;
 }
