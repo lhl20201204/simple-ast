@@ -8,7 +8,6 @@ export default function parseVariableDeclaration(ast, env) {
     if (id.type === 'Identifier') {
       key = id.name;
     }
-
     env[`add${_.upperFirst(type)}`](key, value)
   });
 }

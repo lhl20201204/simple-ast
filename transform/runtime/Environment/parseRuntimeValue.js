@@ -1,4 +1,5 @@
 import { AST } from "../../getAst";
+import generateCode from "../Generate";
 import RuntimeValue from "./RuntimeValue";
 
 export default function parseRuntimeValue(rv) {
@@ -11,11 +12,11 @@ export default function parseRuntimeValue(rv) {
   }
 
   if (rv.type === 'function') {
-    const funast = rv.value;
+    const funast = rv.value.ast;
     if (['FunctionDeclaration', 'FunctionExpression'].includes(funast.type)) {
-      return AST.testingCode.slice(funast.start, funast.end + 1);
+      return generateCode(funast, { text: true });
     }
-    return `[function native code]`
+    return `function(){[native code]}`
   }
   if (_.isObject(value)) {
     return _.reduce(value, (o, v, k) => Object.assign(o, {[k]: parseRuntimeValue(v) }) ,{})

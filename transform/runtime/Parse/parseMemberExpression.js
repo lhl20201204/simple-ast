@@ -9,14 +9,11 @@ export default function parseMemberExpression(ast, env) {
   if (ast.computed) {
     key = parseAst(property, env).value;
   }
-  console.log(key);
   if (object instanceof Environment) {
-    console.log(key, 'Environment')
     return object.get(key)
   }
   if (object.type === 'undefined') {
     throw new Error(`不能获取 undefind 的 ${key}`)
   }
-  console.log('parseMemberExpression', object)
   return object.value[key] ?? getUndefinedValue();
 }

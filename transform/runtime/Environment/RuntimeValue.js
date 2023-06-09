@@ -1,3 +1,5 @@
+// import { getWindowObject } from ".";
+// import Environment from ".";
 import parseRuntimeValue from "./parseRuntimeValue";
 
 export default class RuntimeValue{
@@ -17,8 +19,8 @@ export function getUndefinedValue() {
   return undefinedV;
 }
 
-const consoleV = new RuntimeValue('object', {
-  log: new RuntimeValue('function', {
+const consoleV = (env) => new RuntimeValue('object', {
+  log: new RuntimeValue('function', {ast:{
     type: 'FunctionExpression',
     id: { name: 'console.log' },
     params: [
@@ -37,8 +39,20 @@ const consoleV = new RuntimeValue('object', {
       // 直接结构就行了
       console.warn(...newArr);
     },
-    body: [],
-  })
+    body: {
+      type: 'BlockStatement',
+      body: [
+        {
+          "type": "ExpressionStatement",
+          "expression": {
+            "type": "Literal",
+            "value": "[native code]",
+            "raw": "'[native code]'"
+          },
+        }
+      ],
+    },
+  }, env})
 });
 
 export function getConsoleValue() {
@@ -57,11 +71,14 @@ export function getFalseV() {
   return falseV;
 }
 
+// const windowV = getWindowObject();
+
 const NULL = 'null';
 const UNDEFINED = 'undefined';
 const CONSOLE = 'console';
 const TRUE = 'true';
 const FALSE = 'false';
+const WINDOW = 'window'
 export function initConst() {
   return [
     [NULL, nullV],

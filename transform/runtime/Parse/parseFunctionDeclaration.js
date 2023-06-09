@@ -1,3 +1,4 @@
+import Environment from "../Environment";
 import RuntimeValue from "../Environment/RuntimeValue";
 
 export default function parseFunctionDeclaration(ast, env) {
@@ -11,7 +12,10 @@ export default function parseFunctionDeclaration(ast, env) {
       throw new Error('解构必须放在参数的最后一个');
     }
   }
-  const value = new RuntimeValue('function', ast);
+  const value = new RuntimeValue('function', {
+    ast,
+    env
+  });
   if (key) {
     env.addFunction(key, value);
   }

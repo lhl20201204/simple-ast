@@ -16,11 +16,18 @@ function gf(gf,...args){
 const d = gf(1, 2, 3) + c * (a + 2 *7);
 g('这是自己的console.log',d);
 */
-const f = { a: 1};
-const b = { f, fn(){
-  console.log(this, this.f)
-}}
-b.fn();
+let fn = function (a){
+  if (a === f) {
+    console.log(this, this.f)
+  } else {
+    console.log('hhhh', a)
+  };
+}
+let f = { a: 1};
+const b = { f, fn }
+f.a = 3;
+b.fn(f);
+fn(2)
 `
 
 export const isVariableDeclaration = `

@@ -1,12 +1,15 @@
-import { getConsoleValue, getNullValue, getUndefinedValue, initConst } from "./RuntimeValue";
+import { ObjectLike } from "../Parse/parseObjectExpression";
+import RuntimeValue, { initConst } from "./RuntimeValue";
 import parseRuntimeValue from "./parseRuntimeValue";
 const KEY_VALUEMAP = initConst();
 const skipField = new Set(_.map(KEY_VALUEMAP, '0'));
 let id = 0;
 export default class Environment {
-  constructor(name, parent) {
+  static window = new Environment('window', null, );
+  constructor(name, parent, _config = {}) {
     this.envId = 'symbol(' + id ++ + ')';
     this.name = name;
+    this._config = _config;
     this.parent = parent ?? null;
     if (parent) {
       this.parent.addChildren(this);
@@ -15,6 +18,7 @@ export default class Environment {
     this.map = new Map()
     this.keyMap = new Map();
     this.constMap = new Map();
+    this.placeholderMap = new Map();
   }
 
   addChildren(env) {
@@ -24,6 +28,9 @@ export default class Environment {
   addConst(key, value) {
     if (this.keyMap.has(key)) {
       throw new Error(`${key} 已被定义`);
+    }
+    if (this.placeholderMap.has(key)) {
+      this.placeholderMap.delete(key)
     }
     this.constMap.set(key, value);
     this.keyMap.set(key, 'const');
@@ -37,9 +44,12 @@ export default class Environment {
     this.keyMap.set(key, 'var');
   }
 
-  addLet(key, value) {
-    if (this.keyMap.has(key)) {
+  addLet(key, value, resign) {
+    if (!resign && this.keyMap.has(key)) {
       throw new Error(`${key} 已经定义`);
+    }
+    if (this.placeholderMap.has(key)) {
+      this.placeholderMap.delete(key)
     }
     this.map.set(key, value);
     this.keyMap.set(key, 'let')
@@ -50,30 +60,67 @@ export default class Environment {
     this.keyMap.set(key, 'function')
   }
 
-  get(key) {
-    if (this.keyMap.has(key)) {
-      return this.map.get(key) || this.constMap.get(key)
-    } 
+  getEnv(key) {
+   if (this.keyMap.has(key)) {
+    return this;
+   }
+   return this.parent && this.parent.getEnv(key)
+  }
 
-    if (! this.parent) {
-      throw new Error(`${key} 为 undefined`)
+  get(key) {
+    if (this.placeholderMap.has(key)) {
+      throw new Error(`Cannot access '${key}' before initialization`)
     }
-    return this.parent.get(key)
+    const env = this.getEnv(key);
+    if (! env) {
+      if (key === 'window') {
+        return Environment.window.getValue();
+      } 
+      throw new Error(`${key} 为undefined`)
+    }
+    return env.map.get(key) || env.constMap.get(key)
   }
 
   set(key, value) {
-    if (this.keyMap.has(key)) {
-      if (this.map.has(key)) {
-        this.map.set(key, value)
-      } else if (this.constMap.has(key)) {
-        throw new Error(`const ${key} 不能被重新定义`);
-      }
-    } 
-    if (!this.parent) {
-      throw new Error(`${key} 为 undefined`)
+    const env = this.getEnv(key);
+    if (!env) {
+      return Environment.window.addVar(key, value)
     }
+    if (env.constMap.has(key)) {
+      throw new Error(`const ${key} 不能被重新定义`);
+    }
+    env.map.set(key, value)
+  }
 
-    this.parent.set(key, value)
+  placeholder(key) {
+    this.placeholderMap.set(key, true);
+  }
+
+  findFunctionEnv() {
+    if (this._config.isFunctionEnv) {
+      return this;
+    }
+    return this.parent && this.parent.findFunctionEnv()
+  }
+
+  hadReturn() {
+    return this._config.returnFlag;
+  }
+
+  isFunctionEnv() {
+    return this._config.isFunctionEnv;
+  }
+
+  setReturnValue(value) {
+    this._config.returnFlag = true;
+    this._config.returnValue = value
+    if (!this.isFunctionEnv()) {
+      this.parent.setReturnValue(value);
+    }
+  }
+
+  getReturnValue() {
+    return this._config.returnValue;
   }
 
   reset() {
@@ -82,8 +129,10 @@ export default class Environment {
     this.map = new Map()
     this.keyMap = new Map()
     this.constMap = new Map();
+    this.placeholderMap = new Map();
     _.forEach(KEY_VALUEMAP, ([key, value]) => {
-      this.addConst(key, value)
+      const v = typeof value === 'function' ? value(Environment.window) : value
+      this.addConst(key, v)
     })
   }
 
@@ -100,5 +149,13 @@ export default class Environment {
       obj.children = _.map(this.children, c => c.toString())
     }
     return obj;
+  }
+
+  getValue() {
+    const obj = new ObjectLike();
+    _.forEach([...this.keyMap], ([k]) => {
+     obj[k] = this.map.get(k) || this.constMap.get(k)
+   })
+  return new RuntimeValue('object', obj) ;
   }
 }

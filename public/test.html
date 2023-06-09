@@ -1,17 +1,71 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>测试专用</title>
 </head>
+
 <body>
-    <script>
-    function gf(gf,...args){
-      return (gf + args[0]) * args[1];
+  <script>
+     function test() {
+  function a(x) {
+    console.log(`当前是${x}`);
+    if (x < 10 ){
+      return x + a(x+1)
     }
-    console.log(gf(1, 2, 3))
-    </script>
+    console.log('return', x);
+    return x;
+  }
+  
+  console.log(a(0));
+  }
+     function test1() {
+      const global = this;
+      console.log(global);
+      function a() {
+      }
+      let fn = function (a) {
+        console.log('fn start', a, f)
+        if (a === f) {
+          console.log(this);
+        } else {
+          window.console.log('hhhh', a)
+        }
+      }
+      let f = { id: 0, a: +1, text: 'global defind' };
+      const b = { f, fn, c: 'fdljfosdj' }
+      let x = null
+      function test() {
+        let f = {id: 1, text: 'funciton_1 defind'};
+
+        function test() {
+          const t = f;
+          console.log(f)
+          // 先左边，后右边
+          f['ggg'] = 3 + (f = g = { id: 2, ff: 1, f, text: 'function_2 defined' });
+          console.log('inner', f, b, t, f === g, f === global.f, f === t);
+          x = f;
+          console.log('x', x)
+          let c = 2;
+        b.fn(t);
+        }
+        test()
+        console.log('test 结束------')
+        // 这里有点怪，f id 为 2 ？？？？？？？？？？？？
+        console.log(f, f === x, window.g, 'test end')
+        b.fn(f);
+      }
+      console.log('outer', f)
+      test();
+      console.log('outer after', f)
+      b.fn(f);
+      fn(x);
+    }
+    test1()
+  </script>
 </body>
+
 </html>

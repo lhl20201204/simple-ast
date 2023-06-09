@@ -1,6 +1,9 @@
 import RuntimeValue from "../Environment/RuntimeValue";
 
 export default function parseLiteral(ast) {
-  const { value, valueType } = ast;
-  return new RuntimeValue(valueType, valueType === 'number' ? Number(value) : value)
+  const { value, valueType, raw } = ast;
+  const v = (valueType === 'number'
+  || (+raw === +value)
+  ) ? Number(value) : value;
+  return new RuntimeValue(typeof v, v)
 }
