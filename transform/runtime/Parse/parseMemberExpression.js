@@ -15,5 +15,8 @@ export default function parseMemberExpression(ast, env) {
   if (object.type === 'undefined') {
     throw new Error(`不能获取 undefind 的 ${key}`)
   }
+  if (!['object', 'array'].includes(object.type)){
+    return getUndefinedValue();
+  }
   return object.value[key] ?? getUndefinedValue();
 }

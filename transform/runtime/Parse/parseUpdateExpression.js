@@ -15,13 +15,10 @@ function getUpdate(ast, env, step = 1) {
   return prefix ? rv : updateRv;
 }
 
-export default function parseUnaryExpression(ast, env) {
+export default function parseUpdateExpression(ast, env) {
   const { operator, argument } = ast;
-  const v = parseRuntimeValue(parseAst(argument, env));
   //todo ++ -- 
   switch(operator) {
-    case '-' : return new RuntimeValue(typeof -v, -v);
-    case '+' : return new RuntimeValue(typeof +v, +v); 
     case '++' : return getUpdate(ast, env, 1);
     case '--' : return getUpdate(ast, env, -1);
   }

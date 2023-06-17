@@ -3,6 +3,12 @@
 
 
 export const isProgram = `
+function a(){
+  for(const { x = g=3, y={hh: 'hello',}, ...rest } of [{ y: 5, z: 8}, {x: 2, y: 3},{}, {x: 5, h: 'jk'}, {x: 7}]){
+    console.log(x, y,rest, window.g)
+  }
+}
+a();
 /*var g = console.log
 let a = -8
 const f = ['hello_'];
@@ -15,7 +21,7 @@ function gf(gf,...args){
 }
 const d = gf(1, 2, 3) + c * (a + 2 *7);
 g('这是自己的console.log',d);
-*/
+
 let fn = function (a){
   if (a === f) {
     console.log(this, this.f)
@@ -28,15 +34,17 @@ const b = { f, fn }
 f.a = 3;
 b.fn(f);
 fn(2)
+*/
 `
 
 export const isVariableDeclaration = `
-const tt = \`
+const a
+/*const tt = \`
 try
 write
 ast
 \`,
- jj = q = 'dfsddf',a_B_133 = b + 1 + 2.12342398423 * (12 / 4), dl = 3 + 3
+ jj = q = 'dfsddf',a_B_133 = b + 1 + 2.12342398423 * (12 / 4), dl = 3 + 3*/
 `
 
 

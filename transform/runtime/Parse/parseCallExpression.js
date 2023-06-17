@@ -44,10 +44,10 @@ export default function parseCallExpression(ast, env) {
     if (argsRV[i]) {
       v = argsRV[i];
     }
-    setPattern(v, c, childEnv)
+    setPattern(v, c, childEnv, {})
   })
   if (restParamsAst) {
-    setPattern(new RuntimeValue('arguments',restArgsRV), restParamsAst.argument, childEnv );
+    setPattern(new RuntimeValue('arguments',restArgsRV), restParamsAst.argument, childEnv , {});
   }
   const fnEnv = new Environment('function_' + name, childEnv, { isFunctionEnv: true });
   fnEnv.addConst('this', _this);

@@ -9,20 +9,26 @@
 </head>
 
 <body>
+  <div id="content"></div>
   <script>
-     function test() {
-  function a(x) {
-    console.log(`当前是${x}`);
-    if (x < 10 ){
-      return x + a(x+1)
+    const origin = console.log
+    console.log = (...args) => {
+        const newArgs = [...args].map(x => x instanceof Object ? JSON.parse(JSON.stringify(x)): x)
+        origin(...newArgs)
     }
-    console.log('return', x);
-    return x;
-  }
-  
-  console.log(a(0));
-  }
-     function test1() {
+    function test2() {
+      function a(x) {
+        console.log(`当前是${x}`);
+        if (x < 10) {
+          return x + a(x + 1)
+        }
+        console.log('return', x);
+        return x;
+      }
+
+      console.log(a(0));
+    }
+    function test3() {
       const global = this;
       console.log(global);
       function a() {
@@ -39,7 +45,7 @@
       const b = { f, fn, c: 'fdljfosdj' }
       let x = null
       function test() {
-        let f = {id: 1, text: 'funciton_1 defind'};
+        let f = { id: 1, text: 'funciton_1 defind' };
 
         function test() {
           const t = f;
@@ -50,7 +56,7 @@
           x = f;
           console.log('x', x)
           let c = 2;
-        b.fn(t);
+          b.fn(t);
         }
         test()
         console.log('test 结束------')
@@ -64,7 +70,407 @@
       b.fn(f);
       fn(x);
     }
-    test1()
+
+    function test4() {
+      // let x
+      let g = 34;
+      let t = g;
+      console.log(ggg, 'ggg')
+      if (true) {
+        for (var { x = g = { id: 0 }, y = { hh: 'hello', }, ...rest } of [{ y: 5, z: 8 }, { x: 2, y: 3 }, {}, { x: 5, h: 'jk' }, { x: 7 }]) {
+        if (x === 2) {
+          console.log('跳过', g)
+          // g = 66;
+          console.log(g, window.g);
+          continue;
+        }
+
+        console.log(x, y, rest, g, window.g)
+
+        if (x === 5) {
+          g.id = 55;
+          break;
+        }
+      }
+     
+      }else {
+        var ggg = 'djflsd';
+      }
+     console.log('outer',t === g)
+      t.id = 99
+      console.log(t)
+    }
+
+    function test5 () {
+    // let ggg = {x: 4, y: 5, z: 6}
+    // let { x, ...rest }= ggg;
+    // rest.z = 8
+    // console.log(ggg, rest);
+    let t = 34;
+    for (let {
+        x = g = {
+            id : window.g
+        },
+        y = {
+            hh : a = g,
+        },
+        ...rest
+    } of [{
+        y : 5,
+        z : 8
+    }, {
+        x : 2,
+        y : 3
+    }, {
+    }, {
+        x : 5,
+        h : 'jk'
+    }, {
+        x : 7
+    }] ) {
+        if (x === 2) {
+            console.log('跳过', g)
+            console.log(g, window.g)
+            continue
+        } /* if end */
+        console.log(x, y, rest, g, window.g, 'window.a' , window.a)
+        if (x === 5) {
+            g.id = 55
+            break
+        } /* if end */
+    }  /* for end */
+    console.log('outer', t === g, t, g)
+    t.id = 99
+    console.log(t)
+} /* function end */
+
+function test6 () {
+    // let ggg = {x: 4, y: 5, z: 6}
+    // let { x, ...rest }= ggg;
+    // rest.z = 8
+    // console.log(ggg, rest);
+    g = 33;
+    let [{ a}, {g}] = [{a: {g: 4}},{g: 5}]
+    console.log(a, g)
+    let t = 34;
+    for (let {
+        x = g = {
+            id : g
+        },
+        y = {
+            hh : a = g,
+        },
+        ...rest
+    } of [{
+        y : 5,
+        z : 8
+    }, {
+        x : 2,
+        y : 3
+    }, {
+    }, {
+        x : 5,
+        h : 'jk'
+    }, {
+        x : 7
+    }] ) {
+        if (x === 2) {
+            console.log('跳过', g)
+            console.log(g, window.g)
+            continue
+        } /* if end */
+        console.log(x, y, rest, g, window.g, 'window.a' , window.a)
+        if (x === 5) {
+            g.id = 55
+            break
+        } /* if end */
+    }  /* for end */
+    console.log('outer', t === g, t, g)
+    t.id = 99
+    console.log(t)
+} /* function end */
+
+function test7 () {
+    // let ggg = {x: 4, y: 5, z: 6}
+    // let { x, ...rest }= ggg;
+    // rest.z = 8
+    // console.log(ggg, rest);
+    g = 34
+    let [{ a}, {g:f}, ...rest] = [{a: {g: 4}},{g: 5}, 'hhhhh']
+    console.log(a, g, f, rest)
+    let t = 34;
+    for (let {
+        c = 5,
+        x = g = {
+            id : g
+        },
+        y = {
+            hh : a = g,
+        },
+        ...rest
+    } of [{
+        y : 5,
+        z : 8
+    }, {
+        x : 2,
+        y : 3
+    }, {
+    }, {
+        x : 5,
+        h : 'jk'
+    }, {
+        x : 7
+    }] ) {
+        if (x === 2) {
+            console.log('跳过', g)
+            console.log(g, window.g)
+            continue
+        } /* if end */
+        console.log(x, y, rest, g, window.g, 'window.a' , window.a)
+        if (x === 5) {
+            g.id = 55
+            break
+        } /* if end */
+    }  /* for end */
+    console.log('outer', t === g, t, g)
+    t.id = 99
+    console.log(t)
+} /* function end */
+
+function test8 () {
+    g = 34
+    const f = y = 666
+    let [{ a = 5}, {g:fg = y = 666}, ...rest] = [{a: {text: 'this is tezt'}},{},{g: 5}, 'hhhhh']
+    console.log('test', a, g, f, fg, y, rest)
+    let t = 34;
+    for (let {
+        c = 5,
+        x = g = {
+            id : g
+        },
+        y = {
+            hh : a = g,
+        },
+        ...rest
+    } of [{
+        y : 5,
+        z : 8
+    }, {
+        x : 2,
+        y : 3
+    }, {
+    }, {
+        x : 5,
+        h : 'jk'
+    }, {
+        x : 7
+    }] ) {
+        if (x === 2) {
+            console.log('跳过', g)
+            console.log(g, window.g)
+            continue
+        } /* if end */
+        console.log(x, y, rest, g, window.g, 'window.a' , window.a)
+        if (x === 5) {
+            g.id = 55
+            break
+        } /* if end */
+    }  /* for end */
+    console.log('outer', t === g, t, g)
+    t.id = 99
+    console.log(t)
+} /* function end */
+
+function test9 () {
+    g = 34
+    const f = y = [1][0];
+    let [ {
+        a = 5
+    }, {
+        g : fg = y = 666
+    }, ...rest ] = [{
+        a : {
+        text : 'this is tezt'
+    }
+    }, {
+        
+    }, {
+        g : 5
+    }, 'hhhhh'];
+    console.log('test', a, g, f, fg, y, rest)
+    let t = 34;
+    for ( let {
+        c = 5,
+        x = g = {
+            id : g
+        },
+        y = {
+            hh : a = g
+        },
+        ...rest
+    } of [{
+        y : 5,
+        z : 8
+    }, {
+        x : 2,
+        y : 3
+    }, {
+        
+    }, {
+        x : 5,
+        h : 'jk'
+    }, {
+        x : 7
+    }] ) {
+        if (x === 2) {
+            console.log('跳过', g)
+            console.log(g, window.g)
+            continue
+        } /* if end */
+        console.log(x, {...y}, rest, {...g}, {...window.g}, 'window.a', window.a)
+        if (x === 5) {
+            g.id = 55
+            break
+        } /* if end */
+    }  /* for end */
+    console.log('outer', t === g, t, g)
+    t.id = 99
+    console.log(t)
+} /* function end */
+
+function test10 () {
+    g = 34
+    const test = 'dfsdfsd'
+    const {
+        [test]: { text } = { text: 'default' }
+    } = {dfsdfsd: {text: 'this is tdfjasldfs'}};
+    console.log(text);
+    let [{ a = 5}, {g:fg = y = 666}, ...rest] = [{a: {text: 'this is tezt'}},{},{g: 5}, 'hhhhh']
+    console.log('test', a, g, fg, y, rest)
+    let t = 34;
+    for (let {
+        c = 5,
+        x = g = {
+            id : g
+        },
+        y = {
+            hh : a = g,
+        },
+        ...rest
+    } of [{
+        y : 5,
+        z : 8
+    }, {
+        x : 2,
+        y : 3
+    }, {
+    }, {
+        x : 5,
+        h : 'jk'
+    }, {
+        x : 7
+    }] ) {
+        if (x === 2) {
+            console.log('跳过', g)
+            console.log(g, window.g)
+            continue
+        } /* if end */
+        console.log(x, y, rest, g, window.g, 'window.a' , window.a)
+        if (x === 5) {
+            g.id = 55
+            break
+        } /* if end */
+    }  /* for end */
+    console.log('outer', t === g, t, g)
+    t.id = 99
+    console.log(t)
+} /* function end */
+   
+function test11 () {
+    // var 没有作用域会提升，所以得先解决这个提升问题。
+
+    // 这里的g赋值实际上是下面那个var造成的
+  g = 34
+  console.log(hhhh, gggg, ffff, dfsd)
+  for(var g = 1; g < 5; g++){
+    console.log(g, window.g)
+    var ffff = 2;
+    for(let tt of [1, 2,3]) {
+        var dfsd = 1;
+        console.log(g, tt, g * tt)
+    }
+  }
+
+
+  if (false) {
+    var hhhh = 'fdsfd'
+  } else {
+    var gggg = 'dfsdf'
+  }
+  
+} /* function end */
+
+
+function test () {
+    // var 没有作用域会提升，所以得先解决这个提升问题。
+    // eg: 1 g被提到了这里
+    function test () {
+    // var 没有作用域会提升，所以得先解决这个提升问题。
+    // 这里的g赋值实际上是下面那个var造成的
+    console.log(g)
+    // 这个g是下面for循环里的g提升
+  for( g  of [1, 2]){
+     const g = 1
+     console.log(g) // 1
+  }
+  console.log('window.g', window.g) // undefined
+
+} /* function end */
+
+console.log('还未运行', pp, g) // undefined undefined
+test ()
+console.log('上面的forof 结束后g变成这里的2', pp, g) // undefined 2
+    // 这里的g赋值实际上是下面那个var造成的
+    // eg: 1
+  for(var g = 1; g < 6; g++){
+    console.log(g, window.g)
+    var ffff = 2;
+    if (g === 3) {
+      continue;
+    }
+    for(let tt of [1, 2,3]) {
+        var dfsd = 1;
+       if (tt === 2) {
+         continue
+       }
+
+        console.log(g, tt, g * tt)
+      if (g === 2){
+        console.log('本轮只打印一次')
+        break;
+      }
+    }
+    if (g === 4) {
+      break;
+    }
+  }
+
+
+  if (false) {
+    var hhhh = 'fdsfd'
+    for(const x of [1]){
+      var pp = 0;
+    }
+  } else {
+    var gggg = 'dfsdf'
+  }
+  
+} /* function end */
+
+
+test ()
+
+    content.innerText = test.toString()
   </script>
 </body>
 

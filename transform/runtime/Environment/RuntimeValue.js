@@ -37,7 +37,7 @@ const consoleV = (env) => new RuntimeValue('object', {
         return parseRuntimeValue(item);
       })
       // 直接结构就行了
-      console.warn(...newArr);
+      console.warn(..._.cloneDeep(newArr));
     },
     body: {
       type: 'BlockStatement',

@@ -20,11 +20,12 @@ const throttle = (fn, t) => {
 };
 
 const writeAst = (ast) => {
-  console.clear();
+  // console.clear();
   result.value = "{\n" + writeJSON(ast, 2, false).join("") + "}";
   const win = getWindowEnv();
   parseAst(ast, win);
   excute.value = "{\n" + writeJSON(win.toString(), 2, true).join("") + "}";
+  console.log(win)
 }
 
 const write = (text) => {

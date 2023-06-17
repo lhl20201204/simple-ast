@@ -1,6 +1,9 @@
 import _ from "lodash";
 
 function wtc(x, c, config) {
+  if (!config) {
+    throw new Error(`config 不能为空`)
+  }
   return config.text ? x : `<span title="颜色为${c}" style="cursor:pointer;color:${c};">${x}</span>`
 }
 
@@ -28,6 +31,10 @@ function numGreen(x, config) {
   return wtc(x, '#49866D', config)
 }
 
+function remark(x, config) {
+  return wtc(x, '#6A9955', config)
+}
+
 function letInObjectLeftKey(config) {
   return { ...config, isInObjectLeft: true }
 }
@@ -38,6 +45,10 @@ function letInObjectPropertyKey(config) {
 
 function tabSpace(config) {
   return { ...config, prefixSpaceCount: (config.prefixSpaceCount ?? 0) + 4 }
+}
+
+function letVariableDeclarationInForOFStatement(config) {
+  return { ...config, isVariableDeclarationInForOFStatement: true }
 }
 
 function templateCount(config, i, len) {
@@ -77,8 +88,8 @@ function getVariableDeclarationCode(ast, config) {
   const { kind, declarations } = ast;
   return purple(kind, config) + `${space(config)}` + _.map(declarations, d => {
     const { id, init } = d;
-    return getAstCode(id, config) + `${space(config)}=${space(config)}` + getAstCode(init, config);
-  }).join(',') + ';';
+    return getAstCode(id, config) + (init ? (`${space(config)}=${space(config)}` + getAstCode(init, config)) : '');
+  }).join(`${space(config)},`) +  (config.isVariableDeclarationInForOFStatement ? '': ';');
 }
 
 function getObjectExpressionCode(ast, config) {
@@ -92,7 +103,7 @@ function getObjectExpressionCode(ast, config) {
       return `[${getAstCode(key, config)}]${space(config)}:${space(config)}${getAstCode(value, config)}`
     }
     return `${getAstCode(key, letInObjectLeftKey(config))}${space(config)}:${space(config)}${getAstCode(value, config)}`
-  }).join(',\n' + prefixSpace(tabSpace(config))) + `\n${prefixSpace(config)}}`
+  }).join(',\n' + prefixSpace((tabSpace(config)))) + `\n${prefixSpace(config)}}`
 }
 
 function getLiteralCode(ast, config) {
@@ -121,7 +132,7 @@ function getMemberExpressionCode(ast, config) {
 
 function getFunctionDeclarationCode(ast, config) {
   const { id, body, params } = ast;
-  return `${purple('function', config)}${space(config)}${getAstCode(id, config)}${space(config)}(${getElememtCode(params, config)})${space(config)}{\n${getAstCode(body, tabSpace(config))}\n${prefixSpace(config)}}`
+  return `${purple('function', config)}${space(config)}${getAstCode(id, config)}${space(config)}(${getElememtCode(params, config)})${space(config)}{\n${getAstCode(body, tabSpace(config))}\n${prefixSpace(config)}}${remark(' /* function end */', config)}`
 }
 
 function getCallExpressionCode(ast, config) {
@@ -150,17 +161,17 @@ function getExpressionStatementCode(ast, config) {
 
 function getFunctionExpressionCode(ast, config) {
   const { params, body } = ast;
-  return `${purple('function', config)}${space(config)}(${getElememtCode(params, config)})${space(config)}{\n${getAstCode(body, tabSpace(config))}\n${prefixSpace(config)}}`
+  return `${purple('function', config)}${space(config)}(${getElememtCode(params, config)})${space(config)}{\n${getAstCode(body, tabSpace(config))}\n${prefixSpace(config)}}${remark(' /* function end */', config)}`
 }
 
 function getIfStatementCode(ast, config) {
   const { test, consequent, alternate } = ast;
   const p = `${purple('if', config)}${space(config)}(${getAstCode(test, config)})${space(config)}{\n${getAstCode(consequent, tabSpace(config))}\n${prefixSpace(config)}}`
   if (!alternate) {
-    return p
+    return p + `${remark(' /* if end */', config)}`
   }
   if (alternate.type === 'BlockStatement') {
-    return p + ` ${purple('else', config)}${space(config)}{\n${getAstCode(alternate, tabSpace(config))}\n${prefixSpace(config)}}`
+    return p + ` ${purple('else', config)}${space(config)}{\n${getAstCode(alternate, tabSpace(config))}\n${prefixSpace(config)}}${space(config)}${remark(' /* else if end */', config)}`
   }
   return p + ` ${purple('else', config)} ${getAstCode(alternate, config)}`
 }
@@ -218,7 +229,60 @@ function getTemplateElementCode(ast, config) {
   throw new Error('未处理的模版类型')
 }
 
+function getForOfStatementCode(ast, config) {
+  const  { left, right, body } = ast;
+  return `${purple('for', config)}${space(config)}(${space(config)}${getAstCode(left, letVariableDeclarationInForOFStatement(config))}${space(config)}of${space(config)}${getAstCode(right, config)}${space(config)})${space(config)}{\n${getAstCode(body, tabSpace(config))}\n${prefixSpace(config)}}${space(config)}${remark(' /* for of end */', config)}`
+}
+
+function getObjectPatternCode(ast, config) {
+  const { properties } = ast;
+  return `{\n` + prefixSpace(tabSpace(config)) + _.map(properties, p => {
+
+    const { key, value, computed, shorthand, type } = p;
+    if (type === 'RestElement') {
+      return getAstCode(p, config)
+    }
+    if (shorthand) {
+      if (value.type === 'AssignmentPattern') {
+        return getAstCode(value, tabSpace(config));
+      }
+      return getAstCode(key, config)
+    }
+    if (computed) {
+      return `[${getAstCode(key, config)}]${space(config)}:${space(config)}${getAstCode(value, tabSpace(config))}`
+    }
+    return `${getAstCode(key, config)}${space(config)}:${space(config)}${getAstCode(value, config)}`
+  }).join(',\n' + prefixSpace(tabSpace(config))) + `\n${prefixSpace(config)}}`
+}
+
+function getContinueStatementCode(ast, config) {
+  return purple('continue', config);
+}
+
+function getBreakStatementCode(ast, config) {
+  return purple('break', config);
+}
+
+function getArrayPatternCode(ast, config) {
+  return `[${space(config)}${getElememtCode(ast.elements, config)}${space(config)}]`
+}
+
+function getForStatementCode(ast, config) {
+  const { init, test, update, body } = ast;
+  return `${purple('for', config)}${space(config)}(${space(config)}${[init, test, update].map(a =>
+    getAstCode(a, letVariableDeclarationInForOFStatement(config))).join(`${space(config)};${space(config)}`)}${space(config)})${space(config)}{\n${getAstCode(body, tabSpace(config))}\n${prefixSpace(config)}}${space(config)}${remark(' /* for end */', config)}`
+}
+
+function getUpdateExpressionCode(ast, config) {
+  const { prefix, argument, operator } = ast;
+  const t = getAstCode(argument, config)
+  return prefix ? `${operator}${t}` : `${t}${operator}`
+}
+
 function getAstCode(ast, config) {
+  if (!config) {
+    throw new Error('没有config');
+  }
   const type = ast.type;
   switch (type) {
     case 'BinaryExpression': return getBinaryExpressionCode(ast, config);
@@ -243,6 +307,13 @@ function getAstCode(ast, config) {
     case 'AssignmentPattern': return getAssignmentPattern(ast, config);
     case 'TemplateLiteral': return getTemplateLiteralCode(ast, config);
     case 'TemplateElement': return getTemplateElementCode(ast, config);
+    case 'ForOfStatement': return getForOfStatementCode(ast,config);
+    case 'ObjectPattern': return getObjectPatternCode(ast, config);
+    case 'ContinueStatement': return getContinueStatementCode(ast, config);
+    case 'BreakStatement': return getBreakStatementCode(ast, config);
+    case 'ArrayPattern': return getArrayPatternCode(ast, config);
+    case 'ForStatement': return getForStatementCode(ast, config);
+    case 'UpdateExpression': return getUpdateExpressionCode(ast, config);
     case 'EmptyStatement': return ';';
   }
   console.warn('ast to code fail', ast);

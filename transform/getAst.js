@@ -1,7 +1,7 @@
 import parse from "./parse";
 import _ from 'lodash';
 
-const test = ["isProgram", "isObjectExpression"]
+const test = ["isProgram", "isObjectExpression", "isVariableDeclaration"]
 const testingmodule = test[0];
 
 const DICTS = {
@@ -64,6 +64,9 @@ const KEYWORD = {
   TYPEOF: 'typeOf',
   VOID: 'void',
   DELETE: 'delete',
+  OF: 'of',
+  CONTINUTE: 'continue',
+  BREAK: 'break',
 };
 const KEYWORDLIST = [];
 for (const attr in KEYWORD) {
@@ -229,11 +232,10 @@ export class AST {
     return null;
   }
 
-  breakUpBySign(start, end, signMethod, leftMethod, rightMethod, callback) {
+  breakUpBySign(start, end, signMethod, leftMethod, rightMethod, callback, ...rest) {
     const fn = signMethod.bind(this);
     const leftFn = leftMethod.bind(this);
     const rightFn = rightMethod.bind(this);
-    callback = callback || ((left, right) => [left, ...right]);
     if (!fn || !leftFn || !rightFn) {
       throw new Error("break up 方法调用不存在");
     }
@@ -245,13 +247,13 @@ export class AST {
       if (!fn(i)) {
         continue;
       }
-      const left = leftFn(start, i - 1);
+      const left = leftFn(start, i - 1, ...rest);
       if (!left) {
         continue;
       }
-      const right = rightFn(i + 1, end);
+      const right = rightFn(i + 1, end, ...rest);
       if (right) {
-        return callback(left, right, i);
+        return callback(left, right, i, ...rest);
       }
     }
     return null;
@@ -379,6 +381,18 @@ export class AST {
 
   isForKeyWord(i) {
     return this.list[i]?.value === KEYWORD.FOR;
+  }
+
+  isOfKeyWord(i) {
+    return this.list[i]?.value === KEYWORD.OF;
+  }
+
+  isContinueKeyWord(i) {
+    return this.list[i]?.value === KEYWORD.CONTINUTE;
+  }
+
+  isBreakKeyWord(i){
+    return this.list[i]?.value === KEYWORD.BREAK;
   }
 
   isReturnKeyWord(i) {
@@ -576,7 +590,7 @@ export class AST {
       if (!left) {
         continue;
       }
-      const right = this.isExpression(i+1, end);
+      const right = this.isNoSequenceOrHasParenthesisExpression(i+1, end);
      if (right) {
       return {
         type: "AssignmentPattern",
@@ -842,7 +856,7 @@ export class AST {
     return (
       this.isCommonProperty(start, end) ||
       this.isAssignmentProperty(start, end) ||
-      this.isSpreadElement(start, end)
+      this.isRestElement(start, end)
     );
   }
 
@@ -859,7 +873,8 @@ export class AST {
       end,
       this.isComma,
       this.isParamsProperty,
-      this.isObjectPatternProperties
+      this.isObjectPatternProperties,
+      (left, right) => [left, ...right]
     );
   }
 
@@ -886,7 +901,8 @@ export class AST {
       end,
       this.isComma,
       this.isObjectExpressionProperty,
-      this.isObjectExpressionProperties
+      this.isObjectExpressionProperties,
+      (left, right) => [left, ...right]
     );
   }
 
@@ -903,7 +919,8 @@ export class AST {
       end,
       this.isComma,
       this.isArrayPatternElementsItem,
-      this.isArrayPatternElements
+      this.isArrayPatternElements,
+      (left, right) => [left, ...right]
     );
   }
 
@@ -992,18 +1009,17 @@ export class AST {
     if (paramsChild) {
       return [paramsChild];
     }
-    console.log(paramsChild);
     return this.breakUpBySign(
       start,
       end,
       this.isComma,
       this.isParamsItem,
-      this.isParams
+      this.isParams,
+      (left, right) => [left, ...right],
     );
   }
-  // 声明
 
-  isVariableDeclarator(start, end) {
+  isVariableDeclarator(start, end, isInForOf) {
     let id = null;
     let next = -1;
     const item = this.isIdentifier(start);
@@ -1033,9 +1049,20 @@ export class AST {
           break;
         }
       }
+      if (isInForOf && !id && next === -1) {
+        id =  this.isObjectPattern(start, end) ||
+        this.isArrayPattern(start, end);
+        if (id) {
+          return {
+            type: "VariableDeclarator",
+            ...this.getStartEnd(start, end),
+            id,
+          };
+        }
+      }
     }
     if (!id || !this.isEqual(next)) {
-      return null;
+      return null
     }
     const right = this.isExpression(next + 1, end);
     if (right && this.noSequenceOrHasParenthesis(right, next + 1, end)) {
@@ -1048,8 +1075,8 @@ export class AST {
     }
   }
 
-  isDeclarations(start, end) {
-    const ret = this.isVariableDeclarator(start, end);
+  isDeclarations(start, end, isInForOf) {
+    const ret = this.isVariableDeclarator(start, end, isInForOf);
     if (ret) {
       return [ret];
     }
@@ -1058,19 +1085,21 @@ export class AST {
       end,
       this.isComma,
       this.isVariableDeclarator,
-      this.isDeclarations
+      this.isDeclarations,
+      (left, right) => [left, ...right],
+      isInForOf,
     );
   }
 
-  isVariableDeclaration(start, end) {
-    if (end < start + 3) {
+  isVariableDeclaration(start, end, isInForOf) {
+    if (end < start + 1) {
       return null;
     }
     if (this.isDeclareKind(start)) {
       if (this.isSemicolon(end)) {
         end = end - 1;
       }
-      const declarations = this.isDeclarations(start + 1, end);
+      const declarations = this.isDeclarations(start + 1, end, isInForOf);
       if (declarations) {
         return {
           type: "VariableDeclaration",
@@ -1880,7 +1909,7 @@ export class AST {
       return null;
     }
 
-    const right = this.isExpression(next + 1, end);
+    const right = this.isNoSequenceOrHasParenthesisExpression(next + 1, end);
     if (right) {
       return {
         type: "AssignmentExpression",
@@ -2072,7 +2101,8 @@ export class AST {
       end,
       this.isComma,
       this.isNoSequenceOrHasParenthesisExpression,
-      this.isElements
+      this.isElements,
+     (left, right) => [left, ...right]
     );
   }
 
@@ -2253,6 +2283,58 @@ export class AST {
     return null;
   }
 
+  isForOfStatement(start, end) {
+    if (!this.isForKeyWord(start) 
+    || !(
+      this.isLeftParenthesis(start + 1)
+     ||
+       (this.isAwaitKeyWord(start + 1) &&
+        this.isLeftParenthesis(start + 2)
+       )
+     )
+     || !this.isBIGRightParenthesis(end)) {
+      return null
+    }
+    let isAwait = false;
+    let next = start + 2;
+    if (this.isAwaitKeyWord(start + 1)) {
+      next = start + 3;
+      isAwait = true;
+    }
+    for(let i= next; i< end; i++) {
+      if (!this.isOfKeyWord(i)) {
+        continue;
+      }
+      const left = this.isVariableDeclaration(next, i-1, true)
+      if (!left) {
+        continue;
+      }
+      for(let j = i+1; j<= end; j++) {
+        if (!this.isRightParenthesis(j)) {
+          continue;
+        }
+        const right = this.isExpression(i+1, j-1)
+        if (!right) {
+          continue;
+        }
+        const body = this.isBlockStatement(j+1, end)
+        if (!body) {
+          continue;
+        }
+        return {
+          type: 'ForOfStatement',
+          ...this.getStartEnd(start, end),
+          await: isAwait,
+          left,
+          right,
+          body,
+        }
+
+      }
+    }
+
+  }
+
   isWhileStatement(start, end) {
     if (
       start + 3 > end ||
@@ -2316,6 +2398,26 @@ export class AST {
     return null;
   }
 
+  isContinueStatement(start, end) {
+    if (start !== end || !this.isContinueKeyWord(start)) {
+      return null
+    }
+    return {
+      type: 'ContinueStatement',
+      ...this.getStartEnd(start, end)
+    }
+  }
+
+  isBreakStatement(start, end) {
+    if (start !== end || !this.isBreakKeyWord(start)) {
+      return null
+    }
+    return {
+      type: 'BreakStatement',
+      ...this.getStartEnd(start, end)
+    }
+  }
+
   isReturnStatement(start, end) {
     if (!this.isReturnKeyWord(start)) {
       return null;
@@ -2336,13 +2438,16 @@ export class AST {
 
   isStatement(start, end) {
     return (
+      this.isForOfStatement(start, end) ||
+      this.isContinueStatement(start, end) ||
+      this.isBreakStatement(start, end) ||
       this.isEmptyStatement(start, end) ||
       this.isReturnStatement(start, end) ||
       this.isBlockStatement(start, end) ||
       this.isExpressionStatement(start, end) ||
       this.isIfStatement(start, end) ||
       this.isForStatement(start, end) ||
-      this.isWhileStatement(start, end)
+      this.isWhileStatement(start, end) 
     );
   }
 

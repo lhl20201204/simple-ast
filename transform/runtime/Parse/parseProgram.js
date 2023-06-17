@@ -6,27 +6,50 @@ export function geStatement(statements) {
   const varS = [];
   const letConstS = []
   const total = []
+  const lookupVar = (c) => {
+    if (c.type === 'VariableDeclaration' && c.kind === 'var') {
+      varS.push({
+        ...c,
+        declarations: _.map(c.declarations, item => {
+          return {
+            ...item,
+            init: {
+              type: 'Literal',
+              raw: 'undefined',
+              value: undefined,
+              valueType: 'undefined',
+            }
+          }
+        }),
+        kind: 'var',
+      })
+    }
+  }
+  // 遍历for循环和if语句里的block，找到var使其提升
+  const findVarInForIf = (ast) => {
+    if (ast.type === 'BlockStatement') {
+      _.forEach(ast.body, findVarInForIf)
+    }else if (ast.type === 'ForStatement') {
+      lookupVar(ast.init)
+      findVarInForIf(ast.body);
+    } else if (ast.type === 'ForOfStatement') {
+      lookupVar(ast.left);
+      findVarInForIf(ast.body);
+    } else if (ast.type === 'IfStatement') {
+      findVarInForIf(ast.consequent)
+      if (ast.alternate ) {
+        findVarInForIf(ast.alternate)
+      }
+    }  
+    lookupVar(ast)
+  }
   _.forEach(statements, c => {
     if (c.type === 'FunctionDeclaration') {
       fnS.push(c)
     } else {
       if (c.type === 'VariableDeclaration' ) {
         if (c.kind === 'var') {
-          varS.push({
-            ...c,
-            declarations: _.map(c.declarations, item => {
-              return {
-                ...item,
-                init: {
-                  type: 'Literal',
-                  raw: 'undefined',
-                  value: undefined,
-                  valueType: 'undefined',
-                }
-              }
-            }),
-            kind: 'var',
-          })
+          lookupVar(c)
         } else if (['let', 'const'].includes(c.kind)) {
           letConstS.push({
             ...c,
@@ -40,6 +63,8 @@ export function geStatement(statements) {
             kind: c.kind,
           })
         }
+      } else {
+        findVarInForIf(c)
       }
       total.push(c)
     }

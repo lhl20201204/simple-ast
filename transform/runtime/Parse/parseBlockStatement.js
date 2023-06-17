@@ -1,5 +1,5 @@
 import parseAst from "..";
-import { getUndefinedValue } from "../Environment/RuntimeValue";
+import { getNullValue, getUndefinedValue } from "../Environment/RuntimeValue";
 import { geStatement } from "./parseProgram";
 
 export default function parseBlockStatement(ast, env) {
@@ -9,6 +9,9 @@ export default function parseBlockStatement(ast, env) {
      parseAst(s, env);
     if (env.hadReturn()) {
       value = env.getReturnValue()
+      break;
+    }
+    if (env.hadBreak() || env.hadContinue()) {
       break;
     }
   }

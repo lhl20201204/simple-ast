@@ -1,10 +1,15 @@
 import { getNullValue } from "./Environment/RuntimeValue";
 import parseArrayExpression from "./Parse/parseArrayExpression";
 import parseAssignmentExpression from "./Parse/parseAssignmentExpression";
+import parseAssignmentPattern from "./Parse/parseAssignmentPattern";
 import parseBinaryExpression from "./Parse/parseBinaryExpression";
 import parseBlockStatement from "./Parse/parseBlockStatement";
+import parseBreakStatement from "./Parse/parseBreakStatement";
 import parseCallExpression from "./Parse/parseCallExpression";
+import parseContinueStatement from "./Parse/parseContinueStatement";
 import parseExpressionStatement from "./Parse/parseExpressionStatement";
+import parseForOfStatement from "./Parse/parseForOfStatement";
+import parseForStatement from "./Parse/parseForStatement";
 import parseFunctionDeclaration from "./Parse/parseFunctionDeclaration";
 import parseFunctionExpression from "./Parse/parseFunctionExpression";
 import parseIdentifier from "./Parse/parseIdentifier";
@@ -19,6 +24,7 @@ import parseTemplateElement from "./Parse/parseTemplateElement";
 import parseTemplateLiteral from "./Parse/parseTemplateLiteral";
 import parseThisExpression from "./Parse/parseThisExpression";
 import parseUnaryExpression from "./Parse/parseUnaryExpression";
+import parseUpdateExpression from "./Parse/parseUpdateExpression";
 import parseVariableDeclaration from "./Parse/parseVariableDeclaration";
 
 export default function parseAst(ast, env) {
@@ -46,7 +52,13 @@ export default function parseAst(ast, env) {
     case 'BlockStatement': return parseBlockStatement(ast, env);
     case 'PreDeclaration': return parsePreDeclaration(ast, env);
     case 'EmptyStatement': return getNullValue();
+    case 'ForOfStatement': return parseForOfStatement(ast, env);
+    case 'ContinueStatement': return parseContinueStatement(ast, env);
+    case 'AssignmentPattern': return parseAssignmentPattern(ast, env);
+    case 'BreakStatement': return parseBreakStatement(ast, env);
+    case 'ForStatement': return parseForStatement(ast, env);
+    case 'UpdateExpression': return parseUpdateExpression(ast, env);
   }
-  console.warn('未匹配的', ast);
+  console.warn('未匹配的parseAst', ast);
   return getNullValue()
 }

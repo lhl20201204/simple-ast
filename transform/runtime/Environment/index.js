@@ -46,6 +46,7 @@ export default class Environment {
 
   addLet(key, value, resign) {
     if (!resign && this.keyMap.has(key)) {
+      console.error(this);
       throw new Error(`${key} 已经定义`);
     }
     if (this.placeholderMap.has(key)) {
@@ -76,12 +77,16 @@ export default class Environment {
       if (key === 'window') {
         return Environment.window.getValue();
       } 
+      console.error(this);
       throw new Error(`${key} 为undefined`)
     }
     return env.map.get(key) || env.constMap.get(key)
   }
 
   set(key, value) {
+    if (this.placeholderMap.has(key)) {
+      throw new Error(`Cannot access '${key}' before initialization`)
+    }
     const env = this.getEnv(key);
     if (!env) {
       return Environment.window.addVar(key, value)
@@ -97,7 +102,7 @@ export default class Environment {
   }
 
   findFunctionEnv() {
-    if (this._config.isFunctionEnv) {
+    if (this.isFunctionEnv()) {
       return this;
     }
     return this.parent && this.parent.findFunctionEnv()
@@ -109,6 +114,56 @@ export default class Environment {
 
   isFunctionEnv() {
     return this._config.isFunctionEnv;
+  }
+
+  findForEnv() {
+    if (this.isForEnv()) {
+      return this;
+    }
+    return this.parent && this.parent.findForEnv()
+  }
+
+  isForOfEnv() {
+    return this._config.isForOfEnv;
+  }
+
+  isForEnv() {
+    return this.isForOfEnv() || this._config.isForEnv
+  }
+
+  hadBreak() {
+    return this._config.breakFlag;
+  }
+
+  hadContinue() {
+    return this._config.continueFlag;
+  }
+
+  setBreakFlag(flag) {
+    if (!this.isForEnv()) {
+     throw new Error('不在for 循环中无法 break')
+    }
+    this._config.breakFlag = flag;
+  }
+
+  setContinueFlag(flag) {
+    if (!this.isForEnv()) {
+      throw new Error('不在for 循环中无法 continue')
+    }
+    this._config.continueFlag = flag;
+  }
+
+  beforeRunForStatement() {
+    this._config.lastIsInForEnv = this._config.isForEnv;
+    this._config.isForEnv = true;
+    this.setBreakFlag(false)
+    this.setContinueFlag(false)
+  }
+
+  afterRunForStatement() {
+    this.setBreakFlag(false)
+    this.setContinueFlag(false)
+    this._config.isForEnv = this._config.lastIsInForEnv;
   }
 
   setReturnValue(value) {
