@@ -1,5 +1,6 @@
-import RuntimeValue from "../Environment/RuntimeValue";
+import { createString } from "../Environment";
 
 export default function parseTemplateElement(ast, env) {
-  return new RuntimeValue('string', ast.value.raw);
+
+  return createString(ast.value.raw);
 }

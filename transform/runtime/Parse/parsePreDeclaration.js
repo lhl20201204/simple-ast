@@ -48,7 +48,7 @@ export default function parsePreDeclaration(ast, env) {
   _.forEach(ast.declarations, ({ id }) => {
      const keyList = getDeclarationsKey(id, env, {});
      _.forEach(keyList, key => {
-      env.placeholder(key)
+      env.placeholder(key, ast.kind);
      })
    });
 }

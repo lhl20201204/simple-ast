@@ -1,9 +1,10 @@
 import parseAst from "..";
-import RuntimeValue, { getUndefinedValue } from "../Environment/RuntimeValue";
+import { RUNTIME_LITERAL } from "../constant";
 import parseRuntimeValue from "../Environment/parseRuntimeValue";
+import { getMemberPropertyKey } from "./parseMemberExpression";
 const undefinedAst = {
   type: 'Identifier',
-  name: 'undefined'
+  name: `${RUNTIME_LITERAL.undefined}`
 }
 export function setIdentifierExpression(left, right, env) {
   const value = parseAst(right, env);
@@ -12,20 +13,22 @@ export function setIdentifierExpression(left, right, env) {
 }
 
 export function setMemberExpression(left, right, env) {
-  const { object, computed, property, optional } = left;
+  const { object, optional } = left;
   if (optional) {
     throw new Error('复制表达式左边不能是?.')
   }
+
   const objectRV = parseAst(object, env);
-  let k = property?.name;
-  if (computed) {
-    k = parseRuntimeValue(parseAst(property, env))
-  }
-  if (!['object', 'array'].includes(objectRV.type)) {
-    return getUndefinedValue()
-  }
+  let k = getMemberPropertyKey(left, env)
+  // todo
+  // if (!['object', 'array'].includes(objectRV.type)) {
+  //   return getUndefinedValue()
+  // }
   const value = parseAst(right, env);
-  objectRV.value[k] = value;
+  // console.error(objectRV, k, value, '---.');
+  objectRV.set(k, value)
+  // console.log(objectRV, k, value);
+  // objectRV.value[k] = value;
   return value;
 }
 
@@ -76,6 +79,8 @@ export function setObjectPattern(left, right, env) {
   }
   _.forEach(restI > -1 ? leftAstArr.slice(0, -1) : leftAstArr, (op) => {
     const { key, computed, type, value } = op;
+    // todo
+    console.log('paramas--------->', op)
     let k = key.name;
      if (computed) {
        k = parseRuntimeValue(parseAst(op, env));

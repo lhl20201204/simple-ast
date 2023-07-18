@@ -1,7 +1,9 @@
 import { textList } from "./test";
 import transform from "./transform";
 import { AST } from "./transform/getAst";
+import Ast from './transform/runtime/ast/index';
 import parseAst from "./transform/runtime";
+import Environment from "./transform/runtime/Environment";
 import { getWindowEnv } from "./transform/runtime/Environment/getWindow";
 import generateCode from "./transform/runtime/Generate";
 import writeJSON from "./transform/util";
@@ -21,11 +23,18 @@ const throttle = (fn, t) => {
 
 const writeAst = (ast) => {
   // console.clear();
-  result.value = "{\n" + writeJSON(ast, 2, false).join("") + "}";
+  result.value = "{\n" + writeJSON(ast, 2, { flag: false, text: true }).join("") + "}";
   const win = getWindowEnv();
   parseAst(ast, win);
-  excute.value = "{\n" + writeJSON(win.toString(), 2, true).join("") + "}";
+  excute.innerHTML = textReplace("{\n" + writeJSON(win.toWrite(), 2, { flag: true}).join("") + "}");
   console.log(win)
+  const test = new Ast()
+  test.setSourceCode(`
+  this.type === 'Literal'
+  && 1 === 1
+  && this.parent.left.operator === 'typeof'`)
+  
+  console.log(test.getAst())
 }
 
 const write = (text) => {
@@ -50,6 +59,18 @@ const inputAst = function (e) {
   AST.testingCode = '';
   writeAst(ast)
   localStorage.setItem('ast-temp', JSON.stringify(ast));
+}
+
+paste.onclick = async (e) => {
+  const value = await navigator.clipboard.readText();
+  result.innerHTML = value;
+  console.clear();
+  Environment.envId = 1;
+  inputAst({
+    target: {
+      value
+    }
+  })
 }
 
 result.addEventListener(

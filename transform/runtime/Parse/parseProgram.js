@@ -1,6 +1,7 @@
 import _ from "lodash";
 import parseAst from "..";
-import { getCannotAccessBeforeInitialization, getWindowEnv } from "../Environment/getWindow";
+import { getWindowEnv } from "../Environment/getWindow";
+import { RUNTIME_LITERAL } from "../constant";
 export function geStatement(statements) {
   const fnS = []
   const varS = [];
@@ -14,13 +15,24 @@ export function geStatement(statements) {
           return {
             ...item,
             init: {
-              type: 'Literal',
-              raw: 'undefined',
-              value: undefined,
-              valueType: 'undefined',
+              type: 'Identifier',
+              name: `${RUNTIME_LITERAL.undefined}`
             }
           }
         }),
+        kind: 'var',
+      })
+    } else if (c.type === 'FunctionDeclaration') {
+      varS.push({
+        type: 'VariableDeclaration',
+        declarations:[{
+          type: 'VariableDeclarator',
+          id: c.id, // todo,
+          init: {
+            type: 'Identifier',
+            name: `${RUNTIME_LITERAL.undefined}`
+          }
+        }],
         kind: 'var',
       })
     }
@@ -32,7 +44,7 @@ export function geStatement(statements) {
     }else if (ast.type === 'ForStatement') {
       lookupVar(ast.init)
       findVarInForIf(ast.body);
-    } else if (ast.type === 'ForOfStatement') {
+    } else if (['ForOfStatement', 'ForInStatement'].includes(ast.type) ) {
       lookupVar(ast.left);
       findVarInForIf(ast.body);
     } else if (ast.type === 'IfStatement') {
@@ -40,12 +52,23 @@ export function geStatement(statements) {
       if (ast.alternate ) {
         findVarInForIf(ast.alternate)
       }
-    }  
+    } 
     lookupVar(ast)
   }
   _.forEach(statements, c => {
     if (c.type === 'FunctionDeclaration') {
       fnS.push(c)
+    } else if (c.type === 'ClassDeclaration') {
+      letConstS.push({
+        type: 'PreDeclaration',
+        declarations:[{
+          type: 'VariableDeclarator',
+          id: c.id, // todo,
+          init: null
+        }],
+        kind: 'class',
+      })
+      total.push(c)
     } else {
       if (c.type === 'VariableDeclaration' ) {
         if (c.kind === 'var') {

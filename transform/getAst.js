@@ -65,6 +65,7 @@ const KEYWORD = {
   VOID: 'void',
   DELETE: 'delete',
   OF: 'of',
+  IN: 'in',
   CONTINUTE: 'continue',
   BREAK: 'break',
 };
@@ -385,6 +386,10 @@ export class AST {
 
   isOfKeyWord(i) {
     return this.list[i]?.value === KEYWORD.OF;
+  }
+
+  isInKeyWord(i) {
+    return this.list[i]?.value === KEYWORD.in;
   }
 
   isContinueKeyWord(i) {
@@ -2282,6 +2287,47 @@ export class AST {
     }
     return null;
   }
+  
+  isForInStatement(start, end) {
+    if (!this.isForKeyWord(start) 
+    || !(
+      this.isLeftParenthesis(start + 1)
+     )
+     || !this.isBIGRightParenthesis(end)) {
+      return null
+    }
+    let next = start + 2;
+    for(let i= next; i< end; i++) {
+      if (!this.isInKeyWord(i)) {
+        continue;
+      }
+      const left = this.isVariableDeclaration(next, i-1, true)
+      if (!left) {
+        continue;
+      }
+      for(let j = i+1; j<= end; j++) {
+        if (!this.isRightParenthesis(j)) {
+          continue;
+        }
+        const right = this.isExpression(i+1, j-1)
+        if (!right) {
+          continue;
+        }
+        const body = this.isBlockStatement(j+1, end)
+        if (!body) {
+          continue;
+        }
+        return {
+          type: 'ForInStatement',
+          ...this.getStartEnd(start, end),
+          left,
+          right,
+          body,
+        }
+
+      }
+    }
+  }
 
   isForOfStatement(start, end) {
     if (!this.isForKeyWord(start) 
@@ -2439,6 +2485,7 @@ export class AST {
   isStatement(start, end) {
     return (
       this.isForOfStatement(start, end) ||
+      this.isForInStatement(start, end) ||
       this.isContinueStatement(start, end) ||
       this.isBreakStatement(start, end) ||
       this.isEmptyStatement(start, end) ||

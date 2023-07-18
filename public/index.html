@@ -4,10 +4,11 @@
   <meta charset="UTF-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Document</title>
+  <title>js语法执行</title>
 </head>
 <body>
   <div id="selectWrap">
+    <button id="paste">粘贴ast到中间的框</button>
     <select id="mode">
    </select>
   </div>
@@ -15,7 +16,7 @@
    <div id="container">
     <div id="source" contenteditable="true"></div>
     <textarea id="result"></textarea>
-    <textarea id="excute"></textarea>
+    <div id="excute"  contenteditable="true"></div>
    </div>
 </body>
 <style>
@@ -23,6 +24,11 @@
     padding: 0;
     margin: 0;
   }
+  
+  #paste{
+    cursor: pointer;
+  }
+  
   #selectWrap{
     display: flex;
     justify-content: center;
@@ -33,7 +39,8 @@
     min-width: 200px;
   }
 
-  #source{
+  #source,
+  #excute{
     border: 1px solid #252525;
     overflow: auto;
   }

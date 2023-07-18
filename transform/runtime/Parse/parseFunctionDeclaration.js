@@ -1,5 +1,6 @@
-import Environment from "../Environment";
+import Environment, { createFunction } from "../Environment";
 import RuntimeValue from "../Environment/RuntimeValue";
+import { getAstCode } from "../Generate";
 
 export default function parseFunctionDeclaration(ast, env) {
   const { id } = ast;
@@ -12,9 +13,10 @@ export default function parseFunctionDeclaration(ast, env) {
       throw new Error('解构必须放在参数的最后一个');
     }
   }
-  const value = new RuntimeValue('function', {
-    ast,
-    env
+  const value = createFunction({
+    [RuntimeValue.symbolAst]: ast,
+    [RuntimeValue.symbolEnv]: env,
+    [RuntimeValue.symbolName]: id ? getAstCode(id, { text: true }) : (ast._fnName ?? '匿名函数')
   });
   if (key) {
     env.addFunction(key, value);

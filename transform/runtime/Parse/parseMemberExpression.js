@@ -1,22 +1,27 @@
 import parseAst from "..";
-import Environment from "../Environment";
+import { isUndefinedRuntimeValue } from "../Environment/utils";
 import { getUndefinedValue } from "../Environment/RuntimeValue";
+import { getKeyString } from "./parseObjectExpression";
+
+export function getMemberPropertyKey(ast, env) {
+  if (ast.type !== 'MemberExpression') {
+    throw new Error('ast 必须是MemberExpression')
+  }
+  const { property, computed } = ast;
+  return getKeyString(property, computed, env);
+}
 
 export default function parseMemberExpression(ast, env) {
-  const object = parseAst(ast.object, env);
-  const { property } = ast;
-  let key = property.name;
-  if (ast.computed) {
-    key = parseAst(property, env).value;
-  }
-  if (object instanceof Environment) {
-    return object.get(key)
-  }
-  if (object.type === 'undefined') {
+  let object = parseAst(ast.object, env);
+  const { optional } = ast;
+  let key = getMemberPropertyKey(ast, env)
+
+  if (isUndefinedRuntimeValue(object)) {
+    if (optional) {
+      return getUndefinedValue()
+    }
     throw new Error(`不能获取 undefind 的 ${key}`)
   }
-  if (!['object', 'array'].includes(object.type)){
-    return getUndefinedValue();
-  }
-  return object.value[key] ?? getUndefinedValue();
+
+  return object.get(key);
 }

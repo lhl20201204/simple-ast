@@ -9,13 +9,438 @@
 </head>
 
 <body>
+  <script>
+
+  </script>
+  <!-- <iframe width="100%" height="500" src="https://astexplorer.net/">
+  </iframe> -->
   <div id="content"></div>
+
   <script>
     const origin = console.log
-    console.log = (...args) => {
-        const newArgs = [...args].map(x => x instanceof Object ? JSON.parse(JSON.stringify(x)): x)
-        origin(...newArgs)
+    // console.log = (...args) => {
+    //     origin(...args);
+    //     // try{
+    //     //     const newArgs = [...args].map(x => x instanceof Object ? JSON.parse(JSON.stringify(x)): x)
+    //     //     origin(...newArgs)
+    //     // }catch(e) {
+    //     //    origin(...args);
+    //     // }
+    // }
+
+    // 开始添加类
+
+    function test () {
+      let d = 20;
+      const ff = 'a';
+      const testObj = {
+        gg : 1000,
+         set [ff] (x) {
+        d  =  x
+        console.log('触发set', d, x)
+        return true
+      } /* function end */,
+        get a  () {
+          console.log('触发get', this)
+          return d * this.gg
+       } /* function end */
+    };
+    console.log(testObj.a)
+    testObj.a  +=  40
+    console.log(testObj.a, d)
+
+    console.log('hh-----h')
+    window.sfd?.error?.('jfdofs')
+    this.w  =  '3'
+
+    const fn = '1';
+    let b = 'temp';
+    class A {
+        ff = 'tt';
+
+        [ (() => {
+            console.log(this)
+            return 'run2'
+        })() ] = function () {
+            console.log(this, this.ff)
+        } /* function end */;
+        static ff = 'A of FF';
+        static {
+          this.fffff('....')
+
+          console.log('static block', A, super.call, this.ff, this.g)
+          console.log([
+            super.prototype,
+            super.fn,
+            super.__proto__  === Function.prototype,
+        ])
+
+        }
+        static g = 'h';
+
+        static get fn() {
+          console.log('A static get', this, super.__proto__)
+          return this.ff 
+        }
+        
+        static [ fn + '2' + this.w ] = this.ff;
+        z = 4;
+        [ 4 ];
+        x = 8;
+        fn = function (...args) {
+            A.prototype.constructor?.call?.(...args)
+        } /* function end */;
+        constructor (x) {
+            console.log(x)
+        } /* function end */;
+        run (a) {
+            console.log('A 的实例 of run', this.__proto__ === B.prototype)
+            return this.x * a
+        } /* function end */;
+        static fffff(xxx) {
+          console.log(xxx)
+        }
+        static run (...args) {
+            console.log('A of run', this === B, super.call)
+            console.log(this, B, ...[1, 2, 3], ...args)
+        } /* function end */;
+        gg () {
+            console.log('A.protopyte.gg')
+        } /* function end */
+    } /*class declaration end */
+    
+    class B extends A {
+        constructor (x, y) {
+            super(x)
+            console.log('开始获取super', super.ff, super.x, super.z)
+            this.y  =  y
+        } /* function end */;
+        gg = {
+            jlj : 'tedt'
+        };
+        run () {
+            console.log('B 的实例 of run', super.gg, this.gg, super.gg === this.gg)
+            super.gg()
+            console.log('run in run', this, super.prototype, 'super.__proto__', super.__proto__, 'A.prototype', A.prototype, 'B.prototype', B.prototype, super.__proto__ === B.prototype)
+            super.run()
+            console.log('更改super的值')
+            super.xx  =  22
+            console.log(super.xx, A.prototype, super.__proto__.prototype, B.prototype.__proto__ === A.prototype, super.__proto__.__proto__ === A.prototype)
+        } /* function end */;
+        gg () {
+            console.log('B.protopyte.gg')
+        } /* function end */;
+        static ff = 'B of FF';
+
+        static run () {
+            super.run()
+            console.log('B of run')
+        } /* function end */;
+        static fn () {
+            return this.x * this.y
+        } /* function end */;
+        static [ fn ] = b  =  function * () {
+            yield 1
+            console.log(this)
+        } /* function end */;
+        static get ff () {
+          console.log('B static get ff', this, super.ff)
+          return super.gdsf
+        }
+        [ fn + fn ] = async () => {
+            await 2
+            console.log(this)
+        } /* arrow function end */
+    } /*class declaration end */
+    
+    console.log([
+      Reflect.get(B.__proto__, '__proto__', B),
+      Reflect.get(B.__proto__, 'fn', B),
+      B.__proto__ === A
+    ])
+    console.log('------class----')
+    B.run()
+    console.log('---jingtai-----')
+    const y = new A (4);
+    const x = new B (1, 2);
+    x.run()
+    console.log('A的实例', y, 'B的实例', x)
+    const obj = {
+        x : 2
+    };
+    const obj2 = {
+        x : 4
+    };
+    Reflect.set(obj, 'x', 3, obj2)
+    console.log(obj, obj2, Reflect.get(obj, 'x'))
+} /* function end */
+test()
+ 
+function test32 () {
+
+console.log('hh-----h')
+window.sfd?.error?.('jfdofs')
+this.w = '3'
+const o1 = {
+hhhh : 'kklfl',
+c : [1]
+};
+const o2 = {
+a : 'fff',
+...o1
+};
+console.log( o2)
+o1.c[2] = 2
+console.log(o2, o2.c[1])
+const fn = '1';
+let b = 'temp';
+class A {
+ff = 'tt';
+[ (() => {
+console.log(this)
+return 'run2'
+})() ] = function () {
+console.log(this, this.ff)
+} /* function end */;
+static ff = 'A of FF';
+static g = 'h';
+static [ fn + '2' + this.w ] = this.ff;
+z = 4;
+[ 4 ];
+x = 8;
+ 
+  fn = function (...args) {
+     A.prototype.constructor?.call?.(...args)
+  }
+  
+constructor (x) {
+  console.log(x)
+} /* function end */;
+run (a) {
+  console.log('A 的实例 of run', this.__proto__ === B.prototype)
+  return this.x * a
+} /* function end */;
+static run (...args) {
+  console.log('A of run',  this === B)
+ console.log(this, B, ...[1, 2, 3], ...args)
+} /* function end */
+
+gg() {
+  console.log('A.protopyte.gg')
+}
+
+} /*class declaration end */
+class B extends A {
+constructor (x, y) {
+super(x)
+
+console.log('开始获取super', super.ff, super.x, super.z)
+this.y = y
+
+} /* function end */;
+
+go = () => {
+  console.error('---')
+  console.log(
+    this, super.ff, super.gg, super.__proto__ === B.prototype);
+}
+
+gg = {
+  jlj: 'tedt'
+}
+
+run() {
+  console.log('B 的实例 of run', super.gg, this.gg, super.gg === this.gg)
+  super.gg()
+  console.log( 'run in run',
+  this, // B 的实例
+  super.prototype, // undefined
+  'super.__proto__',
+   super.__proto__, 
+   'A.prototype',
+  A.prototype,
+  'B.prototype',
+   B.prototype, 
+   super.__proto__ === B.prototype)
+  super.run();
+  console.log('更改super的值')
+  this.xx = 23;
+  super.xx = 22;
+  console.log(super.xx,
+   A.prototype, 
+   super.prototype,
+   super.__proto__.prototype,
+   B.prototype.__proto__ === A.prototype,
+   super.__proto__.__proto__ === A.prototype,
+   );
+  B.prototype.xx = 'jfodjsd0ofj'
+  console.log('-----', super.xx, this.xx, B.prototype.xx);
+}
+
+gg() {
+  console.log('B.protopyte.gg')
+}
+
+static run () {
+  super.run()
+  console.log('B of run', 
+  super.fn,
+   super.ff, 
+   super.prototype === A.prototype,
+  super.prototype === B.prototype, 
+  super.__proto__ === A)
+}
+static fn () {
+return this.x * this.y
+} /* function end */;
+static [ fn ] = b = function * () {
+yield 1
+console.log(this)
+} /* function end */;
+[ fn + fn ] = async () => {
+await 2
+console.log(this)
+} /* arrow function end */
+} /*class declaration end */
+console.log('------class----')
+
+B.run()
+console.log('---jingtai-----')
+const y = new A (4);
+const x = new B (1, 2);
+x.run()
+console.log('---run---end')
+x.go();
+console.log('A的实例', y, 'B的实例', x)
+const obj = {
+x : 100,
+run : y.run,
+run2 : y.run2
+};
+console.log(A, B, A['123'])
+// A.call()
+console.log('开始测试bind，call，apply----')
+function bb2(...args) {
+console.log(this, this.x, ...args)
+}
+const cc2 = (...args) => {
+console.log(this, this.x, ...args)
+}
+console.log(cc2.__proto__);
+console.log(cc2.bind);
+const fn0 = cc2.bind({x: 'gg89i9j'});
+console.log('第一个bind函数', fn0);
+fn0('jofjofjf');
+console.log('第一个bind函数执行完毕');
+const fn1 = bb2.bind({x: 'gg89i9j'}, [6,7,7]);
+console.log(fn1, fn1.bind);
+fn1.apply({ x: 'hhhh'}, [1, 2], 3);
+const fn2 = fn1.bind({x: 'jojdoljfs'});
+console.log(fn2.bind, fn1 === fn2);
+fn2.call({ x: 'hhhh'}, 1, 2, 3);
+console.log([B.__proto__ === A,null === null, x.__proto__ === B.prototype, B.prototype.__proto__ === A.prototype, A.prototype.__proto__ === Object.prototype, Object.prototype.__proto__ === null, B.__proto__ === A, A.__proto__ === Function.prototype, Function.prototype.__proto__ === Object.prototype, Object.prototype.__proto__ === null, Function.__proto__ === Function.prototype, Function.prototype === Function.__proto__, Object.__proto__ === Function.prototype])
+A.run('test', 'fsdfsdf')
+const t = A.run;
+t('test2')
+y.run2()
+obj.run2()
+}
+
+
+
+function test31 () {
+    console.log('hh-----h')
+    this.w = '3'
+    const o1 = {
+        hhhh : 'kklfl',
+        c : [1]
+    };
+    const o2 = {
+        a : 'fff',
+        ...o1
+    };
+    console.log(uuuu, o2)
+    o1.c[2] = 2
+    console.log(o2, o2.c[1])
+    const fn = '1';
+    let b = 'temp';
+    class A {
+        ff = 'tt';
+        [ (() => {
+            console.log(this)
+            return 'run2'
+        })() ] = function () {
+            console.log(this, this.ff)
+        } /* function end */;
+        static ff = 'A of FF';
+        static g = 'h';
+        static [ fn + '2' + this.w ] = this.ff;
+        z = 4;
+        [ 4 ];
+        x = 8;
+        constructor (x) {
+
+        } /* function end */;
+        run (a) {
+            return this.x * a
+        } /* function end */;
+        static run (...args) {
+            console.log(this, ...[1, 2, 3], ...args)
+        } /* function end */
+    } /*class declaration end */
+    class B extends A {
+        constructor (x, y) {
+            super(x)
+            this.y = y
+        } /* function end */;
+        static fn () {
+            return this.x * this.y
+        } /* function end */;
+        static [ fn ] = b = function * () {
+            yield 1
+            console.log(this)
+        } /* function end */;
+        [ fn + fn ] = async () => {
+            await 2
+            console.log(this)
+        } /* arrow function end */
+    } /*class declaration end */
+    const y = new A (4);
+    const x = new B (1, 2);
+    console.log('A的实例', y, 'B的实例', x)
+    const obj = {
+        x : 100,
+        run : y.run,
+        run2 : y.run2
+    };
+    console.log(A, B, A['123'])
+    // A.call()
+    function bb2() {
+      console.log(this.x)
     }
+    bb2.call({ x: 'hhhh'});
+    console.log([null === null, x.__proto__ === B.prototype, B.prototype.__proto__ === A.prototype, A.prototype.__proto__ === Object.prototype, Object.prototype.__proto__ === null, B.__proto__ === A, A.__proto__ === Function.prototype, Function.prototype.__proto__ === Object.prototype, Object.prototype.__proto__ === null, Function.__proto__ === Function.prototype, Function.prototype === Function.__proto__, Object.__proto__ === Function.prototype])
+    A.run('test', 'fsdfsdf')
+    const t = A.run;
+    t('test2')
+    y.run2()
+    obj.run2()
+    if (false) {
+        function uuuu () {
+
+        } /* function end */
+        class D {
+            
+        } /*class declaration end */
+        console.log(111, 'uuuu', uuuu)
+    } /* if end */
+    console.log(222, 'uuuu', uuuu)
+} /* function end */
+
+
+
+
+
     function test2() {
       function a(x) {
         console.log(`当前是${x}`);
@@ -78,397 +503,464 @@
       console.log(ggg, 'ggg')
       if (true) {
         for (var { x = g = { id: 0 }, y = { hh: 'hello', }, ...rest } of [{ y: 5, z: 8 }, { x: 2, y: 3 }, {}, { x: 5, h: 'jk' }, { x: 7 }]) {
-        if (x === 2) {
-          console.log('跳过', g)
-          // g = 66;
-          console.log(g, window.g);
-          continue;
+          if (x === 2) {
+            console.log('跳过', g)
+            // g = 66;
+            console.log(g, window.g);
+            continue;
+          }
+
+          console.log(x, y, rest, g, window.g)
+
+          if (x === 5) {
+            g.id = 55;
+            break;
+          }
         }
 
-        console.log(x, y, rest, g, window.g)
-
-        if (x === 5) {
-          g.id = 55;
-          break;
-        }
-      }
-     
-      }else {
+      } else {
         var ggg = 'djflsd';
       }
-     console.log('outer',t === g)
+      console.log('outer', t === g)
       t.id = 99
       console.log(t)
     }
 
-    function test5 () {
-    // let ggg = {x: 4, y: 5, z: 6}
-    // let { x, ...rest }= ggg;
-    // rest.z = 8
-    // console.log(ggg, rest);
-    let t = 34;
-    for (let {
+    function test5() {
+      // let ggg = {x: 4, y: 5, z: 6}
+      // let { x, ...rest }= ggg;
+      // rest.z = 8
+      // console.log(ggg, rest);
+      let t = 34;
+      for (let {
         x = g = {
-            id : window.g
+          id: window.g
         },
         y = {
-            hh : a = g,
+          hh: a = g,
         },
         ...rest
-    } of [{
-        y : 5,
-        z : 8
-    }, {
-        x : 2,
-        y : 3
-    }, {
-    }, {
-        x : 5,
-        h : 'jk'
-    }, {
-        x : 7
-    }] ) {
+      } of [{
+        y: 5,
+        z: 8
+      }, {
+        x: 2,
+        y: 3
+      }, {
+      }, {
+        x: 5,
+        h: 'jk'
+      }, {
+        x: 7
+      }]) {
         if (x === 2) {
-            console.log('跳过', g)
-            console.log(g, window.g)
-            continue
+          console.log('跳过', g)
+          console.log(g, window.g)
+          continue
         } /* if end */
-        console.log(x, y, rest, g, window.g, 'window.a' , window.a)
+        console.log(x, y, rest, g, window.g, 'window.a', window.a)
         if (x === 5) {
-            g.id = 55
-            break
+          g.id = 55
+          break
         } /* if end */
-    }  /* for end */
-    console.log('outer', t === g, t, g)
-    t.id = 99
-    console.log(t)
-} /* function end */
+      }  /* for end */
+      console.log('outer', t === g, t, g)
+      t.id = 99
+      console.log(t)
+    } /* function end */
 
-function test6 () {
-    // let ggg = {x: 4, y: 5, z: 6}
-    // let { x, ...rest }= ggg;
-    // rest.z = 8
-    // console.log(ggg, rest);
-    g = 33;
-    let [{ a}, {g}] = [{a: {g: 4}},{g: 5}]
-    console.log(a, g)
-    let t = 34;
-    for (let {
+    function test6() {
+      // let ggg = {x: 4, y: 5, z: 6}
+      // let { x, ...rest }= ggg;
+      // rest.z = 8
+      // console.log(ggg, rest);
+      g = 33;
+      let [{ a }, { g }] = [{ a: { g: 4 } }, { g: 5 }]
+      console.log(a, g)
+      let t = 34;
+      for (let {
         x = g = {
-            id : g
+          id: g
         },
         y = {
-            hh : a = g,
+          hh: a = g,
         },
         ...rest
-    } of [{
-        y : 5,
-        z : 8
-    }, {
-        x : 2,
-        y : 3
-    }, {
-    }, {
-        x : 5,
-        h : 'jk'
-    }, {
-        x : 7
-    }] ) {
+      } of [{
+        y: 5,
+        z: 8
+      }, {
+        x: 2,
+        y: 3
+      }, {
+      }, {
+        x: 5,
+        h: 'jk'
+      }, {
+        x: 7
+      }]) {
         if (x === 2) {
-            console.log('跳过', g)
-            console.log(g, window.g)
-            continue
+          console.log('跳过', g)
+          console.log(g, window.g)
+          continue
         } /* if end */
-        console.log(x, y, rest, g, window.g, 'window.a' , window.a)
+        console.log(x, y, rest, g, window.g, 'window.a', window.a)
         if (x === 5) {
-            g.id = 55
-            break
+          g.id = 55
+          break
         } /* if end */
-    }  /* for end */
-    console.log('outer', t === g, t, g)
-    t.id = 99
-    console.log(t)
-} /* function end */
+      }  /* for end */
+      console.log('outer', t === g, t, g)
+      t.id = 99
+      console.log(t)
+    } /* function end */
 
-function test7 () {
-    // let ggg = {x: 4, y: 5, z: 6}
-    // let { x, ...rest }= ggg;
-    // rest.z = 8
-    // console.log(ggg, rest);
-    g = 34
-    let [{ a}, {g:f}, ...rest] = [{a: {g: 4}},{g: 5}, 'hhhhh']
-    console.log(a, g, f, rest)
-    let t = 34;
-    for (let {
+    function test7() {
+      // let ggg = {x: 4, y: 5, z: 6}
+      // let { x, ...rest }= ggg;
+      // rest.z = 8
+      // console.log(ggg, rest);
+      g = 34
+      let [{ a }, { g: f }, ...rest] = [{ a: { g: 4 } }, { g: 5 }, 'hhhhh']
+      console.log(a, g, f, rest)
+      let t = 34;
+      for (let {
         c = 5,
         x = g = {
-            id : g
+          id: g
         },
         y = {
-            hh : a = g,
+          hh: a = g,
         },
         ...rest
-    } of [{
-        y : 5,
-        z : 8
-    }, {
-        x : 2,
-        y : 3
-    }, {
-    }, {
-        x : 5,
-        h : 'jk'
-    }, {
-        x : 7
-    }] ) {
+      } of [{
+        y: 5,
+        z: 8
+      }, {
+        x: 2,
+        y: 3
+      }, {
+      }, {
+        x: 5,
+        h: 'jk'
+      }, {
+        x: 7
+      }]) {
         if (x === 2) {
-            console.log('跳过', g)
-            console.log(g, window.g)
-            continue
+          console.log('跳过', g)
+          console.log(g, window.g)
+          continue
         } /* if end */
-        console.log(x, y, rest, g, window.g, 'window.a' , window.a)
+        console.log(x, y, rest, g, window.g, 'window.a', window.a)
         if (x === 5) {
-            g.id = 55
-            break
+          g.id = 55
+          break
         } /* if end */
-    }  /* for end */
-    console.log('outer', t === g, t, g)
-    t.id = 99
-    console.log(t)
-} /* function end */
+      }  /* for end */
+      console.log('outer', t === g, t, g)
+      t.id = 99
+      console.log(t)
+    } /* function end */
 
-function test8 () {
-    g = 34
-    const f = y = 666
-    let [{ a = 5}, {g:fg = y = 666}, ...rest] = [{a: {text: 'this is tezt'}},{},{g: 5}, 'hhhhh']
-    console.log('test', a, g, f, fg, y, rest)
-    let t = 34;
-    for (let {
+    function test8() {
+      g = 34
+      const f = y = 666
+      let [{ a = 5 }, { g: fg = y = 666 }, ...rest] = [{ a: { text: 'this is tezt' } }, {}, { g: 5 }, 'hhhhh']
+      console.log('test', a, g, f, fg, y, rest)
+      let t = 34;
+      for (let {
         c = 5,
         x = g = {
-            id : g
+          id: g
         },
         y = {
-            hh : a = g,
+          hh: a = g,
         },
         ...rest
-    } of [{
-        y : 5,
-        z : 8
-    }, {
-        x : 2,
-        y : 3
-    }, {
-    }, {
-        x : 5,
-        h : 'jk'
-    }, {
-        x : 7
-    }] ) {
+      } of [{
+        y: 5,
+        z: 8
+      }, {
+        x: 2,
+        y: 3
+      }, {
+      }, {
+        x: 5,
+        h: 'jk'
+      }, {
+        x: 7
+      }]) {
         if (x === 2) {
-            console.log('跳过', g)
-            console.log(g, window.g)
-            continue
+          console.log('跳过', g)
+          console.log(g, window.g)
+          continue
         } /* if end */
-        console.log(x, y, rest, g, window.g, 'window.a' , window.a)
+        console.log(x, y, rest, g, window.g, 'window.a', window.a)
         if (x === 5) {
-            g.id = 55
-            break
+          g.id = 55
+          break
         } /* if end */
-    }  /* for end */
-    console.log('outer', t === g, t, g)
-    t.id = 99
-    console.log(t)
-} /* function end */
+      }  /* for end */
+      console.log('outer', t === g, t, g)
+      t.id = 99
+      console.log(t)
+    } /* function end */
 
-function test9 () {
-    g = 34
-    const f = y = [1][0];
-    let [ {
+    function test9() {
+      g = 34
+      const f = y = [1][0];
+      let [{
         a = 5
-    }, {
-        g : fg = y = 666
-    }, ...rest ] = [{
-        a : {
-        text : 'this is tezt'
-    }
-    }, {
-        
-    }, {
-        g : 5
-    }, 'hhhhh'];
-    console.log('test', a, g, f, fg, y, rest)
-    let t = 34;
-    for ( let {
+      }, {
+        g: fg = y = 666
+      }, ...rest] = [{
+        a: {
+          text: 'this is tezt'
+        }
+      }, {
+
+      }, {
+        g: 5
+      }, 'hhhhh'];
+      console.log('test', a, g, f, fg, y, rest)
+      let t = 34;
+      for (let {
         c = 5,
         x = g = {
-            id : g
+          id: g
         },
         y = {
-            hh : a = g
+          hh: a = g
         },
         ...rest
-    } of [{
-        y : 5,
-        z : 8
-    }, {
-        x : 2,
-        y : 3
-    }, {
-        
-    }, {
-        x : 5,
-        h : 'jk'
-    }, {
-        x : 7
-    }] ) {
-        if (x === 2) {
-            console.log('跳过', g)
-            console.log(g, window.g)
-            continue
-        } /* if end */
-        console.log(x, {...y}, rest, {...g}, {...window.g}, 'window.a', window.a)
-        if (x === 5) {
-            g.id = 55
-            break
-        } /* if end */
-    }  /* for end */
-    console.log('outer', t === g, t, g)
-    t.id = 99
-    console.log(t)
-} /* function end */
+      } of [{
+        y: 5,
+        z: 8
+      }, {
+        x: 2,
+        y: 3
+      }, {
 
-function test10 () {
-    g = 34
-    const test = 'dfsdfsd'
-    const {
+      }, {
+        x: 5,
+        h: 'jk'
+      }, {
+        x: 7
+      }]) {
+        if (x === 2) {
+          console.log('跳过', g)
+          console.log(g, window.g)
+          continue
+        } /* if end */
+        console.log(x, { ...y }, rest, { ...g }, { ...window.g }, 'window.a', window.a)
+        if (x === 5) {
+          g.id = 55
+          break
+        } /* if end */
+      }  /* for end */
+      console.log('outer', t === g, t, g)
+      t.id = 99
+      console.log(t)
+    } /* function end */
+
+    function test10() {
+      g = 34
+      const test = 'dfsdfsd'
+      const {
         [test]: { text } = { text: 'default' }
-    } = {dfsdfsd: {text: 'this is tdfjasldfs'}};
-    console.log(text);
-    let [{ a = 5}, {g:fg = y = 666}, ...rest] = [{a: {text: 'this is tezt'}},{},{g: 5}, 'hhhhh']
-    console.log('test', a, g, fg, y, rest)
-    let t = 34;
-    for (let {
+      } = { dfsdfsd: { text: 'this is tdfjasldfs' } };
+      console.log(text);
+      let [{ a = 5 }, { g: fg = y = 666 }, ...rest] = [{ a: { text: 'this is tezt' } }, {}, { g: 5 }, 'hhhhh']
+      console.log('test', a, g, fg, y, rest)
+      let t = 34;
+      for (let {
         c = 5,
         x = g = {
-            id : g
+          id: g
         },
         y = {
-            hh : a = g,
+          hh: a = g,
         },
         ...rest
-    } of [{
-        y : 5,
-        z : 8
-    }, {
-        x : 2,
-        y : 3
-    }, {
-    }, {
-        x : 5,
-        h : 'jk'
-    }, {
-        x : 7
-    }] ) {
+      } of [{
+        y: 5,
+        z: 8
+      }, {
+        x: 2,
+        y: 3
+      }, {
+      }, {
+        x: 5,
+        h: 'jk'
+      }, {
+        x: 7
+      }]) {
         if (x === 2) {
-            console.log('跳过', g)
-            console.log(g, window.g)
-            continue
+          console.log('跳过', g)
+          console.log(g, window.g)
+          continue
         } /* if end */
-        console.log(x, y, rest, g, window.g, 'window.a' , window.a)
+        console.log(x, y, rest, g, window.g, 'window.a', window.a)
         if (x === 5) {
-            g.id = 55
-            break
+          g.id = 55
+          break
         } /* if end */
-    }  /* for end */
-    console.log('outer', t === g, t, g)
-    t.id = 99
-    console.log(t)
-} /* function end */
-   
-function test11 () {
-    // var 没有作用域会提升，所以得先解决这个提升问题。
+      }  /* for end */
+      console.log('outer', t === g, t, g)
+      t.id = 99
+      console.log(t)
+    } /* function end */
 
-    // 这里的g赋值实际上是下面那个var造成的
-  g = 34
-  console.log(hhhh, gggg, ffff, dfsd)
-  for(var g = 1; g < 5; g++){
-    console.log(g, window.g)
-    var ffff = 2;
-    for(let tt of [1, 2,3]) {
-        var dfsd = 1;
-        console.log(g, tt, g * tt)
-    }
-  }
+    function test11() {
+      // var 没有作用域会提升，所以得先解决这个提升问题。
 
-
-  if (false) {
-    var hhhh = 'fdsfd'
-  } else {
-    var gggg = 'dfsdf'
-  }
-  
-} /* function end */
+      // 这里的g赋值实际上是下面那个var造成的
+      g = 34
+      console.log(hhhh, gggg, ffff, dfsd)
+      for (var g = 1; g < 5; g++) {
+        console.log(g, window.g)
+        var ffff = 2;
+        for (let tt of [1, 2, 3]) {
+          var dfsd = 1;
+          console.log(g, tt, g * tt)
+        }
+      }
 
 
-function test () {
-    // var 没有作用域会提升，所以得先解决这个提升问题。
-    // eg: 1 g被提到了这里
-    function test () {
-    // var 没有作用域会提升，所以得先解决这个提升问题。
-    // 这里的g赋值实际上是下面那个var造成的
-    console.log(g)
-    // 这个g是下面for循环里的g提升
-  for( g  of [1, 2]){
-     const g = 1
-     console.log(g) // 1
-  }
-  console.log('window.g', window.g) // undefined
+      if (false) {
+        var hhhh = 'fdsfd'
+      } else {
+        var gggg = 'dfsdf'
+      }
 
-} /* function end */
+    } /* function end */
 
-console.log('还未运行', pp, g) // undefined undefined
-test ()
-console.log('上面的forof 结束后g变成这里的2', pp, g) // undefined 2
-    // 这里的g赋值实际上是下面那个var造成的
-    // eg: 1
-  for(var g = 1; g < 6; g++){
-    console.log(g, window.g)
-    var ffff = 2;
-    if (g === 3) {
-      continue;
-    }
-    for(let tt of [1, 2,3]) {
-        var dfsd = 1;
-       if (tt === 2) {
-         continue
-       }
 
-        console.log(g, tt, g * tt)
-      if (g === 2){
-        console.log('本轮只打印一次')
-        break;
+    function test12() {
+      // var 没有作用域会提升，所以得先解决这个提升问题。
+      // eg: 1 g被提到了这里
+      function test() {
+        // var 没有作用域会提升，所以得先解决这个提升问题。
+        // 这里的g赋值实际上是下面那个var造成的
+        console.log(g)
+        // 这个g是下面for循环里的g提升
+        for (g of [1, 2]) {
+          const g = 1
+          console.log(g) // 1
+        }
+        console.log('window.g', window.g) // undefined
+
+      } /* function end */
+
+      console.log('还未运行', pp, g) // undefined undefined
+      test()
+      console.log('上面的forof 结束后g变成这里的2', pp, g) // undefined 2
+      // 这里的g赋值实际上是下面那个var造成的
+      // eg: 1
+      for (var g = 1; g < 6; g++) {
+        console.log(g, window.g)
+        var ffff = 2;
+        if (g === 3) {
+          continue;
+        }
+        for (let tt of [1, 2, 3]) {
+          var dfsd = 1;
+          if (tt === 2) {
+            continue
+          }
+
+          console.log(g, tt, g * tt)
+          if (g === 2) {
+            console.log('本轮只打印一次')
+            break;
+          }
+        }
+        if (g === 4) {
+          break;
+        }
+      }
+
+
+      if (false) {
+        var hhhh = 'fdsfd'
+        for (const x of [1]) {
+          var pp = 0;
+        }
+      } else {
+        var gggg = 'dfsdf'
+      }
+
+    } /* function end */
+
+    function test13() {
+      // var 没有作用域会提升，所以得先解决这个提升问题。
+      // 这里的g赋值实际上是下面那个var造成的
+      console.log(g) // undefined
+      // 这个g是下面for循环里的g提升
+      const f = 2
+      for (g of [{ a: 1, [f]: 'hhh' }]) {
+        const t = (1 + 5 * (5 + 6)) * (f + f)
+        console.log('for -of', g, t) // 13, a | 13, 2
+      }
+
+      for (g in [1, 2, 3]) {
+        if (g === '2' && true) {
+          console.log('enter in break')
+          break;
+        }
+        if (g === 1) {
+          // g === '1'
+          console.log('enter in continue')
+          continue;
+        }
+        console.log('for - in', g);
+
+      }
+      console.log('final', g) // 2
+
+      g === '2' && console.log('短路成功')
+
+      if (false) {
+        //var g;
       }
     }
-    if (g === 4) {
-      break;
+
+    function test14() {
+      function test() {
+        const x = () => {
+          console.log(this, this.g)
+        } /* arrow function end */;
+        const fn = function () {
+          console.log(this, this.g)
+        } /* function end */;
+        const obj = {
+          g: 'obj of g',
+          x: () => {
+            console.log(this, this.g)
+          } /* arrow function end */,
+          fn() {
+            console.log(this, this.g)
+          } /* function end */
+        };
+        x()
+        obj.x()
+        fn()
+        obj.fn()
+        const t = obj.fn;
+        t()
+      } /* function end */
+      g = 'window of g'
+      const obj2 = {
+        g: 'obj2 of g',
+        test
+      };
+      obj2.test()
     }
-  }
 
 
-  if (false) {
-    var hhhh = 'fdsfd'
-    for(const x of [1]){
-      var pp = 0;
-    }
-  } else {
-    var gggg = 'dfsdf'
-  }
-  
-} /* function end */
 
 
-test ()
+
 
     content.innerText = test.toString()
   </script>

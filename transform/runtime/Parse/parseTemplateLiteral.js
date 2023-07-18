@@ -1,6 +1,9 @@
 import parseAst from "..";
+import { createString } from "../Environment";
 import RuntimeValue from "../Environment/RuntimeValue";
 import parseRuntimeValue from "../Environment/parseRuntimeValue";
+import { RUNTIME_VALUE_TYPE } from "../constant";
+
 
 export default function parseTemplateLiteral(ast, env) {
   const { quasis, expressions } = ast;
@@ -16,5 +19,5 @@ export default function parseTemplateLiteral(ast, env) {
   if (qq.length || ex.length) {
     throw new Error('模版字符串解析错误')
   }
-  return new RuntimeValue('string', ret);
+  return createString(ret)
 }
