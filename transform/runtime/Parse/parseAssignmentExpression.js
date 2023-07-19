@@ -8,8 +8,10 @@ export default function parseAssignmentExpression(ast, env) {
   // setExpression(value, left, env)
   // console.log(env, value);
   // todo
+  // console.error(left, right)
+  
   if (operator === '=') {
-    return setExpression(left, right, env);
+    return setExpression(left, right, env, {});
   } else  {    
     return parseAst({
       type: "ExpressionStatement",

@@ -7,6 +7,7 @@ import { getAstCode } from "../Generate";
 import setPattern from "./setPattern";
 import { createObject } from "../Environment";
 import { createRuntimeValueAst } from "../Environment/utils";
+import PropertyDescriptor from "../Environment/PropertyDescriptor";
 
 export const handleProperty = (targetRv, weakMap, classDefinedEnv) => (c) => {
   if (c.type === 'StaticBlock') {
@@ -15,14 +16,21 @@ export const handleProperty = (targetRv, weakMap, classDefinedEnv) => (c) => {
       body: c.body
     }, classDefinedEnv)
   }
-  const { key, computed, value } = c;
+  // 离开一小会，接下来做set， get属性
+  const { key, computed, value, kind } = c;
 
   const valueRv = value ?  parseAst(value, classDefinedEnv) : getUndefinedValue();
   if (computed) {
     // todo key 为 object 之类的问题。
-    targetRv.set(parseRuntimeValue(weakMap.get(c)), valueRv)
+    const key = parseRuntimeValue(weakMap.get(c))
+    const oldDescriptor = targetRv.getPropertyDescriptor(key) ?? new PropertyDescriptor({});
+    if ([RUNTIME_LITERAL.set, RUNTIME_LITERAL.get].includes(kind)) {
+      oldDescriptor.set(kind, valueRv);
+    }
+    targetRv.set(key, valueRv, oldDescriptor)
   } else {
-    setPattern(valueRv, key, targetRv, { useSet: true })
+    // console.error('class-set', key, kind, valueRv)
+    setPattern(valueRv, key, targetRv, { useSet: true, kind })
   }
 }
 
@@ -32,6 +40,77 @@ function transformSuper(ast) {
 }
 
 const createClassProperty = (weakMap) => function createClassProperty(ast, i) {
+  // 特殊处理 get set
+  console.error(ast)
+  const propertyAst = ast.computed ? createRuntimeValueAst( weakMap.get(ast), {
+    type: 'Identifier',
+    name: '_ref' + i,
+  }, ast.key) : ast.key;
+
+  const rightAst = transformSuper(ast.value) ?? {
+    type: 'Identifier',
+    name: `${RUNTIME_LITERAL.undefined}`,
+  };
+  if (ast.type === 'MethodDefinition' && isSetterOrGetter(ast.kind)) {
+    // 转成 Reflect.defineProperty(this, attr, v, {})
+    // TODO 等后续生成ast重构后
+    // 直接 eval（‘Reflect.defineProperty(this, attr, {[ast.kind]: value})’）
+  
+    const ret = {
+      type: "ExpressionStatement",
+      expression: {
+        type: "CallExpression",
+        callee: {
+          type: "MemberExpression",
+          object: {
+            type: "Identifier",
+            name: "Reflect"
+          },
+          property: {
+            type: "Identifier",
+            name: "defineProperty"
+          },
+          computed: false,
+          optional: false
+        },
+        arguments: [
+          {
+            type: "ThisExpression",
+          },
+          ast.computed ? createRuntimeValueAst( weakMap.get(ast), {
+            type: 'Identifier',
+            name: '_ref' + i,
+          }, ast.key) : {
+            type: "Literal",
+            // TODO 非计算属性一般只能是Identity类型
+            value: `${ast.key.name}`,
+            raw: `'${ast.key.name}'`,
+          },
+          {
+            type: "ObjectExpression",
+            properties: [
+              {
+                type: "Property",
+                method: false,
+                shorthand: false,
+                computed: false,
+                key: {
+                  type: "Identifier",
+                  name: ast.kind,
+                },
+                value: rightAst,
+                kind: "init"
+              }
+            ]
+          }
+        ],
+        optional: false
+      }
+    }
+    console.error('转', ret)
+    return ret;
+  }
+
   return {
     type: 'ExpressionStatement',
     expression: {
@@ -42,21 +121,18 @@ const createClassProperty = (weakMap) => function createClassProperty(ast, i) {
         object: {
           type: 'ThisExpression',
         },
-        property: ast.computed ? createRuntimeValueAst( weakMap.get(ast), {
-          type: 'Identifier',
-          name: '_ref' + i,
-        }, ast.key) : ast.key,
+        property: propertyAst,
         computed: ast.computed,
         optional: false,
       },
-      right: transformSuper(ast.value) ?? {
-        type: 'Identifier',
-        name: `${RUNTIME_LITERAL.undefined}`,
-      },
+      right: rightAst,
     }
   }
 }
 
+export function isSetterOrGetter(kind) {
+  return [RUNTIME_LITERAL.set, RUNTIME_LITERAL.get].includes(kind);
+}
 
 export default function parseClassDeclaration(ast, env) {
   const { id, body: bodyAst, superClass } = ast;
@@ -129,7 +205,11 @@ export default function parseClassDeclaration(ast, env) {
         //     "optional": false
         //   }
         // },
-        ..._.map(_.filter(bodyAst.body, c => !c.static && c.type === 'PropertyDefinition'), createClassProperty(weakMap)),
+        ..._.map(_.filter(bodyAst.body, c => !c.static && 
+          (c.type === 'PropertyDefinition'
+           || (c.type === 'MethodDefinition' && isSetterOrGetter(c.kind))
+          )
+           ), createClassProperty(weakMap)),
         {
           type: "ExpressionStatement",
           expression: {
@@ -211,10 +291,12 @@ export default function parseClassDeclaration(ast, env) {
       [RuntimeValue.superproto]: FunctionPrototypeV,
     }))
   }
-
   
-  _.forEach(_.filter(bodyAst.body, c => !c.static && c.type === 'MethodDefinition'), handleProperty(prototypeRv, weakMap, classPrototypeDefinedEnv))
-  _.forEach(_.filter(bodyAst.body, c => c.static && c.type === 'MethodDefinition'), handleProperty(classRv, weakMap, classDefinedEnv))
-  _.forEach(_.filter(bodyAst.body, c =>( c.static && c.type === 'PropertyDefinition') || ( ['StaticBlock'].includes(c.type) )), handleProperty(classRv, weakMap, classDefinedEnv))
+  _.forEach(_.filter(bodyAst.body, c => !c.static && c.type === 'MethodDefinition'  && !isSetterOrGetter(c.kind)), handleProperty(prototypeRv, weakMap, classPrototypeDefinedEnv))
+  _.forEach(_.filter(bodyAst.body, c => c.static && c.type === 'MethodDefinition'  && !isSetterOrGetter(c.kind)), handleProperty(classRv, weakMap, classDefinedEnv))
+  _.forEach(_.filter(bodyAst.body, c =>
+    (c.static && (c.type === 'PropertyDefinition' || (c.type === 'MethodDefinition' && isSetterOrGetter(c.kind)))) 
+    || ['StaticBlock'].includes(c.type)
+    ), handleProperty(classRv, weakMap, classDefinedEnv))
   // console.log('类定义的---', prototypeRv);
 }

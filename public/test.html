@@ -31,6 +31,135 @@
     // 开始添加类
 
     function test () {
+    console.log([test], test instanceof Function)
+    console.log('hh-----h')
+    window.sfd?.error?.('jfdofs')
+    this.w  =  '3'
+    const fn = '1';
+    let b = 'temp';
+    class A {
+        ff = 0;
+        get a () {
+            console.log('触发get', this)
+            return this.ff
+        } /* function end */;
+        set a (x) {
+            console.log('触发set', this, x)
+            this.ff  +=  x
+            return this.ff * 100
+        } /* function end */;
+        [ (() => {
+            console.log(this)
+            return 'run2'
+        })() ] = function () {
+            console.log(this, this.ff)
+        } /* function end */;
+        static ff = 'A of FF';
+        static {
+            this.fffff('....')
+            console.log('static block', A, super.call, this.ff, this.g)
+            console.log([super.prototype, super.fn, super.__proto__ === Function.prototype])
+        } /* static Block end */;
+        static g = 'h';
+        static get fn () {
+            console.log('A static get', this, super.__proto__)
+            return this.ff
+        } /* function end */;
+        static set fn (x) {
+            this.ff  =  'dfasdf'
+        } /* function end */;
+        static [ fn + '2' + this.w ] = this.ff;
+        z = 4;
+        [ 4 ];
+        x = 8;
+        fn = function (...args) {
+            A.prototype.constructor?.call?.(...args)
+        } /* function end */;
+        constructor (x) {
+            console.log(x)
+        } /* function end */;
+        run (a) {
+            console.log('A 的实例 of run', this.__proto__ === B.prototype)
+            return this.x * a
+        } /* function end */;
+        static fffff (xxx) {
+            console.log(xxx)
+        } /* function end */;
+        static run (...args) {
+            console.log('A of run', this === B, super.call)
+            console.log(this, B, ...[1, 2, 3], ...args)
+        } /* function end */;
+        gg () {
+            console.log('A.protopyte.gg')
+        } /* function end */
+    } /*class declaration end */
+    class B extends A {
+        constructor (x, y) {
+            super(x)
+            console.log('开始获取super', super.ff, super.x, super.z)
+            this.y  =  y
+        } /* function end */;
+        gg = {
+            jlj : 'tedt'
+        };
+        run () {
+            console.log('B 的实例 of run', super.gg, this.gg, super.gg === this.gg)
+            super.gg()
+            console.log('run in run', this, super.prototype, 'super.__proto__', super.__proto__, 'A.prototype', A.prototype, 'B.prototype', B.prototype, super.__proto__ === B.prototype)
+            super.run()
+            console.log('更改super的值')
+            super.xx  =  22
+            console.log(super.xx, A.prototype, super.__proto__.prototype, B.prototype.__proto__ === A.prototype, super.__proto__.__proto__ === A.prototype)
+        } /* function end */;
+        gg () {
+            console.log('B.protopyte.gg')
+        } /* function end */;
+        static ff = 'B of FF';
+        static run () {
+            super.run()
+            console.log('B of run')
+        } /* function end */;
+        static fn () {
+            return this.x * this.y
+        } /* function end */;
+        static [ fn ] = b  =  function * () {
+            yield 1
+            console.log(this)
+        } /* function end */;
+        static get ff () {
+            console.log('B static get ff', this, super.ff)
+            return super.gdsf
+        } /* function end */;
+        [ fn + fn ] = async () => {
+            await 2
+            console.log(this)
+        } /* arrow function end */
+    } /*class declaration end */
+    console.log([Reflect.get(B.__proto__, '__proto__', B), Reflect.get(B.__proto__, 'fn', B), B.__proto__ === A])
+    console.log('------class----')
+    B.run()
+    console.log('---jingtai-----')
+    const y = new A (4);
+    console.log('---test-a-set-get')
+    console.log('y.a', y.a)
+    y.a  =  30
+    console.log('y.a', y.a)
+    console.log('------test-a-set-get--end--')
+    const x = new B (1, 2);
+    x.run()
+    console.log('A的实例', y, 'B的实例', x)
+    const obj = {
+        x : 2
+    };
+    const obj2 = {
+        x : 4
+    };
+    Reflect.set(obj, 'x', 3, obj2)
+    console.log(obj, obj2, Reflect.get(obj, 'x'))
+} /* function end */
+test()
+
+    function test33 () {
       let d = 20;
       const ff = 'a';
       const testObj = {
@@ -174,8 +303,7 @@
     Reflect.set(obj, 'x', 3, obj2)
     console.log(obj, obj2, Reflect.get(obj, 'x'))
 } /* function end */
-test()
- 
+
 function test32 () {
 
 console.log('hh-----h')

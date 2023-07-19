@@ -40,9 +40,13 @@ export function getSuperCode(ast, config) {
 }
 
 export function getMethodDefinitionCode(ast, config) {
-  const { static: isStatic, computed, key, value } = ast;
+  const { static: isStatic, computed, key, value, kind } = ast;
   const keystr = getAstCode(key, config)
   return `${isStatic ? purple(RUNTIME_LITERAL.static, config) + space(config) : ''}${
+    [RUNTIME_LITERAL.set, RUNTIME_LITERAL.get].includes(kind) ?
+    purple(kind, config) + space(config) :
+    ''
+  }${
     computed ? `[${wrapSpace( keystr, config)}]`: keystr
   }${
     getAstCode(value, letFunctionInClassMethodDefinition(tabSpace(config)))

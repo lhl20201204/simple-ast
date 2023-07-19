@@ -1,5 +1,6 @@
 import Environment, { createFunction } from "../Environment";
 import RuntimeValue from "../Environment/RuntimeValue";
+import { instanceOfRuntimeValue } from "../Environment/utils";
 import { getAstCode } from "../Generate";
 
 export default function parseFunctionDeclaration(ast, env) {
@@ -18,6 +19,13 @@ export default function parseFunctionDeclaration(ast, env) {
     [RuntimeValue.symbolEnv]: env,
     [RuntimeValue.symbolName]: id ? getAstCode(id, { text: true }) : (ast._fnName ?? '匿名函数')
   });
+  // const FunctionRv = Environment.window.get('Function');
+  // console.log(FunctionRv)
+  // console.error(
+  //   value, 
+  //   value.getProto() === FunctionRv.getProtoType(),
+  //   instanceOfRuntimeValue(value, FunctionRv)
+  // )
   if (key) {
     env.addFunction(key, value);
   }

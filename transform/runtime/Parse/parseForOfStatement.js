@@ -1,12 +1,14 @@
 import parseAst from "..";
 import Environment from "../Environment";
+import { RUNTIME_VALUE_TYPE } from "../constant";
 import setPattern from "./setPattern";
 
 export default function parseForOfStatement(ast, env) {
   const { left, right, body } = ast;
   const arrV = parseAst(right, env);
   // todo 先处理类数组类型
-  if (!['array', 'arguments'].includes(arrV.type)) {
+  if (![RUNTIME_VALUE_TYPE.array, RUNTIME_VALUE_TYPE.arguments].includes(arrV.type)) {
+    console.log(arrV);
     throw new Error('for of 语句必须遍历数组类型');
   }
 

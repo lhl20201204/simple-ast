@@ -136,7 +136,7 @@ export class RuntimeRefValue extends RuntimeValue{
       if (descriptor instanceof PropertyDescriptor) {
         if (isFunctionRuntimeValue(descriptor.get)) {
           const fnRv = descriptor.get;
-          console.log('begin---call')
+          // console.log('begin---call')
           return parseFunctionCallRuntimeValue(
             fnRv.getDefinedEnv(),
             createRuntimeValueAst(fnRv, `${attr}_getter`),

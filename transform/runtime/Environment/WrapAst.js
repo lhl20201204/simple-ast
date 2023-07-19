@@ -6,45 +6,20 @@ import { isUndefinedRuntimeValue } from ".";
 import parseRuntimeValue from "./parseRuntimeValue";
 import { AST_LITERAL, JS_TO_RUNTIME_VALUE_TYPE, OUTPUT_TYPE, RUNTIME_VALUE_TYPE } from "../constant";
 
-class SetAttrConfig {
-  constructor([attr, oldV, newV], parent) {
-    this.attr = attr;
-    this.oldV = oldV;
-    this.newV = newV;
-    this.parent = parent;
-  }
-}
-
-class WillDoConfig {
-  constructor(configs , parent) {
-    if (!_.isArray(configs)) {
-      throw new Error('configs 必须是数组')
-    }
-    this.configs = _.map(configs, c => new SetAttrConfig(c, parent));
-    this.parent = parent;
-  }
-}
 
 
-
-
-const config = [
+const defalultTransformConfig = [
   {
     where: `
      this.type === 'Literal'
      && parent?.left?.operator === 'typeof'
     `,
-    willDo: [
+    replaceConfig: [
       ['value', AST_LITERAL.function, OUTPUT_TYPE.function],
       ['raw', `'${AST_LITERAL.function}'`, `'${OUTPUT_TYPE.function}'`]
     ]
   }
-].map(item => {
-  return {
-    willDo: new WillDoConfig(item.willDo),
-    where: item.where,
-  }
-})
+]
 
 const isProxyRuntimeValueFlag = '$__Symbol(isProxyRuntimeValueFlag)___';
 function createProxyRuntimeValue(x) {
@@ -80,8 +55,9 @@ function createProxyRuntimeValue(x) {
 class WrapAst {
   static ast = new AST();
 
-  constructor(obj, parent) {
+  constructor(obj, { parent, transformConfig }) {
     this.parent = parent;
+    this.transformConfig = transformConfig ?? defalultTransformConfig
     this.value = {}
     for(const x in obj) {
       this.value[x] = obj[x]
@@ -98,7 +74,6 @@ class WrapAst {
       return createProxyRuntimeValue(this)
     } else if (attr === 'parent') {
       const ret =  createProxyRuntimeValue(this.parent);
-      createProxyRuntimeValue(ret);
       return ret;
     } 
     // return new RuntimeRefValue()
@@ -116,14 +91,14 @@ class WrapAst {
   set(attr, v) {
     for(const {
       where,
-      willDo
-    } of  config) {
+      replaceConfig
+    } of this.transformConfig) {
       if (
         this.parseConditon(where)
        ) {
-        for(const item of willDo.configs) {
-          if (attr === item.attr && v === item.oldV) {
-            return this.value[attr] = item.newV;
+        for(const item of replaceConfig) {
+          if (attr === item[0] && v === item[1]) {
+            return this.value[attr] = item[2];
           }
         }
      }
@@ -152,17 +127,26 @@ class WrapAst {
   }
 }
 
-export function transformInnerAst(ast, parent = null) {
+export function transformInnerAst(ast, config = {}) {
+  if (!config.parent) {
+    config.parent = null;
+  }
   if (!Reflect.has(ast, 'type')) {
     throw new Error('非ast结构')
   }
-  const copy = new WrapAst({}, parent)
+  const copy = new WrapAst({}, config)
   for(const x in ast) {
     let v = ast[x]
     if (_.isArray(v)) {
-      v = _.map(v, c => transformInnerAst(c, copy))
+      v = _.map(v, c => transformInnerAst(c, {
+        ...config,
+        parent: copy
+      }))
     } else if (_.isObject(v) && Reflect.has(v, 'type')) {
-      v = transformInnerAst(v, copy)
+      v = transformInnerAst(v, {
+        ...config,
+        parent: copy
+      })
     }
     copy.set(x, v)
   }

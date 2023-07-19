@@ -40,6 +40,10 @@ export const RUNTIME_LITERAL = {
   get: 'get',
 }
 
+export const DEBUGGER_DICTS = {
+  isOutputConsoleFlag: '$___isOutputConsole___'
+}
+
 export const AST_LITERAL = {
   undefined: 'undefined',
   function: 'function',

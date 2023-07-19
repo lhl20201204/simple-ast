@@ -9,18 +9,18 @@ export default class PropertyDescriptor{
         writable,
         set,
         get,
-  }) {
+  }, oldPropertyDescriptor) {
     if (!_.isNil(get) && !_.isNil(value)) {
       throw new Error('get ')
     }
    const undefinedRv = getUndefinedValue();
    const trueV = getTrueV()
-   this.configurable = configurable ?? trueV
-   this.enumerable = enumerable ?? trueV
-   this.value = value ?? undefinedRv
-   this.writable = writable ?? trueV
-   this.set = set ?? undefinedRv
-   this.get = get ?? undefinedRv
+   this.configurable = configurable ?? oldPropertyDescriptor?.configurable ?? trueV
+   this.enumerable = enumerable ?? oldPropertyDescriptor?.enumerable ?? trueV
+   this.value = value ?? oldPropertyDescriptor?.value ?? undefinedRv
+   this.writable = writable ?? oldPropertyDescriptor?.writable ?? trueV
+   this.set = set ?? oldPropertyDescriptor?.set ?? undefinedRv
+   this.get = get ?? oldPropertyDescriptor?.get ??undefinedRv
   }
 
   setRuntimeValue(kind, rv) {

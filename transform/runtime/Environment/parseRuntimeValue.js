@@ -1,7 +1,6 @@
 import { isUndefinedRuntimeValue } from "./utils";
-import { AST } from "../../getAst";
 import generateCode from "../Generate";
-import { RUNTIME_VALUE_TYPE } from "../constant";
+import { DEBUGGER_DICTS, RUNTIME_VALUE_TYPE } from "../constant";
 import RuntimeValue, { RuntimeRefValue } from "./RuntimeValue";
 
 const subConfigLevel = (config) => {
@@ -41,7 +40,7 @@ export default function parseRuntimeValue(rv, config = {}) {
       'FunctionDeclaration',
       'FunctionExpression',
       'ClassDeclaration',
-       'ClassExpression',
+      'ClassExpression',
       'ArrowFunctionExpression'
     ].includes(funast.type)) {
       const ret =  generateCode(funast, {
@@ -49,8 +48,8 @@ export default function parseRuntimeValue(rv, config = {}) {
         isFunctionEndNotRemark: true,
         prefixSpaceCount: config.prefixSpaceCount ?? 0
       });
-      return config.isOutputConsole ? {
-        [('$___isOutputConsole___')]: true,
+      return (config.isOutputConsole ) ? {
+        [DEBUGGER_DICTS.isOutputConsoleFlag]: true,
         title: (funast.id ? generateCode(funast.id, {
           text: true,
         }) : '匿名') + ' ' + rv.type ,

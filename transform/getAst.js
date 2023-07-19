@@ -1919,7 +1919,7 @@ export class AST {
       return {
         type: "AssignmentExpression",
         ...this.getStartEnd(start, end),
-        operators: this.list[next]?.value, // todo 封装
+        operator: this.list[next]?.value, // todo 封装
         left: id,
         right,
       };

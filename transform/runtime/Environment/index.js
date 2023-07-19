@@ -1,8 +1,9 @@
 import parseAst from "..";
-import { JS_TO_RUNTIME_VALUE_TYPE, OUTPUT_TYPE, RUNTIME_LITERAL, RUNTIME_VALUE_TYPE } from "../constant";
+import { DEBUGGER_DICTS, JS_TO_RUNTIME_VALUE_TYPE, OUTPUT_TYPE, RUNTIME_LITERAL, RUNTIME_VALUE_TYPE } from "../constant";
 import { _ErrorAst } from "./Native/Error";
 import { _FunctionApplyAst, _FunctionBindAst, _FunctionCallAst } from "./Native/Function";
 import { _reflectAst } from "./Native/Reflect";
+import PropertyDescriptor from "./PropertyDescriptor";
 import RuntimeValue, { RuntimeRefValue, createString, describeNativeClassAst, describeNativeFunction, getFalseV, getNullValue, getTrueV, getUndefinedValue } from "./RuntimeValue";
 import { transformInnerAst } from "./WrapAst";
 import parseRuntimeValue from "./parseRuntimeValue";
@@ -267,7 +268,29 @@ export default class Environment {
       _FunctionCallAst,
       _FunctionBindAst,
       _ErrorAst,
-    ], ast => transformInnerAst(ast, null).toAST()).forEach(x => parseAst(x, Environment.window));
+    ], ast => transformInnerAst(ast, {
+      parent: null
+    }).toAST()).forEach(x => parseAst(x, Environment.window));
+    windowRv.get('Reflect').set('defineProperty', generateFn('Reflect$defineProperty', (
+      [
+       objRv, 
+       attrRv,
+       attributesRv
+      ],
+    )=> {
+      // 底层调用方法
+      // console.error('Reflect.defineProperty', 
+      // objRv, 
+      // attrRv,
+      // attributesRv,)
+      const attr = parseRuntimeValue(attrRv)
+      objRv.set(attr, 
+        getNullValue(), 
+        new PropertyDescriptor(
+          attributesRv.value, 
+          objRv.getPropertyDescriptor(attr)
+        ))
+    }))
     RuntimeValue.isTransforming = false;
   }
 
@@ -398,7 +421,7 @@ ObjectPrototypeV.set('toString', generateFn( 'Object$toString', (args) => {
 consoleV.set('log', generateFn('console$log', (args) => {
   const newArr = _.map(args, item => {
     return parseRuntimeValue(item, {
-      isOutputConsole: true
+      isOutputConsole: true,
     });
   })
   // 直接结构就行了
@@ -428,8 +451,13 @@ consoleV.set('log', generateFn('console$log', (args) => {
   }
 
   console.group('')
-  _.forEach(_.cloneDeep(newArr), item => {
-    if (item && item[('$___isOutputConsole___')]) {
+  const handleItem = item => {
+    if (_.isArray(item)) {
+      console.group('array')
+      _.map(item, handleItem)
+      return console.groupEnd()
+    }
+    if (item && item[DEBUGGER_DICTS.isOutputConsoleFlag]) {
       console.groupCollapsed('%c%s', 'color: green', item.title)
       console.warn(item.content)
       console.groupEnd()
@@ -440,7 +468,8 @@ consoleV.set('log', generateFn('console$log', (args) => {
       return console.warn(item)
     }
     return console.log(`\x1B[96;100;4m${getType(JS_TO_RUNTIME_VALUE_TYPE(item), item)}`, item);
-  })
+  };
+  _.forEach(_.cloneDeep(newArr), handleItem)
   // console.warn(..._.flatten(_.cloneDeep(_.map(newArr, item => {
   //   if (item && item[('$___isOutputConsole___')]) {
   //     console.groupCollapsed(item.title)

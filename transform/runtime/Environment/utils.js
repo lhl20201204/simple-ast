@@ -1,6 +1,6 @@
 import parseAst from ".."
 import { OUTPUT_TYPE } from "../constant"
-import RuntimeValue, { getFalseV } from "./RuntimeValue"
+import RuntimeValue, { getFalseV, getTrueV } from "./RuntimeValue"
 import parseRuntimeValue from "./parseRuntimeValue"
 
 export function typeOfRuntimeValue(rv) {
@@ -45,9 +45,11 @@ export function instanceOfRuntimeValue(left, right) {
   }
   if (
     !isObjectRuntimeValue(left)
+    && !isFunctionRuntimeValue(left)
   ) {
     return getFalseV()
   }
+
   let t = left.getProto();
   const rightPrototypeRv = right.getProtoType();
   if (isUndefinedRuntimeValue(rightPrototypeRv)) {
@@ -56,7 +58,7 @@ export function instanceOfRuntimeValue(left, right) {
   while(parseRuntimeValue(t) && t !== rightPrototypeRv) {
     t = t.getProto();
   }
-
+  // console.log('enter-instanceOf')
   return t === rightPrototypeRv ? getTrueV() : getFalseV()
 }
 

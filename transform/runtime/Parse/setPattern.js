@@ -4,10 +4,11 @@ import RuntimeValue, { RuntimeRefValue, getUndefinedValue } from "../Environment
 import parseRuntimeValue from "../Environment/parseRuntimeValue";
 import Environment from "../Environment";
 import { getMemberPropertyKey } from "./parseMemberExpression";
-import { getObjectPropertyExpressionKey } from "./parseObjectExpression";
-import { RUNTIME_VALUE_TYPE } from "../constant";
+import { getObjectPropertyDescriptor, getObjectPropertyExpressionKey } from "./parseObjectExpression";
+import { RUNTIME_LITERAL, RUNTIME_VALUE_TYPE } from "../constant";
 import { createObject } from "../Environment";
 import { isUndefinedRuntimeValue } from "../Environment/utils";
+import PropertyDescriptor from "../Environment/PropertyDescriptor";
 
 function getType(restConfig, env) {
   if (restConfig.useSet || (env instanceof RuntimeValue)) {
@@ -21,8 +22,16 @@ export function setIdentifierPattern(argsRv, paramsAst, env, restConfig) {
   if (!(argsRv instanceof RuntimeValue)) {
     throw new Error('运行时赋值出错')
   }
+  if (env instanceof RuntimeValue) {
+    const { kind } = restConfig;
+    const oldDescriptor = getObjectPropertyDescriptor(env, paramsAst.name, argsRv, kind);
+    // console.error('env-set', env, paramsAst.name, oldDescriptor)
+    env[getType(restConfig, env)](paramsAst.name, argsRv, oldDescriptor);
+  } else {
+    env[getType(restConfig, env)](paramsAst.name, argsRv);
+  }
   // console.log(getType(restConfig, env), paramsAst.name)
-  env[getType(restConfig, env)](paramsAst.name, argsRv);
+ 
 }
 
 export function setAssignmentPattern(argsRv, paramsAst, env, restConfig) {
@@ -80,9 +89,11 @@ export function setMemberExpression(v, ast, env, restConfig) {
   if (optional) {
     throw new Error('复制表达式左边不能是?.')
   }
+  const { kind } = restConfig;
   const objectRV = parseAst(object, env);
   let k = getMemberPropertyKey(ast, env);
-  objectRV.set(k, v)
+
+  objectRV.set(k, v, getObjectPropertyDescriptor(objectRV, k, v, kind))
 }
 
 export function setVariableDeclaration(v, ast, env, restConfig) {

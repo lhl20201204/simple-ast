@@ -2,6 +2,7 @@ import parseAst from "..";
 import { createObject } from "../Environment";
 import PropertyDescriptor from "../Environment/PropertyDescriptor";
 import parseRuntimeValue from "../Environment/parseRuntimeValue";
+import { RUNTIME_LITERAL } from "../constant";
 
 export function getKeyString(key, computed,  env) {
   if (!env) {
@@ -27,6 +28,15 @@ export function getObjectPropertyExpressionKey(ast, env) {
   return getKeyString(key, computed, env)
 }
 
+export function getObjectPropertyDescriptor(objRv, attr, valueRv, kind) {
+  const oldDescriptor = objRv.getPropertyDescriptor(attr) ?? new PropertyDescriptor({})
+    
+  if ([RUNTIME_LITERAL.set, RUNTIME_LITERAL.get].includes(kind)) {
+      oldDescriptor.setRuntimeValue(kind, valueRv)
+   }
+  return oldDescriptor;
+}
+
 export default function parseObjectExpression(ast, env) {
   //  const obj = {};
    const objRv = createObject({})
@@ -42,12 +52,15 @@ export default function parseObjectExpression(ast, env) {
     const { value, kind } = c;
     let k = getObjectPropertyExpressionKey(c, env)
     const valueRv = parseAst(value, env)
-    const oldDescriptor = objRv.getPropertyDescriptor(k) ?? new PropertyDescriptor({})
+    // const oldDescriptor = objRv.getPropertyDescriptor(k) ?? new PropertyDescriptor({})
     
-    oldDescriptor.setRuntimeValue(kind, valueRv)
+    // if ([RUNTIME_LITERAL.set, RUNTIME_LITERAL.get].includes(kind)) {
+    //   oldDescriptor.setRuntimeValue(kind, valueRv)
+    // }
+    
 
-    objRv.set(k, valueRv, oldDescriptor)
+    objRv.set(k, valueRv, getObjectPropertyDescriptor(objRv, k, valueRv, kind))
     // obj[k] = valueRv;
    })
-   return objRv || createObject(obj);
+   return objRv
 }

@@ -6,13 +6,13 @@ const undefinedAst = {
   type: 'Identifier',
   name: `${RUNTIME_LITERAL.undefined}`
 }
-export function setIdentifierExpression(left, right, env) {
+export function setIdentifierExpression(left, right, env, config) {
   const value = parseAst(right, env);
   env.set(left.name, value);
   return value;
 }
 
-export function setMemberExpression(left, right, env) {
+export function setMemberExpression(left, right, env, config) {
   const { object, optional } = left;
   if (optional) {
     throw new Error('复制表达式左边不能是?.')
@@ -32,7 +32,7 @@ export function setMemberExpression(left, right, env) {
   return value;
 }
 
-export function setArrayPattern(left, right, env) {
+export function setArrayPattern(left, right, env, config) {
   const leftAstArr = left.elements;
   const restI = _.findIndex(leftAstArr, op => ['RestElement'].includes(op.type) )
   if (restI > - 1 && restI !== leftAstArr.length -1) {
@@ -56,15 +56,15 @@ export function setArrayPattern(left, right, env) {
       },
       computed: true,
       optional: false,
-     }, env)
+     }, env, config)
    })
    if (restLeftAst) {
-    setExpression(restLeftAst.argument, restRightAst, env);
+    setExpression(restLeftAst.argument, restRightAst, env, config);
   }
   return retValue;
 }
 
-export function setObjectPattern(left, right, env) {
+export function setObjectPattern(left, right, env, config) {
   const leftAstArr = left.properties;
   const restI = _.findIndex(leftAstArr, op => ['RestElement'].includes(op.type) )
   if (restI > - 1 && restI !== leftAstArr.length -1) {
@@ -100,21 +100,24 @@ export function setObjectPattern(left, right, env) {
     setExpression(key, 
       value.type === 'AssignmentPattern' ?
        (rightTargetAst === undefinedAst ? value : rightTargetAst): (rightTargetAst ?? undefinedAst),
-       env);
+       env, config);
     // keyil
   })
   if (restLeftAst) {
-    setExpression(restLeftAst.argument, restRightAst, env);
+    setExpression(restLeftAst.argument, restRightAst, env, config);
   }
   return retValue;
 }
 
-export default function setExpression(left, right, env) {
+export default function setExpression(left, right, env, config) {
+  if (!config) {
+    throw new Error('config 必传')
+  }
   switch(left.type) {
-    case 'Identifier': return setIdentifierExpression(left, right, env);
-    case 'ArrayPattern': return setArrayPattern(left, right, env);
-    case 'ObjectPattern': return setObjectPattern(left, right, env);
-    case 'MemberExpression': return setMemberExpression(left, right, env);
+    case 'Identifier': return setIdentifierExpression(left, right, env, config);
+    case 'ArrayPattern': return setArrayPattern(left, right, env, config);
+    case 'ObjectPattern': return setObjectPattern(left, right, env, config);
+    case 'MemberExpression': return setMemberExpression(left, right, env, config);
   }
   console.error(left)
   throw new Error('未处理的setExpression')

@@ -81,8 +81,9 @@ export default function parseCallExpression(ast, env) {
     fnAst = calleeRv.value;
     const { nativeFnCb } = _.get(fnAst, RuntimeValue.symbolAst, {})
     if (nativeFnCb) {
-      // console.log('劫持', name , _this);
+      
       nativeTempArgsRvValue = getCallParams(args, callee, env);
+      // console.log('劫持', name , _this, nativeTempArgsRvValue);
       nativeFnRv = nativeFnCb(nativeTempArgsRvValue, { _this, env })
     }
   }
