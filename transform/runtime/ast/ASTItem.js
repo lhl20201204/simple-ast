@@ -1,10 +1,11 @@
 import _ from "lodash"
+import { isInstanceOf } from "../../commonApi";
 
 export function getTotalToken(ast) {
   if (Array.isArray(ast)) {
     return _.flatten(_.map(ast, c => getTotalToken(c)))
   }
-  if (!(ast instanceof ASTItem)) {
+  if (!(isInstanceOf(ast, ASTItem))) {
     return [];
   }
   return ast.tokens;

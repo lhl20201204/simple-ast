@@ -7,6 +7,7 @@ import Environment from "./transform/runtime/Environment";
 import { getWindowEnv } from "./transform/runtime/Environment/getWindow";
 import generateCode from "./transform/runtime/Generate";
 import writeJSON from "./transform/util";
+import { DEBUGGER_DICTS } from "./transform/runtime/constant";
 
 const throttle = (fn, t) => {
   let timer = null;
@@ -23,18 +24,31 @@ const throttle = (fn, t) => {
 
 const writeAst = (ast) => {
   // console.clear();
-  result.value = "{\n" + writeJSON(ast, 2, { flag: false, text: true }).join("") + "}";
+  result.value = "{\n" + writeJSON(ast, 2, { 
+    [DEBUGGER_DICTS.isStringTypeUseQuotationMarks]: false,
+    [DEBUGGER_DICTS.isTextMode]: true 
+  }).join("") + "}";
+
   const win = getWindowEnv();
   parseAst(ast, win);
-  excute.innerHTML = textReplace("{\n" + writeJSON(win.toWrite(), 2, { flag: true}).join("") + "}");
-  console.log(win)
-  const test = new Ast()
-  test.setSourceCode(`
-  this.type === 'Literal'
-  && 1 === 1
-  && this.parent.left.operator === 'typeof'`)
+  excute.innerHTML = '正在写入环境中，请稍等';
+
+  requestIdleCallback(() => {
+    console.time('写操作花费时间')
+    excute.innerHTML = textReplace("{\n" + writeJSON(win.toWrite(), 2, { 
+      [DEBUGGER_DICTS.isStringTypeUseQuotationMarks]: true, 
+      [DEBUGGER_DICTS.isHTMLMode]: true, 
+      [DEBUGGER_DICTS.onlyShowEnvName]: false}).join("") + "}");
+    console.log(win)
+    console.timeEnd('写操作花费时间')
+  })
+  // const test = new Ast()
+  // test.setSourceCode(`
+  // this.type === 'Literal'
+  // && 1 === 1
+  // && this.parent.left.operator === 'typeof'`)
   
-  console.log(test.getAst())
+  // console.log(test.getAst())
 }
 
 const write = (text) => {
@@ -55,7 +69,7 @@ source.addEventListener(
 const inputAst = function (e) {
   console.log(e.target.value)
   const ast = JSON.parse(e.target.value);
-  source.innerHTML = textReplace(generateCode(ast));
+  source.innerHTML = textReplace(generateCode(ast, { [DEBUGGER_DICTS.isHTMLMode]: true }));
   AST.testingCode = '';
   writeAst(ast)
   localStorage.setItem('ast-temp', JSON.stringify(ast));

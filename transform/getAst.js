@@ -1,3 +1,4 @@
+import { isInstanceOf } from "./commonApi";
 import parse from "./parse";
 import _ from 'lodash';
 
@@ -2533,7 +2534,7 @@ export class AST {
 
 export default function getAst(str) {
   const wordList = parse(str);
-  if (wordList instanceof Error) {
+  if (isInstanceOf(wordList, Error)) {
     return wordList;
   }
   const list = wordList.filter((x) => x.type !== DICTS.REMARK);

@@ -6,6 +6,8 @@ import { instanceOfRuntimeValue } from "../Environment/utils";
 export default function parseThrowStatement(ast, env) {
   const rv = parseAst(ast.argument, env);
   if (instanceOfRuntimeValue(rv, Environment.windowRv.get('Error'))) {
-    throw new Error(`${parseRuntimeValue(rv.get('message'))}`);
+    const text = parseRuntimeValue(rv.get('message'))
+    console.error(text, '----')
+    throw new Error(`${text}`);
   }
 }

@@ -73,12 +73,12 @@ export default function parseNewExpression(ast, env) {
     const classNewEnv =  new Environment('new_function_' + (ctorName) + '_of_env',
     ctorEnv,
   )
-
+   classNewEnv.addConst(RUNTIME_LITERAL.this, objRv);
     const CtorRv = getBindRuntimeValue(classNewEnv, createRuntimeValueAst(classRv, ctorName));
-    classNewEnv.addConst(RUNTIME_LITERAL.this, objRv);
-    objRv.setProto(createObject({
-      constructor: classRv,
-    }))
+   // const e = new Error()
+   // 将实例对象的隐式原型指向构造函数的显式原型
+    // e.__proto__ = Error.prototype
+    objRv.setProto(classRv.getProtoType())
     const retRv = parseAst({
       type: 'CallExpression',
       callee: createRuntimeValueAst(
@@ -94,6 +94,7 @@ export default function parseNewExpression(ast, env) {
     if (isObjectRuntimeValue(retRv)) {
       return retRv;
     }
+    console.log(objRv, '---->')
     return objRv;
   }
   

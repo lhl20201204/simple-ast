@@ -9,9 +9,10 @@ import { RUNTIME_LITERAL, RUNTIME_VALUE_TYPE } from "../constant";
 import { createObject } from "../Environment";
 import { isUndefinedRuntimeValue } from "../Environment/utils";
 import PropertyDescriptor from "../Environment/PropertyDescriptor";
+import { isInstanceOf } from "../../commonApi";
 
 function getType(restConfig, env) {
-  if (restConfig.useSet || (env instanceof RuntimeValue)) {
+  if (restConfig.useSet || isInstanceOf(env , RuntimeValue)) {
     return 'set';
   }
   return 'add' + _.upperFirst( _.get(restConfig, 'kind', env === Environment.window ? 'var' : 'let'));
@@ -19,13 +20,14 @@ function getType(restConfig, env) {
 
 export function setIdentifierPattern(argsRv, paramsAst, env, restConfig) {
   // console.log('设置', env);
-  if (!(argsRv instanceof RuntimeValue)) {
+  if (!isInstanceOf(argsRv,  RuntimeValue)) {
+    console.error(argsRv, isInstanceOf(argsRv, RuntimeValue ));
     throw new Error('运行时赋值出错')
   }
-  if (env instanceof RuntimeValue) {
+  if (isInstanceOf(env , RuntimeValue)) {
     const { kind } = restConfig;
-    const oldDescriptor = getObjectPropertyDescriptor(env, paramsAst.name, argsRv, kind);
-    // console.error('env-set', env, paramsAst.name, oldDescriptor)
+    const oldDescriptor = getObjectPropertyDescriptor(env, paramsAst.name, argsRv, kind ?? 'init');
+    // console.error('env-set', paramsAst.name, oldDescriptor)
     env[getType(restConfig, env)](paramsAst.name, argsRv, oldDescriptor);
   } else {
     env[getType(restConfig, env)](paramsAst.name, argsRv);
@@ -92,7 +94,7 @@ export function setMemberExpression(v, ast, env, restConfig) {
   const { kind } = restConfig;
   const objectRV = parseAst(object, env);
   let k = getMemberPropertyKey(ast, env);
-
+  // console.error(k)
   objectRV.set(k, v, getObjectPropertyDescriptor(objectRV, k, v, kind))
 }
 

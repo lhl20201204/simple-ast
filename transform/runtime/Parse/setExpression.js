@@ -17,13 +17,15 @@ export function setMemberExpression(left, right, env, config) {
   if (optional) {
     throw new Error('复制表达式左边不能是?.')
   }
-
+  // console.log('设置', object, env.get('Function'));
   const objectRV = parseAst(object, env);
+  // console.log(k, objectRV)
   let k = getMemberPropertyKey(left, env)
   // todo
   // if (!['object', 'array'].includes(objectRV.type)) {
   //   return getUndefinedValue()
   // }
+  // console.log(k, config)
   const value = parseAst(right, env);
   // console.error(objectRV, k, value, '---.');
   objectRV.set(k, value)

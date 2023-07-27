@@ -29,11 +29,15 @@ export function getObjectPropertyExpressionKey(ast, env) {
 }
 
 export function getObjectPropertyDescriptor(objRv, attr, valueRv, kind) {
-  const oldDescriptor = objRv.getPropertyDescriptor(attr) ?? new PropertyDescriptor({})
+  const oldDescriptor = objRv.getPropertyDescriptor(attr) ?? new PropertyDescriptor({
+    value: valueRv,
+  })
     
   if ([RUNTIME_LITERAL.set, RUNTIME_LITERAL.get].includes(kind)) {
       oldDescriptor.setRuntimeValue(kind, valueRv)
-   }
+  } else if (kind === 'init') {
+    oldDescriptor.setRuntimeValue('value', valueRv)
+  }
   return oldDescriptor;
 }
 

@@ -31,8 +31,8 @@ export const RUNTIME_LITERAL = {
   yield: 'yield',
   await: 'await',
   throw: 'throw',
-  __proto__: '__proto__',
-  prototype: 'prototype',
+  $__proto__: '__proto__',
+  $prototype: 'prototype',
   var: 'var',
   let: 'let',
   const: 'const',
@@ -41,7 +41,18 @@ export const RUNTIME_LITERAL = {
 }
 
 export const DEBUGGER_DICTS = {
-  isOutputConsoleFlag: '$___isOutputConsole___'
+  isOutputConsoleFlag: '$___isOutputConsole___',
+  isRenderingHTMLFlag: '$___isRenderingHTML__',
+  isStringTypeUseQuotationMarks: 'isStringTypeUseQuotationMarks',
+  isTextMode: 'isTextMode',
+  isHTMLMode: 'isHTMLMode',
+  onlyShowEnvName: 'onlyShowEnvName',
+  parseRuntimeValueDeepth: 'parseRuntimeValueDeepth',
+  prefixSpaceCount: 'prefixSpaceCount',
+  isRenderHTMLSourceCode: 'isRenderHTMLSourceCode',
+  isInWrapFunction: 'isInWrapFunction',
+  isInWrapClass: 'isInWrapClass',
+  currentAttr: 'currentAttr',
 }
 
 export const AST_LITERAL = {
@@ -103,4 +114,9 @@ export function RUNTIME_VALUE_TO_OUTPUT_TYPE(x) {
   }
   console.error(x);
   throw new Error('未处理的runtimevalue to output转换')
+}
+
+export function getRuntimeValueCreateByClassName(rv) {
+  const protoRv = rv.getProto()
+  return protoRv.type === RUNTIME_VALUE_TYPE.null ? 'Object':  protoRv.get('constructor').getDefinedName()
 }

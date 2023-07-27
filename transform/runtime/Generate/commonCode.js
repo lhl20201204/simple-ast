@@ -11,6 +11,7 @@ import { space, prefixSpace, purple, red, blue, numGreen, remark,
   templateCount,
   wrapSpace,
   isInCallExpressionCalleer,
+  isElementInArray,
 } from './util'
 const priorityArr = [[RUNTIME_LITERAL.or],
 [RUNTIME_LITERAL.and],
@@ -55,7 +56,10 @@ export function getBlockStatementCode(ast, config) {
 }
 
 export function getIdentifierCode(ast, config) {
-  return config.isInObjectLeft || config.isInObjectProperty ? ast.name : blue(ast.name, config);
+  if (config.isInObjectLeft || config.isInObjectProperty) {
+    return ast.name;
+  }
+  return  blue(ast.name, config);
 }
 
 export function getTwoOperatorCode(ast, config) {
@@ -105,7 +109,7 @@ export function getObjectExpressionCode(ast, config) {
     }${getAstCode(key, letInObjectLeftKey(config))}${space(config)}${getAstCode(value, tabSpace(letFunctionInObjectRight(config)))}`
     }
     const isFunctionType = ['ArrowFunctionExpression', 'FunctionExpression'].includes(value.type);
-    const valueAstCode = getAstCode(value, isFunctionType ? tabSpace(letFunctionInObjectRight(config)) : config);
+    const valueAstCode = getAstCode(value, isFunctionType ? tabSpace(letFunctionInObjectRight(config)) : tabSpace(config));
     const splitCode = isFunctionType ? '' : wrapSpace(':', config)
     if (computed) {
       return `${kindAstCode}[${getAstCode(key, config)}]${splitCode}${valueAstCode}`
@@ -121,13 +125,21 @@ export function getLiteralCode(ast, config) {
 }
 
 export function getElememtCode(ast, config) {
-  const ret = _.map(ast, a => getAstCode(a, config)).join(`,${space(config)}`);
-  return ret;
+  const children = _.map(ast, a => getAstCode(a, config))
+  let isLong = children.length > 3
+  // const ret = children.join(`,${space(config)}`);
+  return isLong ? 
+   (
+    ( '\n' +  prefixSpace((tabSpace(config)))) +
+    children.join(`,\n${prefixSpace((tabSpace(config)))}`) 
+    +  ('\n' + prefixSpace(config) ) 
+   ) 
+  :  children.join(`,${space(config)}`)
 }
 
 export function getArrayExpressionCode(ast, config) {
   const { elements } = ast;
-  return `[${getElememtCode(elements, config)}]`
+  return `[${getElememtCode(elements, isElementInArray(config))}]`
 }
 
 export function getMemberExpressionCode(ast, config) {

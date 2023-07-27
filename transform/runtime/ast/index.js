@@ -5,6 +5,7 @@
 import _ from "lodash";
 import ASTItem from "./ASTITem";
 import { valueToRaw } from "./utils";
+import { isInstanceOf } from "../../commonApi";
 
 class TokenChar {
   constructor(value) {
@@ -190,12 +191,14 @@ export default class AST {
 
   getLiteralAst() {
     const token = this.eatToken()
-    return new ASTItem({
+    const ret = new ASTItem({
       type: 'Literal',
       value: token.value,
       raw: valueToRaw(token.value),
       restTokens: [token],
     })
+    // console.error(token);
+    return ret;
   }
 
   getIdentifierAst() {
@@ -261,7 +264,7 @@ export default class AST {
           restTokens,
         })
       }
-      if (!(left instanceof ASTItem)) {
+      if (!isInstanceOf(left, ASTItem)) {
         throw new Error('类型错误')
       }
       return left;

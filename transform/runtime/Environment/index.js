@@ -1,22 +1,24 @@
 import parseAst from "..";
-import { DEBUGGER_DICTS, JS_TO_RUNTIME_VALUE_TYPE, OUTPUT_TYPE, RUNTIME_LITERAL, RUNTIME_VALUE_TYPE } from "../constant";
+import { EnvJSON } from "../../commonApi";
+import { DEBUGGER_DICTS, JS_TO_RUNTIME_VALUE_TYPE, OUTPUT_TYPE, RUNTIME_LITERAL, RUNTIME_VALUE_TYPE, getRuntimeValueCreateByClassName } from "../constant";
 import { _ErrorAst } from "./Native/Error";
-import { _FunctionApplyAst, _FunctionBindAst, _FunctionCallAst } from "./Native/Function";
+import { _FunctionApplyAst, _FunctionBindAst, _FunctionCallAst, _FunctionPrototypeConstuctorAst } from "./Native/Function";
+import { _ObjectAst } from "./Native/Object";
 import { _reflectAst } from "./Native/Reflect";
 import PropertyDescriptor from "./PropertyDescriptor";
 import RuntimeValue, { RuntimeRefValue, createString, describeNativeClassAst, describeNativeFunction, getFalseV, getNullValue, getTrueV, getUndefinedValue } from "./RuntimeValue";
-import { transformInnerAst } from "./WrapAst";
+import { defalultTransformConfig, transformInnerAst } from "./WrapAst";
 import parseRuntimeValue from "./parseRuntimeValue";
 
 const skipField = new Set([
   RUNTIME_LITERAL.null,
-  RUNTIME_LITERAL.undefined, 
+  RUNTIME_LITERAL.undefined,
   RUNTIME_LITERAL.true,
   RUNTIME_LITERAL.false,
 ]);
 
-export const ObjectPrototypeValue = {};
-export const ObjectPrototypeV = new RuntimeRefValue(RUNTIME_VALUE_TYPE.object, ObjectPrototypeValue, {
+export const ObjectPrototypeV = new RuntimeRefValue(RUNTIME_VALUE_TYPE.object, {}, {
+  [RuntimeValue._prototype]: getUndefinedValue(),
   [RuntimeValue.proto]: getNullValue()
 })
 
@@ -37,6 +39,7 @@ export default class Environment {
     this.name = name;
     this._config = _config;
     this.parent = parent ?? null;
+    this.$hideInHTML = RuntimeValue.isTransforming;
     if (parent) {
       this.parent.addChildren(this);
     }
@@ -149,7 +152,7 @@ export default class Environment {
     if (this.placeholderMap.has(key)) {
       throw new Error(`${key} 不能重新定义`)
     }
-    console.log('预处理开始', key);
+    // console.log('预处理开始', key);
     this.placeholderMap.set(key, kind);
   }
 
@@ -184,8 +187,8 @@ export default class Environment {
   }
 
   isForEnv() {
-    return this.isForOfEnv() || this.isForInEnv() || this._config.isForEnv 
-    || (this.parent && this.parent.isForEnv())
+    return this.isForOfEnv() || this.isForInEnv() || this._config.isForEnv
+      || (this.parent && this.parent.isForEnv())
   }
 
   isWhileEnv() {
@@ -201,7 +204,7 @@ export default class Environment {
   }
 
 
-  getNearBreakContinueable(){
+  getNearBreakContinueable() {
     if (this._config.isForEnv || this._config.isWhileEnv) {
       return this;
     }
@@ -255,42 +258,80 @@ export default class Environment {
     ], ([key, value, kind]) => {
       this['add' + _.upperFirst(kind)](key, value)
     })
-    this.addLet('Object', ObjectClassV);
-    this.addLet('Function', FunctionClassV);
-    this.addLet('console', consoleV);
+    // this.addLet('Object', ObjectClassV);
     const windowRv = Environment.windowRv
+    this.addFunction('Function', FunctionClassV);
+    parseAst(_ObjectAst, Environment.window);
+    const objectRv= windowRv.get('Object')
+    objectRv.setProtoType(ObjectPrototypeV);
+    ObjectPrototypeV.set('constructor', objectRv)
+    this.addLet('console', consoleV);
+
     this.addLet('window', windowRv);
     this.addConst(RUNTIME_LITERAL.this, windowRv);
     RuntimeValue.isTransforming = true;
-    _.map([
+    // console.error( '开始')
+    
+    const runInnerAst = (arr) => _.map(arr, ast => transformInnerAst(ast, {
+      wrapRuntimeValue: false,
+      transformConfig: defalultTransformConfig,
+      parent: null
+    })).forEach((x, i)=>{
+      // console.error('-----', x)
+       parseAst(x, Environment.window)
+      });
+
+    runInnerAst([
       _reflectAst,
       _FunctionApplyAst,
       _FunctionCallAst,
       _FunctionBindAst,
-      _ErrorAst,
-    ], ast => transformInnerAst(ast, {
-      parent: null
-    }).toAST()).forEach(x => parseAst(x, Environment.window));
+    ])
+    
+    // 后续直接挂runtimeValue里，先暂时这样
     windowRv.get('Reflect').set('defineProperty', generateFn('Reflect$defineProperty', (
       [
-       objRv, 
-       attrRv,
-       attributesRv
+        objRv,
+        attrRv,
+        attributesRv
       ],
-    )=> {
-      // 底层调用方法
-      // console.error('Reflect.defineProperty', 
-      // objRv, 
-      // attrRv,
-      // attributesRv,)
+    ) => {
       const attr = parseRuntimeValue(attrRv)
-      objRv.set(attr, 
-        getNullValue(), 
-        new PropertyDescriptor(
-          attributesRv.value, 
+      const newPropertyDescriptor = new PropertyDescriptor(
+          attributesRv.value,
           objRv.getPropertyDescriptor(attr)
-        ))
+        )
+      // console.error(attr, newPropertyDescriptor)
+      return objRv.set(attr,
+        attributesRv.value.value ?? getNullValue(),
+        newPropertyDescriptor
+      )
     }))
+    windowRv.get('Reflect').set('getOwnPropertyDescriptor', generateFn('Reflect$getOwnPropertyDescriptor', (
+      [
+        objRv,
+        attrRv,
+      ],
+    ) => {
+      const oldDescripor = objRv.getPropertyDescriptor(
+        parseRuntimeValue(attrRv)
+      );
+      // console.log(oldDescripor)
+      return createObject(
+        _.pick(oldDescripor, [
+        'configurable',
+        'enumerable',
+        'value',
+        'writable',
+        'set',
+        'get',
+      ]))
+    }))
+
+    runInnerAst([
+      _ErrorAst,
+    ])
+  
     RuntimeValue.isTransforming = false;
   }
 
@@ -319,9 +360,9 @@ export default class Environment {
       obj[key] = rv;
     })
     if (!noGetChildren && _.size(this.children)) {
-      obj.children = _.map(this.children, c => c.toWrite())
+      obj.children = _.map(_.filter(this.children, x => !x.$hideInHTML), c => c.toWrite())
     }
-    return obj;
+    return new EnvJSON(obj);
   }
 
   getValue() {
@@ -329,13 +370,15 @@ export default class Environment {
     _.forEach([...this.keyMap], ([k]) => {
       obj[k] = this.map.get(k) || this.constMap.get(k)
     })
-    return createObject(obj);
+    const windowRv = createObject(obj);
+    // console.error(windowRv)
+    return windowRv
   }
 
   getEnvPath() {
     const ret = []
     let t = this
-    while(t) {
+    while (t) {
       ret.push([t.envId, t.name])
       t = t.parent
     }
@@ -346,48 +389,50 @@ export default class Environment {
 
 export const FunctionPrototypeV = new RuntimeRefValue(RUNTIME_VALUE_TYPE.class, {
   [RuntimeValue.symbolAst]: {
-    "type": "FunctionExpression",
-    "id": null,
-    "expression": false,
-    "generator": false,
-    "async": false,
-    "params": [],
-    "body": {
-      "type": "BlockStatement",
-      "body": []
+    type: "FunctionExpression",
+    id: {
+      type: 'Identifier',
+      name: "Function$Prototype"
+    },
+    expression: false,
+    generator: false,
+    async: false,
+    params: [],
+    body: {
+      type: "BlockStatement",
+      body: []
     }
   },
   [RuntimeValue.symbolEnv]: Environment.window,
   [RuntimeValue.symbolName]: 'Function$Prototype',
-},{
+}, {
   [RuntimeValue._prototype]: getUndefinedValue(),
   [RuntimeValue.proto]: ObjectPrototypeV,
 });
 
+
 const consoleValue = {};
 const consoleV = createObject(consoleValue);
 
-const generateFn = describeNativeFunction(Environment.window,FunctionPrototypeV)
+const generateFn = describeNativeFunction(Environment.window, FunctionPrototypeV, ObjectPrototypeV)
 
 
-const ObjectClassV =  new RuntimeRefValue(RUNTIME_VALUE_TYPE.class, {
-  [RuntimeValue.symbolAst]: describeNativeClassAst('Object'),
-  [RuntimeValue.symbolEnv]: Environment.window,
-  [RuntimeValue.symbolName]: 'Object',
-}, {
-  [RuntimeValue._prototype]: ObjectPrototypeV,
-  [RuntimeValue.proto]: FunctionPrototypeV,
+// const ObjectClassV = new RuntimeRefValue(RUNTIME_VALUE_TYPE.function, {
+//   [RuntimeValue.symbolAst]: _ObjectAst,
+//   [RuntimeValue.symbolEnv]: Environment.window,
+//   [RuntimeValue.symbolName]: 'Object',
+// }, {
+//   [RuntimeValue._prototype]: ObjectPrototypeV,
+//   [RuntimeValue.proto]: FunctionPrototypeV,
+// })
+
+
+export const FunctionClassV = generateFn('Function', ([argsRv]) => {
+  console.log('new Function', parseRuntimeValue(argsRv))
 })
 
-
-export const FunctionClassV = new RuntimeRefValue(RUNTIME_VALUE_TYPE.class, {
-  [RuntimeValue.symbolAst]: describeNativeClassAst('Function'),
-  [RuntimeValue.symbolEnv]: Environment.window,
-  [RuntimeValue.symbolName]: 'Function'
-}, {
-  [RuntimeValue._prototype]: FunctionPrototypeV,
-  [RuntimeValue.proto]: FunctionPrototypeV,
-})
+FunctionClassV.setProtoType(FunctionPrototypeV);
+FunctionPrototypeV.set('constructor', FunctionClassV)
 
 // FunctionPrototypeV.set('constructor', FunctionClassV)
 
@@ -402,9 +447,13 @@ export function getObjectPrototype() {
 
 
 export function createFunction(value) {
-  return new RuntimeRefValue(RUNTIME_VALUE_TYPE.function, value, {
+  const ret = new RuntimeRefValue(RUNTIME_VALUE_TYPE.function, value, {
     [RuntimeValue.proto]: FunctionPrototypeV,
   })
+  ret.setProtoType(createObject({
+    constructor: ret,
+  }))
+  return ret;
 }
 
 export function createObjectExtends(superClassRv) {
@@ -414,30 +463,40 @@ export function createObjectExtends(superClassRv) {
 }
 
 
-ObjectPrototypeV.set('toString', generateFn( 'Object$toString', (args) => {
-  console.warn('this is a toString');
+ObjectPrototypeV.set('toString', generateFn('Object$toString', ([argsRv]) => {
+   console.log(parseRuntimeValue(argsRv))
+}))
+
+ObjectPrototypeV.set('hasOwnProperty', generateFn('Object$hasOwnProperty', ([attrRv], { _this }) => {
+  return  _this.hasOwnProperty(parseRuntimeValue(attrRv)) ?  getTrueV() : getFalseV()
+}))
+
+const get__proto__Rv = generateFn('Object$__proto__', ([], { _this }) => {
+  return _this === ObjectPrototypeV ? get__proto__Rv : _this.get(RUNTIME_LITERAL.$__proto__)
+});
+
+const set__proto__Rv = generateFn('Object$__proto__', ([argsRv], { _this }) => {
+ return _this.set(RUNTIME_LITERAL.$__proto__, argsRv);
+});
+
+ObjectPrototypeV.set(RUNTIME_LITERAL.$__proto__, getNullValue(), new PropertyDescriptor({
+  get: get__proto__Rv,
+  set: set__proto__Rv,
 }))
 
 consoleV.set('log', generateFn('console$log', (args) => {
-  const newArr = _.map(args, item => {
-    return parseRuntimeValue(item, {
-      isOutputConsole: true,
-    });
-  })
-  // 直接结构就行了
-  // console.warn(..._.cloneDeep(_.filter(newArr, item => _.get(item, '0') !== '_groupCollapsed')));
-  // _.forEach(_.cloneDeep(_.filter(newArr, item => _.get(item, '0') === '_groupCollapsed')), x => {
-  //   console.groupCollapsed(x[1])
-  //   console.warn(x[2])
-  //   console.groupEnd()
+  // const newArr = _.map(args, item => {
+  //   return parseRuntimeValue(item, {
+  //     [DEBUGGER_DICTS.isOutputConsoleFlag]: true,
+  //   });
   // })
 
   const getType = (type, item) => {
-    if([
-      RUNTIME_VALUE_TYPE.string, 
+    if ([
+      RUNTIME_VALUE_TYPE.string,
       RUNTIME_VALUE_TYPE.boolean,
       RUNTIME_VALUE_TYPE.undefined,
-     ]) {
+    ]) {
       return '%s';
     }
     if (type === RUNTIME_VALUE_TYPE.object) {
@@ -446,30 +505,59 @@ consoleV.set('log', generateFn('console$log', (args) => {
     if (type === RUNTIME_VALUE_TYPE.number) {
       return '%d'
     }
-   
+
     console.error(item, type)
   }
 
   console.group('')
-  const handleItem = item => {
+  const handleItem = rv => {
+    const item = parseRuntimeValue(rv, { [DEBUGGER_DICTS.parseRuntimeValueDeepth]: 1, [DEBUGGER_DICTS.isOutputConsoleFlag]: true, });
+    // console.log(item, '----')
+    let tempProto 
     if (_.isArray(item)) {
       console.group('array')
       _.map(item, handleItem)
       return console.groupEnd()
     }
-    if (item && item[DEBUGGER_DICTS.isOutputConsoleFlag]) {
-      console.groupCollapsed('%c%s', 'color: green', item.title)
-      console.warn(item.content)
-      console.groupEnd()
+    if (_.size(item) && _.isObject(item) ) {
+      // if (isUndefinedRuntimeValue(item?.getProto()))
+      // console.error(item, isInstanceOf(rv, RuntimeRefValue))
+      const outputValue = parseRuntimeValue(rv, {
+        [DEBUGGER_DICTS.isOutputConsoleFlag]: true,
+      });
+      const isOutputConsoleFlag = outputValue[DEBUGGER_DICTS.isOutputConsoleFlag]
+      // console[isOutputConsoleFlag? 'groupCollapsed': 'group']('%c%s', 'color: green', isOutputConsoleFlag
+      // ? outputValue.title
+      // : ( getRuntimeValueCreateByClassName(rv) + '{}'))
+      if (isOutputConsoleFlag) {
+        console.log(outputValue.content)
+      } else {
+        console.log( outputValue)
+      }
+      // console.groupEnd()
+      return;
+    }
+    // if (item && item[DEBUGGER_DICTS.isOutputConsoleFlag]) {
+    //   console.groupCollapsed('%c%s', 'color: green', item.title)
+    //   console.warn(item.content)
+    //   console.groupEnd()
+    //   return;
+    // }
+
+    if (JS_TO_RUNTIME_VALUE_TYPE(item) === RUNTIME_VALUE_TYPE.function) {
+      // console.log(item.name)
+      // console.groupCollapsed('%c%s', 'color: red','f ' + (item.name ?? '' ))
+      console.log('%c%o', 'color: red', item)
+      // console.groupEnd()
       return;
     }
 
     if (JS_TO_RUNTIME_VALUE_TYPE(item) === RUNTIME_VALUE_TYPE.object) {
-      return console.warn(item)
+      return console.log(item)
     }
     return console.log(`\x1B[96;100;4m${getType(JS_TO_RUNTIME_VALUE_TYPE(item), item)}`, item);
   };
-  _.forEach(_.cloneDeep(newArr), handleItem)
+  _.forEach(_.cloneDeep(args), handleItem)
   // console.warn(..._.flatten(_.cloneDeep(_.map(newArr, item => {
   //   if (item && item[('$___isOutputConsole___')]) {
   //     console.groupCollapsed(item.title)
@@ -499,5 +587,5 @@ consoleV.set('error', generateFn('console$error', (args) => {
 }))
 
 
-export  { createString }
+export { createString }
 

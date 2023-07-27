@@ -1,4 +1,5 @@
 import { getNullValue } from "./Environment/RuntimeValue";
+import generateCode from "./Generate";
 import parseArrayExpression from "./Parse/parseArrayExpression";
 import parseArrowFunctionExpression from "./Parse/parseArrowFunctionExpression";
 import parseAssignmentExpression from "./Parse/parseAssignmentExpression";
@@ -37,11 +38,17 @@ import parseUnaryExpression from "./Parse/parseUnaryExpression";
 import parseUpdateExpression from "./Parse/parseUpdateExpression";
 import parseVariableDeclaration from "./Parse/parseVariableDeclaration";
 import parseWhileStatement from "./Parse/parseWhileStatement";
+import { DEBUGGER_DICTS } from "./constant";
 
+let id = 0;
 export default function parseAst(ast, env) {
   if(!env){
     throw new Error('env 必传')
   }
+  // if (id ++ > 403) {
+  //   return;
+  // }
+  // console.log(ast, generateCode(ast, { [DEBUGGER_DICTS.isTextMode]: true}));
   const type  = ast.type;
   switch(type) {  
     case 'ArrowFunctionExpression': return parseArrowFunctionExpression(ast, env);

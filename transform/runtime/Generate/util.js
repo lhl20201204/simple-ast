@@ -1,16 +1,18 @@
+import { DEBUGGER_DICTS } from "../constant"
+
 function wtc(x, c, config) {
   if (!config) {
     throw new Error(`config 不能为空`)
   }
-  return config.text ? x : `<span title="颜色为${c}" style="cursor:pointer;color:${c};">${x}</span>`
+  return config[DEBUGGER_DICTS.isHTMLMode] ?  `<span title="颜色为${c}" style="cursor:pointer;color:${c};">${x}</span>` : x
 }
 
 export function space(config, count = 1) {
-  return _.map(new Array(count), () => (config.text ? ' ' : '&nbsp;')).join('')
+  return _.map(new Array(count), () => (config[DEBUGGER_DICTS.isHTMLMode] ? '&nbsp;' : ' ')).join('')
 }
 
 export function prefixSpace(config) {
-  return space(config, config.prefixSpaceCount)
+  return space(config, config[DEBUGGER_DICTS.prefixSpaceCount])
 }
 
 export function purple(x, config) {
@@ -42,7 +44,7 @@ export function letInObjectPropertyKey(config) {
 }
 
 export function tabSpace(config) {
-  return { ...config, prefixSpaceCount: (config.prefixSpaceCount ?? 0) + 4 }
+  return { ...config, [DEBUGGER_DICTS.prefixSpaceCount]: (config[DEBUGGER_DICTS.prefixSpaceCount] ?? 0) + 4 }
 }
 
 export function letVariableDeclarationInForOFStatement(config) {
@@ -80,4 +82,11 @@ export function isInCallExpressionCalleer(config) {
 
 export function isFunctionEndNotRemark(config) {
   return {...config, isFunctionEndNotRemark: true }
+}
+
+export function isElementInArray(config) {
+  return {
+    ...config,
+    isElementInArray: true,
+  }
 }

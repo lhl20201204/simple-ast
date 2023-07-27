@@ -8,8 +8,9 @@ export default function parseWhileStatement(ast, env) {
   const childEnv = new Environment('while body', env, {
     isWhileEnv: true,
   })
-  let i  = 0;
+
   while(parseRuntimeValue(parseAst(test, env))) {
+    // console.log('while')
     parseAst(body, childEnv);
     if (childEnv.hadBreak()) {
       break;

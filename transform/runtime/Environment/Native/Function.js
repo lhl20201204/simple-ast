@@ -1,6 +1,7 @@
 const code = `
-Function.prototype.call = function (context, ...args) {
+Function.prototype.call = function call(context, ...args) {
   if (typeof this !== 'function') {
+    console.error(this, typeof this)
     throw new Error('call不能作用在非函数上')
   }
   const _this = context || window;
@@ -8,7 +9,8 @@ Function.prototype.call = function (context, ...args) {
   const temp = _this[attr];
   _this[attr] = this;
   const ret =_this[attr](...args);
-  if (typeof temp === void 0) {
+
+  if (typeof temp === 'undefined') {
     Reflect.deleteProperty(_this, attr)
   } else {
     _this[attr] = temp
@@ -18,7 +20,7 @@ Function.prototype.call = function (context, ...args) {
 `
 
 const code2 = `
-Function.prototype.apply = function (context, args) {
+Function.prototype.apply = function apply(context, args) {
   if (typeof this !== 'function') {
     throw new Error('apply不能作用在非函数上')
   }
@@ -27,7 +29,7 @@ Function.prototype.apply = function (context, args) {
   const temp = _this[attr];
   _this[attr] = this;
   const ret = _this[attr](...args);
-  if (typeof temp === void 0) {
+  if (typeof temp === 'undefined') {
     Reflect.deleteProperty(_this, attr)
   } else {
     _this[attr] = temp
@@ -37,10 +39,10 @@ Function.prototype.apply = function (context, args) {
 `
 
 const code3 = `
-Function.prototype.bind = function (...args1) {
+Function.prototype.bind = function bind(...args1) {
   const _this = this;
   if (typeof _this !== 'function') {
-    console.error(_this);
+    console.error(_this, typeof _this, 'bind不能作用在非函数上');
     throw new Error('bind不能作用在非函数上');
   }
   
@@ -50,33 +52,33 @@ Function.prototype.bind = function (...args1) {
 }
 `
 
-export const _FunctionCallAst = {
+export const _FunctionCallAst =  {
   "type": "ExpressionStatement",
-  "start": 1,
-  "end": 414,
+  "start": 0,
+  "end": 457,
   "expression": {
     "type": "AssignmentExpression",
-    "start": 1,
-    "end": 414,
+    "start": 0,
+    "end": 457,
     "operator": "=",
     "left": {
       "type": "MemberExpression",
-      "start": 1,
-      "end": 24,
+      "start": 0,
+      "end": 23,
       "object": {
         "type": "MemberExpression",
-        "start": 1,
-        "end": 19,
+        "start": 0,
+        "end": 18,
         "object": {
           "type": "Identifier",
-          "start": 1,
-          "end": 9,
+          "start": 0,
+          "end": 8,
           "name": "Function"
         },
         "property": {
           "type": "Identifier",
-          "start": 10,
-          "end": 19,
+          "start": 9,
+          "end": 18,
           "name": "prototype"
         },
         "computed": false,
@@ -84,8 +86,8 @@ export const _FunctionCallAst = {
       },
       "property": {
         "type": "Identifier",
-        "start": 20,
-        "end": 24,
+        "start": 19,
+        "end": 23,
         "name": "call"
       },
       "computed": false,
@@ -93,89 +95,143 @@ export const _FunctionCallAst = {
     },
     "right": {
       "type": "FunctionExpression",
-      "start": 27,
-      "end": 414,
-      "id": null,
+      "start": 26,
+      "end": 457,
+      "id": {
+        "type": "Identifier",
+        "start": 35,
+        "end": 39,
+        "name": "call"
+      },
       "expression": false,
       "generator": false,
       "async": false,
       "params": [
         {
           "type": "Identifier",
-          "start": 37,
-          "end": 44,
+          "start": 40,
+          "end": 47,
           "name": "context"
         },
         {
           "type": "RestElement",
-          "start": 46,
-          "end": 53,
+          "start": 49,
+          "end": 56,
           "argument": {
             "type": "Identifier",
-            "start": 49,
-            "end": 53,
+            "start": 52,
+            "end": 56,
             "name": "args"
           }
         }
       ],
       "body": {
         "type": "BlockStatement",
-        "start": 55,
-        "end": 414,
+        "start": 58,
+        "end": 457,
         "body": [
           {
             "type": "IfStatement",
-            "start": 59,
-            "end": 133,
+            "start": 62,
+            "end": 173,
             "test": {
               "type": "BinaryExpression",
-              "start": 63,
-              "end": 89,
+              "start": 66,
+              "end": 92,
               "left": {
                 "type": "UnaryExpression",
-                "start": 63,
-                "end": 74,
+                "start": 66,
+                "end": 77,
                 "operator": "typeof",
                 "prefix": true,
                 "argument": {
                   "type": "ThisExpression",
-                  "start": 70,
-                  "end": 74
+                  "start": 73,
+                  "end": 77
                 }
               },
               "operator": "!==",
               "right": {
                 "type": "Literal",
-                "start": 79,
-                "end": 89,
+                "start": 82,
+                "end": 92,
                 "value": "function",
                 "raw": "'function'"
               }
             },
             "consequent": {
               "type": "BlockStatement",
-              "start": 91,
-              "end": 133,
+              "start": 94,
+              "end": 173,
               "body": [
                 {
+                  "type": "ExpressionStatement",
+                  "start": 100,
+                  "end": 132,
+                  "expression": {
+                    "type": "CallExpression",
+                    "start": 100,
+                    "end": 132,
+                    "callee": {
+                      "type": "MemberExpression",
+                      "start": 100,
+                      "end": 113,
+                      "object": {
+                        "type": "Identifier",
+                        "start": 100,
+                        "end": 107,
+                        "name": "console"
+                      },
+                      "property": {
+                        "type": "Identifier",
+                        "start": 108,
+                        "end": 113,
+                        "name": "error"
+                      },
+                      "computed": false,
+                      "optional": false
+                    },
+                    "arguments": [
+                      {
+                        "type": "ThisExpression",
+                        "start": 114,
+                        "end": 118
+                      },
+                      {
+                        "type": "UnaryExpression",
+                        "start": 120,
+                        "end": 131,
+                        "operator": "typeof",
+                        "prefix": true,
+                        "argument": {
+                          "type": "ThisExpression",
+                          "start": 127,
+                          "end": 131
+                        }
+                      }
+                    ],
+                    "optional": false
+                  }
+                },
+                {
                   "type": "ThrowStatement",
-                  "start": 97,
-                  "end": 129,
+                  "start": 137,
+                  "end": 169,
                   "argument": {
                     "type": "NewExpression",
-                    "start": 103,
-                    "end": 129,
+                    "start": 143,
+                    "end": 169,
                     "callee": {
                       "type": "Identifier",
-                      "start": 107,
-                      "end": 112,
+                      "start": 147,
+                      "end": 152,
                       "name": "Error"
                     },
                     "arguments": [
                       {
                         "type": "Literal",
-                        "start": 113,
-                        "end": 128,
+                        "start": 153,
+                        "end": 168,
                         "value": "call不能作用在非函数上",
                         "raw": "'call不能作用在非函数上'"
                       }
@@ -188,34 +244,34 @@ export const _FunctionCallAst = {
           },
           {
             "type": "VariableDeclaration",
-            "start": 136,
-            "end": 168,
+            "start": 176,
+            "end": 208,
             "declarations": [
               {
                 "type": "VariableDeclarator",
-                "start": 142,
-                "end": 167,
+                "start": 182,
+                "end": 207,
                 "id": {
                   "type": "Identifier",
-                  "start": 142,
-                  "end": 147,
+                  "start": 182,
+                  "end": 187,
                   "name": "_this"
                 },
                 "init": {
                   "type": "LogicalExpression",
-                  "start": 150,
-                  "end": 167,
+                  "start": 190,
+                  "end": 207,
                   "left": {
                     "type": "Identifier",
-                    "start": 150,
-                    "end": 157,
+                    "start": 190,
+                    "end": 197,
                     "name": "context"
                   },
                   "operator": "||",
                   "right": {
                     "type": "Identifier",
-                    "start": 161,
-                    "end": 167,
+                    "start": 201,
+                    "end": 207,
                     "name": "window"
                   }
                 }
@@ -225,23 +281,23 @@ export const _FunctionCallAst = {
           },
           {
             "type": "VariableDeclaration",
-            "start": 171,
-            "end": 200,
+            "start": 211,
+            "end": 240,
             "declarations": [
               {
                 "type": "VariableDeclarator",
-                "start": 177,
-                "end": 199,
+                "start": 217,
+                "end": 239,
                 "id": {
                   "type": "Identifier",
-                  "start": 177,
-                  "end": 181,
+                  "start": 217,
+                  "end": 221,
                   "name": "attr"
                 },
                 "init": {
                   "type": "Literal",
-                  "start": 184,
-                  "end": 199,
+                  "start": 224,
+                  "end": 239,
                   "value": "__tempAttr___",
                   "raw": "'__tempAttr___'"
                 }
@@ -251,33 +307,33 @@ export const _FunctionCallAst = {
           },
           {
             "type": "VariableDeclaration",
-            "start": 203,
-            "end": 228,
+            "start": 243,
+            "end": 268,
             "declarations": [
               {
                 "type": "VariableDeclarator",
-                "start": 209,
-                "end": 227,
+                "start": 249,
+                "end": 267,
                 "id": {
                   "type": "Identifier",
-                  "start": 209,
-                  "end": 213,
+                  "start": 249,
+                  "end": 253,
                   "name": "temp"
                 },
                 "init": {
                   "type": "MemberExpression",
-                  "start": 216,
-                  "end": 227,
+                  "start": 256,
+                  "end": 267,
                   "object": {
                     "type": "Identifier",
-                    "start": 216,
-                    "end": 221,
+                    "start": 256,
+                    "end": 261,
                     "name": "_this"
                   },
                   "property": {
                     "type": "Identifier",
-                    "start": 222,
-                    "end": 226,
+                    "start": 262,
+                    "end": 266,
                     "name": "attr"
                   },
                   "computed": true,
@@ -289,27 +345,27 @@ export const _FunctionCallAst = {
           },
           {
             "type": "ExpressionStatement",
-            "start": 231,
-            "end": 250,
+            "start": 271,
+            "end": 290,
             "expression": {
               "type": "AssignmentExpression",
-              "start": 231,
-              "end": 249,
+              "start": 271,
+              "end": 289,
               "operator": "=",
               "left": {
                 "type": "MemberExpression",
-                "start": 231,
-                "end": 242,
+                "start": 271,
+                "end": 282,
                 "object": {
                   "type": "Identifier",
-                  "start": 231,
-                  "end": 236,
+                  "start": 271,
+                  "end": 276,
                   "name": "_this"
                 },
                 "property": {
                   "type": "Identifier",
-                  "start": 237,
-                  "end": 241,
+                  "start": 277,
+                  "end": 281,
                   "name": "attr"
                 },
                 "computed": true,
@@ -317,44 +373,44 @@ export const _FunctionCallAst = {
               },
               "right": {
                 "type": "ThisExpression",
-                "start": 245,
-                "end": 249
+                "start": 285,
+                "end": 289
               }
             }
           },
           {
             "type": "VariableDeclaration",
-            "start": 256,
-            "end": 288,
+            "start": 293,
+            "end": 325,
             "declarations": [
               {
                 "type": "VariableDeclarator",
-                "start": 262,
-                "end": 287,
+                "start": 299,
+                "end": 324,
                 "id": {
                   "type": "Identifier",
-                  "start": 262,
-                  "end": 265,
+                  "start": 299,
+                  "end": 302,
                   "name": "ret"
                 },
                 "init": {
                   "type": "CallExpression",
-                  "start": 267,
-                  "end": 287,
+                  "start": 304,
+                  "end": 324,
                   "callee": {
                     "type": "MemberExpression",
-                    "start": 267,
-                    "end": 278,
+                    "start": 304,
+                    "end": 315,
                     "object": {
                       "type": "Identifier",
-                      "start": 267,
-                      "end": 272,
+                      "start": 304,
+                      "end": 309,
                       "name": "_this"
                     },
                     "property": {
                       "type": "Identifier",
-                      "start": 273,
-                      "end": 277,
+                      "start": 310,
+                      "end": 314,
                       "name": "attr"
                     },
                     "computed": true,
@@ -363,12 +419,12 @@ export const _FunctionCallAst = {
                   "arguments": [
                     {
                       "type": "SpreadElement",
-                      "start": 279,
-                      "end": 286,
+                      "start": 316,
+                      "end": 323,
                       "argument": {
                         "type": "Identifier",
-                        "start": 282,
-                        "end": 286,
+                        "start": 319,
+                        "end": 323,
                         "name": "args"
                       }
                     }
@@ -381,68 +437,61 @@ export const _FunctionCallAst = {
           },
           {
             "type": "IfStatement",
-            "start": 291,
-            "end": 398,
+            "start": 329,
+            "end": 441,
             "test": {
               "type": "BinaryExpression",
-              "start": 295,
-              "end": 317,
+              "start": 333,
+              "end": 360,
               "left": {
                 "type": "UnaryExpression",
-                "start": 295,
-                "end": 306,
+                "start": 333,
+                "end": 344,
                 "operator": "typeof",
                 "prefix": true,
                 "argument": {
                   "type": "Identifier",
-                  "start": 302,
-                  "end": 306,
+                  "start": 340,
+                  "end": 344,
                   "name": "temp"
                 }
               },
               "operator": "===",
               "right": {
-                "type": "UnaryExpression",
-                "start": 311,
-                "end": 317,
-                "operator": "void",
-                "prefix": true,
-                "argument": {
-                  "type": "Literal",
-                  "start": 316,
-                  "end": 317,
-                  "value": 0,
-                  "raw": "0"
-                }
+                "type": "Literal",
+                "start": 349,
+                "end": 360,
+                "value": "undefined",
+                "raw": "'undefined'"
               }
             },
             "consequent": {
               "type": "BlockStatement",
-              "start": 319,
-              "end": 364,
+              "start": 362,
+              "end": 407,
               "body": [
                 {
                   "type": "ExpressionStatement",
-                  "start": 325,
-                  "end": 360,
+                  "start": 368,
+                  "end": 403,
                   "expression": {
                     "type": "CallExpression",
-                    "start": 325,
-                    "end": 360,
+                    "start": 368,
+                    "end": 403,
                     "callee": {
                       "type": "MemberExpression",
-                      "start": 325,
-                      "end": 347,
+                      "start": 368,
+                      "end": 390,
                       "object": {
                         "type": "Identifier",
-                        "start": 325,
-                        "end": 332,
+                        "start": 368,
+                        "end": 375,
                         "name": "Reflect"
                       },
                       "property": {
                         "type": "Identifier",
-                        "start": 333,
-                        "end": 347,
+                        "start": 376,
+                        "end": 390,
                         "name": "deleteProperty"
                       },
                       "computed": false,
@@ -451,14 +500,14 @@ export const _FunctionCallAst = {
                     "arguments": [
                       {
                         "type": "Identifier",
-                        "start": 348,
-                        "end": 353,
+                        "start": 391,
+                        "end": 396,
                         "name": "_this"
                       },
                       {
                         "type": "Identifier",
-                        "start": 355,
-                        "end": 359,
+                        "start": 398,
+                        "end": 402,
                         "name": "attr"
                       }
                     ],
@@ -469,32 +518,32 @@ export const _FunctionCallAst = {
             },
             "alternate": {
               "type": "BlockStatement",
-              "start": 370,
-              "end": 398,
+              "start": 413,
+              "end": 441,
               "body": [
                 {
                   "type": "ExpressionStatement",
-                  "start": 376,
-                  "end": 394,
+                  "start": 419,
+                  "end": 437,
                   "expression": {
                     "type": "AssignmentExpression",
-                    "start": 376,
-                    "end": 394,
+                    "start": 419,
+                    "end": 437,
                     "operator": "=",
                     "left": {
                       "type": "MemberExpression",
-                      "start": 376,
-                      "end": 387,
+                      "start": 419,
+                      "end": 430,
                       "object": {
                         "type": "Identifier",
-                        "start": 376,
-                        "end": 381,
+                        "start": 419,
+                        "end": 424,
                         "name": "_this"
                       },
                       "property": {
                         "type": "Identifier",
-                        "start": 382,
-                        "end": 386,
+                        "start": 425,
+                        "end": 429,
                         "name": "attr"
                       },
                       "computed": true,
@@ -502,8 +551,8 @@ export const _FunctionCallAst = {
                     },
                     "right": {
                       "type": "Identifier",
-                      "start": 390,
-                      "end": 394,
+                      "start": 433,
+                      "end": 437,
                       "name": "temp"
                     }
                   }
@@ -513,12 +562,12 @@ export const _FunctionCallAst = {
           },
           {
             "type": "ReturnStatement",
-            "start": 401,
-            "end": 412,
+            "start": 444,
+            "end": 455,
             "argument": {
               "type": "Identifier",
-              "start": 408,
-              "end": 411,
+              "start": 451,
+              "end": 454,
               "name": "ret"
             }
           }
@@ -531,11 +580,11 @@ export const _FunctionCallAst = {
 export const _FunctionApplyAst = {
   "type": "ExpressionStatement",
   "start": 0,
-  "end": 410,
+  "end": 420,
   "expression": {
     "type": "AssignmentExpression",
     "start": 0,
-    "end": 410,
+    "end": 420,
     "operator": "=",
     "left": {
       "type": "MemberExpression",
@@ -572,83 +621,88 @@ export const _FunctionApplyAst = {
     "right": {
       "type": "FunctionExpression",
       "start": 27,
-      "end": 410,
-      "id": null,
+      "end": 420,
+      "id": {
+        "type": "Identifier",
+        "start": 36,
+        "end": 41,
+        "name": "apply"
+      },
       "expression": false,
       "generator": false,
       "async": false,
       "params": [
         {
           "type": "Identifier",
-          "start": 37,
-          "end": 44,
+          "start": 42,
+          "end": 49,
           "name": "context"
         },
         {
           "type": "Identifier",
-          "start": 46,
-          "end": 50,
+          "start": 51,
+          "end": 55,
           "name": "args"
         }
       ],
       "body": {
         "type": "BlockStatement",
-        "start": 52,
-        "end": 410,
+        "start": 57,
+        "end": 420,
         "body": [
           {
             "type": "IfStatement",
-            "start": 56,
-            "end": 131,
+            "start": 61,
+            "end": 136,
             "test": {
               "type": "BinaryExpression",
-              "start": 60,
-              "end": 86,
+              "start": 65,
+              "end": 91,
               "left": {
                 "type": "UnaryExpression",
-                "start": 60,
-                "end": 71,
+                "start": 65,
+                "end": 76,
                 "operator": "typeof",
                 "prefix": true,
                 "argument": {
                   "type": "ThisExpression",
-                  "start": 67,
-                  "end": 71
+                  "start": 72,
+                  "end": 76
                 }
               },
               "operator": "!==",
               "right": {
                 "type": "Literal",
-                "start": 76,
-                "end": 86,
+                "start": 81,
+                "end": 91,
                 "value": "function",
                 "raw": "'function'"
               }
             },
             "consequent": {
               "type": "BlockStatement",
-              "start": 88,
-              "end": 131,
+              "start": 93,
+              "end": 136,
               "body": [
                 {
                   "type": "ThrowStatement",
-                  "start": 94,
-                  "end": 127,
+                  "start": 99,
+                  "end": 132,
                   "argument": {
                     "type": "NewExpression",
-                    "start": 100,
-                    "end": 127,
+                    "start": 105,
+                    "end": 132,
                     "callee": {
                       "type": "Identifier",
-                      "start": 104,
-                      "end": 109,
+                      "start": 109,
+                      "end": 114,
                       "name": "Error"
                     },
                     "arguments": [
                       {
                         "type": "Literal",
-                        "start": 110,
-                        "end": 126,
+                        "start": 115,
+                        "end": 131,
                         "value": "apply不能作用在非函数上",
                         "raw": "'apply不能作用在非函数上'"
                       }
@@ -661,34 +715,34 @@ export const _FunctionApplyAst = {
           },
           {
             "type": "VariableDeclaration",
-            "start": 134,
-            "end": 166,
+            "start": 139,
+            "end": 171,
             "declarations": [
               {
                 "type": "VariableDeclarator",
-                "start": 140,
-                "end": 165,
+                "start": 145,
+                "end": 170,
                 "id": {
                   "type": "Identifier",
-                  "start": 140,
-                  "end": 145,
+                  "start": 145,
+                  "end": 150,
                   "name": "_this"
                 },
                 "init": {
                   "type": "LogicalExpression",
-                  "start": 148,
-                  "end": 165,
+                  "start": 153,
+                  "end": 170,
                   "left": {
                     "type": "Identifier",
-                    "start": 148,
-                    "end": 155,
+                    "start": 153,
+                    "end": 160,
                     "name": "context"
                   },
                   "operator": "||",
                   "right": {
                     "type": "Identifier",
-                    "start": 159,
-                    "end": 165,
+                    "start": 164,
+                    "end": 170,
                     "name": "window"
                   }
                 }
@@ -698,23 +752,23 @@ export const _FunctionApplyAst = {
           },
           {
             "type": "VariableDeclaration",
-            "start": 169,
-            "end": 198,
+            "start": 174,
+            "end": 203,
             "declarations": [
               {
                 "type": "VariableDeclarator",
-                "start": 175,
-                "end": 197,
+                "start": 180,
+                "end": 202,
                 "id": {
                   "type": "Identifier",
-                  "start": 175,
-                  "end": 179,
+                  "start": 180,
+                  "end": 184,
                   "name": "attr"
                 },
                 "init": {
                   "type": "Literal",
-                  "start": 182,
-                  "end": 197,
+                  "start": 187,
+                  "end": 202,
                   "value": "__tempAttr___",
                   "raw": "'__tempAttr___'"
                 }
@@ -724,33 +778,33 @@ export const _FunctionApplyAst = {
           },
           {
             "type": "VariableDeclaration",
-            "start": 201,
-            "end": 226,
+            "start": 206,
+            "end": 231,
             "declarations": [
               {
                 "type": "VariableDeclarator",
-                "start": 207,
-                "end": 225,
+                "start": 212,
+                "end": 230,
                 "id": {
                   "type": "Identifier",
-                  "start": 207,
-                  "end": 211,
+                  "start": 212,
+                  "end": 216,
                   "name": "temp"
                 },
                 "init": {
                   "type": "MemberExpression",
-                  "start": 214,
-                  "end": 225,
+                  "start": 219,
+                  "end": 230,
                   "object": {
                     "type": "Identifier",
-                    "start": 214,
-                    "end": 219,
+                    "start": 219,
+                    "end": 224,
                     "name": "_this"
                   },
                   "property": {
                     "type": "Identifier",
-                    "start": 220,
-                    "end": 224,
+                    "start": 225,
+                    "end": 229,
                     "name": "attr"
                   },
                   "computed": true,
@@ -762,27 +816,27 @@ export const _FunctionApplyAst = {
           },
           {
             "type": "ExpressionStatement",
-            "start": 229,
-            "end": 248,
+            "start": 234,
+            "end": 253,
             "expression": {
               "type": "AssignmentExpression",
-              "start": 229,
-              "end": 247,
+              "start": 234,
+              "end": 252,
               "operator": "=",
               "left": {
                 "type": "MemberExpression",
-                "start": 229,
-                "end": 240,
+                "start": 234,
+                "end": 245,
                 "object": {
                   "type": "Identifier",
-                  "start": 229,
-                  "end": 234,
+                  "start": 234,
+                  "end": 239,
                   "name": "_this"
                 },
                 "property": {
                   "type": "Identifier",
-                  "start": 235,
-                  "end": 239,
+                  "start": 240,
+                  "end": 244,
                   "name": "attr"
                 },
                 "computed": true,
@@ -790,44 +844,44 @@ export const _FunctionApplyAst = {
               },
               "right": {
                 "type": "ThisExpression",
-                "start": 243,
-                "end": 247
+                "start": 248,
+                "end": 252
               }
             }
           },
           {
             "type": "VariableDeclaration",
-            "start": 251,
-            "end": 284,
+            "start": 256,
+            "end": 289,
             "declarations": [
               {
                 "type": "VariableDeclarator",
-                "start": 257,
-                "end": 283,
+                "start": 262,
+                "end": 288,
                 "id": {
                   "type": "Identifier",
-                  "start": 257,
-                  "end": 260,
+                  "start": 262,
+                  "end": 265,
                   "name": "ret"
                 },
                 "init": {
                   "type": "CallExpression",
-                  "start": 263,
-                  "end": 283,
+                  "start": 268,
+                  "end": 288,
                   "callee": {
                     "type": "MemberExpression",
-                    "start": 263,
-                    "end": 274,
+                    "start": 268,
+                    "end": 279,
                     "object": {
                       "type": "Identifier",
-                      "start": 263,
-                      "end": 268,
+                      "start": 268,
+                      "end": 273,
                       "name": "_this"
                     },
                     "property": {
                       "type": "Identifier",
-                      "start": 269,
-                      "end": 273,
+                      "start": 274,
+                      "end": 278,
                       "name": "attr"
                     },
                     "computed": true,
@@ -836,12 +890,12 @@ export const _FunctionApplyAst = {
                   "arguments": [
                     {
                       "type": "SpreadElement",
-                      "start": 275,
-                      "end": 282,
+                      "start": 280,
+                      "end": 287,
                       "argument": {
                         "type": "Identifier",
-                        "start": 278,
-                        "end": 282,
+                        "start": 283,
+                        "end": 287,
                         "name": "args"
                       }
                     }
@@ -854,68 +908,61 @@ export const _FunctionApplyAst = {
           },
           {
             "type": "IfStatement",
-            "start": 287,
-            "end": 394,
+            "start": 292,
+            "end": 404,
             "test": {
               "type": "BinaryExpression",
-              "start": 291,
-              "end": 313,
+              "start": 296,
+              "end": 323,
               "left": {
                 "type": "UnaryExpression",
-                "start": 291,
-                "end": 302,
+                "start": 296,
+                "end": 307,
                 "operator": "typeof",
                 "prefix": true,
                 "argument": {
                   "type": "Identifier",
-                  "start": 298,
-                  "end": 302,
+                  "start": 303,
+                  "end": 307,
                   "name": "temp"
                 }
               },
               "operator": "===",
               "right": {
-                "type": "UnaryExpression",
-                "start": 307,
-                "end": 313,
-                "operator": "void",
-                "prefix": true,
-                "argument": {
-                  "type": "Literal",
-                  "start": 312,
-                  "end": 313,
-                  "value": 0,
-                  "raw": "0"
-                }
+                "type": "Literal",
+                "start": 312,
+                "end": 323,
+                "value": "undefined",
+                "raw": "'undefined'"
               }
             },
             "consequent": {
               "type": "BlockStatement",
-              "start": 315,
-              "end": 360,
+              "start": 325,
+              "end": 370,
               "body": [
                 {
                   "type": "ExpressionStatement",
-                  "start": 321,
-                  "end": 356,
+                  "start": 331,
+                  "end": 366,
                   "expression": {
                     "type": "CallExpression",
-                    "start": 321,
-                    "end": 356,
+                    "start": 331,
+                    "end": 366,
                     "callee": {
                       "type": "MemberExpression",
-                      "start": 321,
-                      "end": 343,
+                      "start": 331,
+                      "end": 353,
                       "object": {
                         "type": "Identifier",
-                        "start": 321,
-                        "end": 328,
+                        "start": 331,
+                        "end": 338,
                         "name": "Reflect"
                       },
                       "property": {
                         "type": "Identifier",
-                        "start": 329,
-                        "end": 343,
+                        "start": 339,
+                        "end": 353,
                         "name": "deleteProperty"
                       },
                       "computed": false,
@@ -924,14 +971,14 @@ export const _FunctionApplyAst = {
                     "arguments": [
                       {
                         "type": "Identifier",
-                        "start": 344,
-                        "end": 349,
+                        "start": 354,
+                        "end": 359,
                         "name": "_this"
                       },
                       {
                         "type": "Identifier",
-                        "start": 351,
-                        "end": 355,
+                        "start": 361,
+                        "end": 365,
                         "name": "attr"
                       }
                     ],
@@ -942,32 +989,32 @@ export const _FunctionApplyAst = {
             },
             "alternate": {
               "type": "BlockStatement",
-              "start": 366,
-              "end": 394,
+              "start": 376,
+              "end": 404,
               "body": [
                 {
                   "type": "ExpressionStatement",
-                  "start": 372,
-                  "end": 390,
+                  "start": 382,
+                  "end": 400,
                   "expression": {
                     "type": "AssignmentExpression",
-                    "start": 372,
-                    "end": 390,
+                    "start": 382,
+                    "end": 400,
                     "operator": "=",
                     "left": {
                       "type": "MemberExpression",
-                      "start": 372,
-                      "end": 383,
+                      "start": 382,
+                      "end": 393,
                       "object": {
                         "type": "Identifier",
-                        "start": 372,
-                        "end": 377,
+                        "start": 382,
+                        "end": 387,
                         "name": "_this"
                       },
                       "property": {
                         "type": "Identifier",
-                        "start": 378,
-                        "end": 382,
+                        "start": 388,
+                        "end": 392,
                         "name": "attr"
                       },
                       "computed": true,
@@ -975,8 +1022,8 @@ export const _FunctionApplyAst = {
                     },
                     "right": {
                       "type": "Identifier",
-                      "start": 386,
-                      "end": 390,
+                      "start": 396,
+                      "end": 400,
                       "name": "temp"
                     }
                   }
@@ -986,12 +1033,12 @@ export const _FunctionApplyAst = {
           },
           {
             "type": "ReturnStatement",
-            "start": 397,
-            "end": 408,
+            "start": 407,
+            "end": 418,
             "argument": {
               "type": "Identifier",
-              "start": 404,
-              "end": 407,
+              "start": 414,
+              "end": 417,
               "name": "ret"
             }
           }
@@ -1003,31 +1050,31 @@ export const _FunctionApplyAst = {
 
 export const _FunctionBindAst = {
   "type": "ExpressionStatement",
-  "start": 1,
-  "end": 294,
+  "start": 0,
+  "end": 296,
   "expression": {
     "type": "AssignmentExpression",
-    "start": 1,
-    "end": 294,
+    "start": 0,
+    "end": 296,
     "operator": "=",
     "left": {
       "type": "MemberExpression",
-      "start": 1,
-      "end": 24,
+      "start": 0,
+      "end": 23,
       "object": {
         "type": "MemberExpression",
-        "start": 1,
-        "end": 19,
+        "start": 0,
+        "end": 18,
         "object": {
           "type": "Identifier",
-          "start": 1,
-          "end": 9,
+          "start": 0,
+          "end": 8,
           "name": "Function"
         },
         "property": {
           "type": "Identifier",
-          "start": 10,
-          "end": 19,
+          "start": 9,
+          "end": 18,
           "name": "prototype"
         },
         "computed": false,
@@ -1035,8 +1082,8 @@ export const _FunctionBindAst = {
       },
       "property": {
         "type": "Identifier",
-        "start": 20,
-        "end": 24,
+        "start": 19,
+        "end": 23,
         "name": "bind"
       },
       "computed": false,
@@ -1044,49 +1091,54 @@ export const _FunctionBindAst = {
     },
     "right": {
       "type": "FunctionExpression",
-      "start": 27,
-      "end": 294,
-      "id": null,
+      "start": 26,
+      "end": 296,
+      "id": {
+        "type": "Identifier",
+        "start": 35,
+        "end": 39,
+        "name": "bind"
+      },
       "expression": false,
       "generator": false,
       "async": false,
       "params": [
         {
           "type": "RestElement",
-          "start": 37,
-          "end": 45,
+          "start": 40,
+          "end": 48,
           "argument": {
             "type": "Identifier",
-            "start": 40,
-            "end": 45,
+            "start": 43,
+            "end": 48,
             "name": "args1"
           }
         }
       ],
       "body": {
         "type": "BlockStatement",
-        "start": 47,
-        "end": 294,
+        "start": 50,
+        "end": 296,
         "body": [
           {
             "type": "VariableDeclaration",
-            "start": 51,
-            "end": 70,
+            "start": 54,
+            "end": 73,
             "declarations": [
               {
                 "type": "VariableDeclarator",
-                "start": 57,
-                "end": 69,
+                "start": 60,
+                "end": 72,
                 "id": {
                   "type": "Identifier",
-                  "start": 57,
-                  "end": 62,
+                  "start": 60,
+                  "end": 65,
                   "name": "_this"
                 },
                 "init": {
                   "type": "ThisExpression",
-                  "start": 65,
-                  "end": 69
+                  "start": 68,
+                  "end": 72
                 }
               }
             ],
@@ -1094,62 +1146,62 @@ export const _FunctionBindAst = {
           },
           {
             "type": "IfStatement",
-            "start": 73,
-            "end": 207,
+            "start": 76,
+            "end": 209,
             "test": {
               "type": "BinaryExpression",
-              "start": 77,
-              "end": 104,
+              "start": 80,
+              "end": 107,
               "left": {
                 "type": "UnaryExpression",
-                "start": 77,
-                "end": 89,
+                "start": 80,
+                "end": 92,
                 "operator": "typeof",
                 "prefix": true,
                 "argument": {
                   "type": "Identifier",
-                  "start": 84,
-                  "end": 89,
+                  "start": 87,
+                  "end": 92,
                   "name": "_this"
                 }
               },
               "operator": "!==",
               "right": {
                 "type": "Literal",
-                "start": 94,
-                "end": 104,
+                "start": 97,
+                "end": 107,
                 "value": "function",
                 "raw": "'function'"
               }
             },
             "consequent": {
               "type": "BlockStatement",
-              "start": 106,
-              "end": 207,
+              "start": 109,
+              "end": 209,
               "body": [
                 {
                   "type": "ExpressionStatement",
-                  "start": 112,
-                  "end": 148,
+                  "start": 115,
+                  "end": 167,
                   "expression": {
                     "type": "CallExpression",
-                    "start": 112,
-                    "end": 147,
+                    "start": 115,
+                    "end": 166,
                     "callee": {
                       "type": "MemberExpression",
-                      "start": 112,
-                      "end": 123,
+                      "start": 115,
+                      "end": 128,
                       "object": {
                         "type": "Identifier",
-                        "start": 112,
-                        "end": 119,
+                        "start": 115,
+                        "end": 122,
                         "name": "console"
                       },
                       "property": {
                         "type": "Identifier",
-                        "start": 120,
-                        "end": 123,
-                        "name": "log"
+                        "start": 123,
+                        "end": 128,
+                        "name": "error"
                       },
                       "computed": false,
                       "optional": false
@@ -1157,22 +1209,29 @@ export const _FunctionBindAst = {
                     "arguments": [
                       {
                         "type": "Identifier",
-                        "start": 124,
-                        "end": 129,
+                        "start": 129,
+                        "end": 134,
                         "name": "_this"
                       },
                       {
                         "type": "UnaryExpression",
-                        "start": 132,
-                        "end": 144,
+                        "start": 136,
+                        "end": 148,
                         "operator": "typeof",
                         "prefix": true,
                         "argument": {
                           "type": "Identifier",
-                          "start": 139,
-                          "end": 144,
+                          "start": 143,
+                          "end": 148,
                           "name": "_this"
                         }
+                      },
+                      {
+                        "type": "Literal",
+                        "start": 150,
+                        "end": 165,
+                        "value": "bind不能作用在非函数上",
+                        "raw": "'bind不能作用在非函数上'"
                       }
                     ],
                     "optional": false
@@ -1180,57 +1239,25 @@ export const _FunctionBindAst = {
                 },
                 {
                   "type": "ThrowStatement",
-                  "start": 153,
-                  "end": 203,
+                  "start": 172,
+                  "end": 205,
                   "argument": {
                     "type": "NewExpression",
-                    "start": 159,
-                    "end": 202,
+                    "start": 178,
+                    "end": 204,
                     "callee": {
                       "type": "Identifier",
-                      "start": 163,
-                      "end": 168,
+                      "start": 182,
+                      "end": 187,
                       "name": "Error"
                     },
                     "arguments": [
                       {
-                        "type": "BinaryExpression",
-                        "start": 169,
-                        "end": 201,
-                        "left": {
-                          "type": "BinaryExpression",
-                          "start": 169,
-                          "end": 196,
-                          "left": {
-                            "type": "Literal",
-                            "start": 169,
-                            "end": 180,
-                            "value": "bind不能作用在",
-                            "raw": "'bind不能作用在'"
-                          },
-                          "operator": "+",
-                          "right": {
-                            "type": "UnaryExpression",
-                            "start": 183,
-                            "end": 195,
-                            "operator": "typeof",
-                            "prefix": true,
-                            "argument": {
-                              "type": "Identifier",
-                              "start": 190,
-                              "end": 195,
-                              "name": "_this"
-                            }
-                          }
-                        },
-                        "operator": "+",
-                        "right": {
-                          "type": "Literal",
-                          "start": 198,
-                          "end": 201,
-                          "value": "上",
-                          "raw": "'上'"
-                        }
+                        "type": "Literal",
+                        "start": 188,
+                        "end": 203,
+                        "value": "bind不能作用在非函数上",
+                        "raw": "'bind不能作用在非函数上'"
                       }
                     ]
                   }
@@ -1241,16 +1268,16 @@ export const _FunctionBindAst = {
           },
           {
             "type": "ReturnStatement",
-            "start": 213,
-            "end": 292,
+            "start": 215,
+            "end": 294,
             "argument": {
               "type": "FunctionExpression",
-              "start": 220,
-              "end": 292,
+              "start": 222,
+              "end": 294,
               "id": {
                 "type": "Identifier",
-                "start": 229,
-                "end": 233,
+                "start": 231,
+                "end": 235,
                 "name": "bind"
               },
               "expression": false,
@@ -1259,43 +1286,43 @@ export const _FunctionBindAst = {
               "params": [
                 {
                   "type": "RestElement",
-                  "start": 234,
-                  "end": 242,
+                  "start": 236,
+                  "end": 244,
                   "argument": {
                     "type": "Identifier",
-                    "start": 237,
-                    "end": 242,
+                    "start": 239,
+                    "end": 244,
                     "name": "args2"
                   }
                 }
               ],
               "body": {
                 "type": "BlockStatement",
-                "start": 244,
-                "end": 292,
+                "start": 246,
+                "end": 294,
                 "body": [
                   {
                     "type": "ReturnStatement",
-                    "start": 250,
-                    "end": 288,
+                    "start": 252,
+                    "end": 290,
                     "argument": {
                       "type": "CallExpression",
-                      "start": 257,
-                      "end": 287,
+                      "start": 259,
+                      "end": 289,
                       "callee": {
                         "type": "MemberExpression",
-                        "start": 257,
-                        "end": 267,
+                        "start": 259,
+                        "end": 269,
                         "object": {
                           "type": "Identifier",
-                          "start": 257,
-                          "end": 262,
+                          "start": 259,
+                          "end": 264,
                           "name": "_this"
                         },
                         "property": {
                           "type": "Identifier",
-                          "start": 263,
-                          "end": 267,
+                          "start": 265,
+                          "end": 269,
                           "name": "call"
                         },
                         "computed": false,
@@ -1304,23 +1331,23 @@ export const _FunctionBindAst = {
                       "arguments": [
                         {
                           "type": "SpreadElement",
-                          "start": 268,
-                          "end": 276,
+                          "start": 270,
+                          "end": 278,
                           "argument": {
                             "type": "Identifier",
-                            "start": 271,
-                            "end": 276,
+                            "start": 273,
+                            "end": 278,
                             "name": "args1"
                           }
                         },
                         {
                           "type": "SpreadElement",
-                          "start": 278,
-                          "end": 286,
+                          "start": 280,
+                          "end": 288,
                           "argument": {
                             "type": "Identifier",
-                            "start": 281,
-                            "end": 286,
+                            "start": 283,
+                            "end": 288,
                             "name": "args2"
                           }
                         }

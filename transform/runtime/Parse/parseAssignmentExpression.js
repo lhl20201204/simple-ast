@@ -11,6 +11,7 @@ export default function parseAssignmentExpression(ast, env) {
   // console.error(left, right)
   
   if (operator === '=') {
+    // console.error(left, right);
     return setExpression(left, right, env, {});
   } else  {    
     return parseAst({

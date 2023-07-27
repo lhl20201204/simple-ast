@@ -1,4 +1,5 @@
 import parseAst from "..";
+import { isInstanceOf } from "../../commonApi";
 import Environment from "../Environment";
 import RuntimeValue, { RuntimeRefValue, getUndefinedValue } from "../Environment/RuntimeValue";
 import { getWindowObject } from "../Environment/getWindow";
@@ -16,13 +17,13 @@ function getCallParams(args, callee, env) {
     argsRVValue.push(...callee._argsRVValue)
   } else {
     args.forEach(q => {
-    const v = parseAst(q , env);
-    if (['SpreadElement'].includes(q.type)) {
-      argsRVValue.push(...v.value)
-    } else {
-      argsRVValue.push(v)
-    }
-  })
+      const v = parseAst(q, env);
+      if (['SpreadElement'].includes(q.type)) {
+        argsRVValue.push(...v.value)
+      } else {
+        argsRVValue.push(v)
+      }
+    })
   }
   return argsRVValue
 }
@@ -31,22 +32,22 @@ const logger = false;
 
 export default function parseCallExpression(ast, env) {
   const { callee, arguments: args, optional } = ast;
- 
-  logger && console.log( getAstCode(ast, { 
+
+  logger && console.log(getAstCode(ast, {
     text: true,
-    isFunctionEndNotRemark: true, 
+    isFunctionEndNotRemark: true,
     isInCallExpressionCalleer: true,
-  }), 
-  // [..._.map(getCallParams(args, callee, env),v => parseRuntimeValue(v))],
+  }),
+    // [..._.map(getCallParams(args, callee, env),v => parseRuntimeValue(v))],
   )
 
   let _this = getUndefinedValue()
-  let fnAst = undefined; 
-  let name = getUndefinedValue() 
-  let nativeFnRv;
+  let fnAst = undefined;
+  let name = getUndefinedValue()
+  let nativeFnRetRv;
   let nativeTempArgsRvValue
   if (callee.type === 'Identifier') {
-    fnAst =  env.get(callee.name).value;
+    fnAst = env.get(callee.name).value;
     _this = getWindowObject()
     name = callee.name
   } else if (callee.type === 'FunctionExpression') {
@@ -63,7 +64,7 @@ export default function parseCallExpression(ast, env) {
     _this = rv.getDefinedEnv().get(RUNTIME_LITERAL.this)
     name = rv.getDefinedName();
     // console.log('RuntimeValue', fnAst, _this, name)
-  } else if(callee.type === 'Super'){
+  } else if (callee.type === 'Super') {
     // console.log('执行super时候的环境', env, env.getEnvPath())
     const rv = env.get(RUNTIME_LITERAL.super);
     // console.log(rv)
@@ -81,10 +82,13 @@ export default function parseCallExpression(ast, env) {
     fnAst = calleeRv.value;
     const { nativeFnCb } = _.get(fnAst, RuntimeValue.symbolAst, {})
     if (nativeFnCb) {
-      
+
       nativeTempArgsRvValue = getCallParams(args, callee, env);
       // console.log('劫持', name , _this, nativeTempArgsRvValue);
-      nativeFnRv = nativeFnCb(nativeTempArgsRvValue, { _this, env })
+      nativeFnRetRv = nativeFnCb(nativeTempArgsRvValue, { _this, env })
+      if (nativeFnRetRv && !isInstanceOf(nativeFnRetRv, RuntimeValue)) {
+        throw new Error('内置函数必须返回runtimeValue')
+      }
     }
   }
   if (!fnAst) {
@@ -94,7 +98,7 @@ export default function parseCallExpression(ast, env) {
     console.log(callee, fnAst)
     throw new Error(`${name} 不是可执行函数`)
   }
-  const { [RuntimeValue.symbolAst]: {params, body, nativeFnCb, type }, [RuntimeValue.symbolEnv]: fnBeDefinedEnv } = fnAst;
+  const { [RuntimeValue.symbolAst]: { params, body, nativeFnCb, type }, [RuntimeValue.symbolEnv]: fnBeDefinedEnv } = fnAst;
 
   if (type === 'ArrowFunctionExpression') {
     _this = fnBeDefinedEnv.get(RUNTIME_LITERAL.this);
@@ -122,11 +126,11 @@ export default function parseCallExpression(ast, env) {
     setPattern(v, c, childEnv, {})
   })
   if (restParamsAst) {
-    setPattern(new RuntimeRefValue(RUNTIME_VALUE_TYPE.arguments,restArgsRVValue), restParamsAst.argument, childEnv , {});
+    setPattern(new RuntimeRefValue(RUNTIME_VALUE_TYPE.arguments, restArgsRVValue), restParamsAst.argument, childEnv, {});
   }
-  const fnEnv = new Environment('function_' + (name || '匿名函数')+ '_execute_body', childEnv, { isFunctionEnv: true });
+  const fnEnv = new Environment('function_' + (name || '匿名函数') + '_execute_body', childEnv, { isFunctionEnv: true });
   fnEnv.addConst(RUNTIME_LITERAL.this, _this);
   fnEnv.addConst('arguments', new RuntimeRefValue(RUNTIME_VALUE_TYPE.arguments, argsRVValue));
-  const ret = parseAst( body, fnEnv);
-  return ret;
+  const ret = parseAst(body, fnEnv);
+  return nativeFnRetRv ?? ret;
 }

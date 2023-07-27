@@ -1,6 +1,6 @@
 import parseAst from "..";
 import { createString } from "../Environment";
-import RuntimeValue, {  getUndefinedValue } from "../Environment/RuntimeValue";
+import RuntimeValue, {  getFalseV, getTrueV, getUndefinedValue } from "../Environment/RuntimeValue";
 import parseRuntimeValue from "../Environment/parseRuntimeValue";
 import { JS_TO_RUNTIME_VALUE_TYPE, OUTPUT_TYPE, RUNTIME_VALUE_TO_OUTPUT_TYPE, RUNTIME_VALUE_TYPE } from "../constant";
 import { getMemberPropertyKey } from "./parseMemberExpression";
@@ -19,14 +19,15 @@ function getUpdate(ast, env, step = 1) {
   return prefix ? rv : updateRv;
 }
 
-function getTypeOf(ast, env) {
-  const {  argument } = ast;
+export function getTypeOf(ast, env) {
+  const { argument } = ast;
   const rv = parseAst(argument, env)
   if ([
     RUNTIME_VALUE_TYPE.function,
     RUNTIME_VALUE_TYPE.arrow_func,
     RUNTIME_VALUE_TYPE.class,
   ].includes(rv.type)) {
+    // console.log('进来getTypeOf', rv);
     return createString(OUTPUT_TYPE.function)
   }
   if ([
@@ -41,6 +42,7 @@ function getTypeOf(ast, env) {
 }
 
 function deleteProperty(ast, env) {
+  // console.error('进来');
   const {  argument } = ast;
   if (argument.type === 'MemberExpression') {
    let key = getMemberPropertyKey(argument, env);
@@ -53,15 +55,23 @@ function deleteProperty(ast, env) {
 
 export default function parseUnaryExpression(ast, env) {
   const { operator, argument } = ast;
-  const v = parseRuntimeValue(parseAst(argument, env));
+  let v;
   //todo ++ -- 
+  // console.log('进来2')
   switch(operator) {
-    case '-' : return new RuntimeValue(JS_TO_RUNTIME_VALUE_TYPE( -v), -v);
-    case '+' : return new RuntimeValue(JS_TO_RUNTIME_VALUE_TYPE( +v), +v); 
+    case '-' :  
+        v = parseRuntimeValue(parseAst(argument, env));
+      return new RuntimeValue(JS_TO_RUNTIME_VALUE_TYPE( -v), -v);
+    case '+' : 
+        v = parseRuntimeValue(parseAst(argument, env));
+       return new RuntimeValue(JS_TO_RUNTIME_VALUE_TYPE( +v), +v); 
     case '++' : return getUpdate(ast, env, 1);
     case '--' : return getUpdate(ast, env, -1);
     case 'typeof': return getTypeOf(ast, env);
     case 'void': return getUndefinedValue()
     case 'delete': return deleteProperty(ast, env);
+    case '!': return parseRuntimeValue(parseAst(argument, env)) ? getFalseV() : getTrueV()
   }
+
+  console.error('未处理的符号', operator)
 }

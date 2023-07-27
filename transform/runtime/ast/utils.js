@@ -9,5 +9,5 @@ export function valueToRaw(value) {
       ret.push(x)
     }
   }
-  return ret;
+  return ret.join('');
 }

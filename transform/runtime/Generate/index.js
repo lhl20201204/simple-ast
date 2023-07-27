@@ -1,6 +1,7 @@
 import _ from "lodash";
 import { getClassBodyCode, getClassDeclarationCode, getClassExpressionCode, getMethodDefinitionCode, getNewExpressionCode, getPropertyDefinitionCode, getSuperCode } from "./classCode";
 import { getArrayExpressionCode, getArrayPatternCode, getArrowFunctionExpressionCode, getAssignmentExpressionCode, getAssignmentPatternCode, getAwaitExpressionCode, getBinaryExpressionCode, getBlockStatementCode, getBreakStatementCode, getCallExpressionCode, getCallFunctionExpressionCode, getChainExpressionCode, getContinueStatementCode, getExpressionStatementCode, getForInStatementCode, getForOfStatementCode, getForStatementCode, getFunctionDeclarationCode, getFunctionExpressionCode, getIdentifierCode, getIfStatementCode, getLiteralCode, getLogicalExpressionCode, getMemberExpressionCode, getObjectExpressionCode, getObjectPatternCode, getProgramCode, getRestElementCode, getReturnStatementCode, getRuntimeValueCode, getSpreadElementCode, getStaticBlockCode, getTemplateElementCode, getTemplateLiteralCode, getThisExpressionCode, getThrowStatementCode, getUnaryExpressionCode, getUpdateExpressionCode, getVariableDeclarationCode, getWhileStatementCode, getYieldExpressionCode } from "./commonCode";
+import { DEBUGGER_DICTS } from "../constant";
 
 export function getAstCode(ast, config) {
   if (!config) {
@@ -66,6 +67,9 @@ export function getAstCode(ast, config) {
 }
 
 
-export default function generateCode(ast, config = { prefixSpaceCount: 0 }) {
+export default function generateCode(ast, config ={} ) {
+  if (!config[DEBUGGER_DICTS.prefixSpaceCount]) {
+    config[DEBUGGER_DICTS.prefixSpaceCount] = 0;
+  }
   return getAstCode(ast, config)
 }

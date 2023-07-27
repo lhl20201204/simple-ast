@@ -1,10 +1,11 @@
 import { AST } from "../../getAst";
+import { isInstanceOf } from "../../commonApi";
 import { RUNTIME_VALUE_TYPE } from "../constant";
 import RuntimeValue from "./RuntimeValue";
 
 export default function getEqualValue(rv) {
-  if (!(rv instanceof RuntimeValue)) {
-    console.error('运行出错')
+  if (!(isInstanceOf(rv,RuntimeValue))) {
+    console.error('运行出错', rv, typeof rv)
     return rv;
   }
   if ([

@@ -1,5 +1,6 @@
-import parseFunctionDeclaration from "./parseFunctionDeclaration";
+import parseFunctionDeclaration, { handleFunction } from "./parseFunctionDeclaration";
 
 export default function parseFunctionExpression(ast, env) {
-  return parseFunctionDeclaration(ast, env);
+  // console.error('parseFunctionExpression')
+  return handleFunction(ast, env, false);
 }

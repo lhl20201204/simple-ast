@@ -1,7 +1,4 @@
-// import { getWindowObject } from ".";
-// import Environment from "."; // 循环饮用。。。。。
-
-import parseAst from "..";
+import { isInstanceOf } from "../../commonApi";
 import { RUNTIME_LITERAL, RUNTIME_VALUE_TYPE } from "../constant";
 import PropertyDescriptor from "./PropertyDescriptor";
 import parseRuntimeValue from "./parseRuntimeValue";
@@ -56,12 +53,12 @@ export default class RuntimeValue {
     
     this.value = value;
     if (Reflect.has(restConfig, proto)) {
-      if (!restConfig[proto] instanceof RuntimeValue) {
+      if (!isInstanceOf(restConfig[proto], RuntimeValue)) {
         throw new Error('原型链初始化失败')
       }
     }
     if (Reflect.has(restConfig, _prototype)) {
-      if (!restConfig[_prototype] instanceof RuntimeValue) {
+      if (!isInstanceOf(restConfig[_prototype], RuntimeValue)) {
         throw new Error('原型链初始化失败')
       }
     }
@@ -81,8 +78,9 @@ export default class RuntimeValue {
   }
 
   delete(attr) {
+    // console.error('delete', attr);
     const v = Reflect.deleteProperty(this.value, attr)
-    if (this instanceof RuntimeRefValue) {
+    if (isInstanceOf(this, RuntimeRefValue)) {
       const descriptor = this.propertyDescriptors.get(attr)
       if (descriptor ) {
         this.propertyDescriptors.delete(attr)
@@ -128,33 +126,45 @@ export class RuntimeRefValue extends RuntimeValue{
     return this.propertyDescriptors.has(attr)
   }
 
+  getBaseHasProperty(attr) {
+    if (this.hasOwnProperty(attr)) {
+      return this;
+    }
+    return this.restConfig[proto] && this.getProto().getBaseHasProperty(attr)
+  }
+
 
   get(attr) {
     // console.log(attr, this)
+
+    if (attr === RUNTIME_LITERAL.$__proto__) {
+      // todo这里很怪
+      if (this.type === RUNTIME_VALUE_TYPE.super) {
+        // console.error('enter');
+        return this.getSuperProto()
+      }
+      return this.getProto()
+    }
+
     if (this.hasOwnProperty(attr)) {
       const descriptor = this.propertyDescriptors.get(attr)
-      if (descriptor instanceof PropertyDescriptor) {
+      if (isInstanceOf(descriptor, PropertyDescriptor)) {
         if (isFunctionRuntimeValue(descriptor.get)) {
           const fnRv = descriptor.get;
           // console.log('begin---call')
           return parseFunctionCallRuntimeValue(
             fnRv.getDefinedEnv(),
             createRuntimeValueAst(fnRv, `${attr}_getter`),
-            createRuntimeValueAst(this),
+            createRuntimeValueAst(this, 'this'),
           )
         }
       }
     }
 
-    if (attr === '__proto__') {
-      // todo这里很怪
-      if (this.type === RUNTIME_VALUE_TYPE.super) {
-        return this.getSuperProto()
-      }
-      return this.getProto()
-    }
 
-    if (attr === RUNTIME_LITERAL.prototype) {
+    // const target = this.getBaseHasProperty(attr);
+
+    if (attr === RUNTIME_LITERAL.$prototype) {
       return this.getProtoType()
     }
 
@@ -183,7 +193,7 @@ export class RuntimeRefValue extends RuntimeValue{
     
     if (!descriptor) {
       const oldDescriptor = this.propertyDescriptors.get(attr)
-      if (oldDescriptor instanceof PropertyDescriptor) { 
+      if (isInstanceOf(oldDescriptor , PropertyDescriptor)) { 
         if (!parseRuntimeValue(oldDescriptor.writable)) {
           return falseV;
         }
@@ -193,7 +203,7 @@ export class RuntimeRefValue extends RuntimeValue{
           return parseFunctionCallRuntimeValue(
             fnRv.getDefinedEnv(),
             createRuntimeValueAst(fnRv, `${attr}_setter`),
-            createRuntimeValueAst(this),
+            createRuntimeValueAst(this, 'this'),
             createRuntimeValueAst(rv),
           )
         }
@@ -202,10 +212,14 @@ export class RuntimeRefValue extends RuntimeValue{
           value: rv,
         }))
       }
-    } else if (descriptor instanceof PropertyDescriptor) {
+    } else if (isInstanceOf(descriptor , PropertyDescriptor)) {
       this.propertyDescriptors.set(attr, descriptor)
     }
-    this.value[attr] = rv;
+    if (attr !== RUNTIME_LITERAL.$__proto__) {
+      this.value[attr] = rv;
+    } else {
+      this.restConfig[proto] = rv;
+    }
     return trueV
   }
 
@@ -214,14 +228,14 @@ export class RuntimeRefValue extends RuntimeValue{
   }
 
   setProto(rv) {
-    if (!(rv instanceof RuntimeRefValue)) {
+    if (!isInstanceOf(rv, RuntimeRefValue)) {
       throw new Error('原型链指向失败')
     }
     this.restConfig[proto] = rv;
   }
 
   setProtoType(rv) {
-    if (!(rv instanceof RuntimeRefValue)) {
+    if (!isInstanceOf(rv, RuntimeRefValue)) {
       throw new Error('原型链指向失败')
     }
     this.restConfig[_prototype] = rv;
@@ -254,6 +268,10 @@ export class RuntimeRefValue extends RuntimeValue{
   getMergeCtor() {
     return this.value[symbolMergeNewCtor] ?? undefinedV;
   }
+
+  setMergeCtor(rv) {
+    return this.value[symbolMergeNewCtor] = rv;
+  }
 }
 
 
@@ -274,7 +292,8 @@ export function getUndefinedValue() {
   return undefinedV;
 }
 
-export const describeNativeFunction = (env, proto) => (name, nativeFnCb, rest) => new RuntimeRefValue(RUNTIME_VALUE_TYPE.function, {
+export const describeNativeFunction = (env, proto, ObjectPrototypeV) => (name, nativeFnCb, rest) => {
+  const ret = new RuntimeRefValue(RUNTIME_VALUE_TYPE.function, {
   [RuntimeValue.symbolAst]: {
     type: 'FunctionExpression',
     id: { type: 'Identifier', name },
@@ -296,8 +315,8 @@ export const describeNativeFunction = (env, proto) => (name, nativeFnCb, rest) =
           type: "ExpressionStatement",
           expression: {
             type: "Literal",
-            value: "[native code]",
-            raw: "'[native code]'"
+            value: "[native code] of " + name,
+            raw: `'[native code] of ${name}'`
           },
         }
       ],
@@ -308,6 +327,13 @@ export const describeNativeFunction = (env, proto) => (name, nativeFnCb, rest) =
 }, {
   [RuntimeValue.proto]: proto
 })
+ret.setProtoType(new RuntimeRefValue(RUNTIME_VALUE_TYPE.object, {
+  constructor: ret,
+}, {
+  [RuntimeValue.proto]: ObjectPrototypeV,
+}))
+return ret;
+}
 
 export function describeNativeClassAst(name, superName) {
   return {

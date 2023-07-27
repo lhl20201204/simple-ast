@@ -6,8 +6,10 @@ function parseAnd(ast1, ast2, env) {
   let value = (parseAst(ast1, env))
   // 第一个为false，提前返回
   if (!parseRuntimeValue(value)) {
+    // console.error('判断', ast1)
     return value;
   }
+  
   value = parseAst(ast2, env)
   return value
 }

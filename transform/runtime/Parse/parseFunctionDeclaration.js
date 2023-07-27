@@ -3,7 +3,7 @@ import RuntimeValue from "../Environment/RuntimeValue";
 import { instanceOfRuntimeValue } from "../Environment/utils";
 import { getAstCode } from "../Generate";
 
-export default function parseFunctionDeclaration(ast, env) {
+export function handleFunction (ast, env, add) {
   const { id } = ast;
   let key = id?.name;
 
@@ -26,8 +26,13 @@ export default function parseFunctionDeclaration(ast, env) {
   //   value.getProto() === FunctionRv.getProtoType(),
   //   instanceOfRuntimeValue(value, FunctionRv)
   // )
-  if (key) {
+  if (add) {
     env.addFunction(key, value);
   }
+  // console.error(value)
   return value;
+}
+
+export default function parseFunctionDeclaration(ast, env) {
+  return handleFunction(ast, env, true);
 }
