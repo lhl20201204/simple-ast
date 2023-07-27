@@ -4,3 +4,4 @@
 2. cd simple-ast
 3. npm install
 4. npm run dev
+5. 打开 http://localhost:4444/，粘贴好像需要浏览器授权来着，给一下就可以粘贴ast了
