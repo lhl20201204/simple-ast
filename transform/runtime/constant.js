@@ -40,6 +40,19 @@ export const RUNTIME_LITERAL = {
   get: 'get',
 }
 
+export const ENV_DICTS = {
+  isUseStrict: 'isUseStrict',
+  continueFlag: 'continueFlag',
+  breakFlag: 'breakFlag',
+  isForEnv: 'isForEnv',
+  returnFlag: 'returnFlag',
+  returnValue: 'returnValue',
+  isWhileEnv: 'isWhileEnv',
+  isFunctionEnv: 'isFunctionEnv',
+  isForOfEnv: 'isForOfEnv',
+  isForInEnv: 'isForInEnv',
+}
+
 export const DEBUGGER_DICTS = {
   isOutputConsoleFlag: '$___isOutputConsole___',
   isRenderingHTMLFlag: '$___isRenderingHTML__',

@@ -1,6 +1,6 @@
 import parseAst from "..";
 import { EnvJSON } from "../../commonApi";
-import { DEBUGGER_DICTS, JS_TO_RUNTIME_VALUE_TYPE, OUTPUT_TYPE, RUNTIME_LITERAL, RUNTIME_VALUE_TYPE, getRuntimeValueCreateByClassName } from "../constant";
+import { DEBUGGER_DICTS, ENV_DICTS, JS_TO_RUNTIME_VALUE_TYPE, OUTPUT_TYPE, RUNTIME_LITERAL, RUNTIME_VALUE_TYPE, getRuntimeValueCreateByClassName } from "../constant";
 import { _ErrorAst } from "./Native/Error";
 import { _FunctionApplyAst, _FunctionBindAst, _FunctionCallAst, _FunctionPrototypeConstuctorAst } from "./Native/Function";
 import { _ObjectAst } from "./Native/Object";
@@ -9,6 +9,7 @@ import PropertyDescriptor from "./PropertyDescriptor";
 import RuntimeValue, { RuntimeRefValue, createString, describeNativeClassAst, describeNativeFunction, getFalseV, getNullValue, getTrueV, getUndefinedValue } from "./RuntimeValue";
 import { defalultTransformConfig, transformInnerAst } from "./WrapAst";
 import parseRuntimeValue from "./parseRuntimeValue";
+import { createRuntimeValueAst, isFunctionRuntimeValue } from "./utils";
 
 const skipField = new Set([
   RUNTIME_LITERAL.null,
@@ -18,7 +19,6 @@ const skipField = new Set([
 ]);
 
 export const ObjectPrototypeV = new RuntimeRefValue(RUNTIME_VALUE_TYPE.object, {}, {
-  [RuntimeValue._prototype]: getUndefinedValue(),
   [RuntimeValue.proto]: getNullValue()
 })
 
@@ -164,11 +164,11 @@ export default class Environment {
   }
 
   hadReturn() {
-    return this._config.returnFlag;
+    return this._config[ENV_DICTS.returnFlag];
   }
 
   isFunctionEnv() {
-    return this._config.isFunctionEnv;
+    return this._config[ENV_DICTS.isFunctionEnv];
   }
 
   findForEnv() {
@@ -179,33 +179,33 @@ export default class Environment {
   }
 
   isForOfEnv() {
-    return this._config.isForOfEnv;
+    return this._config[ENV_DICTS.isForOfEnv];
   }
 
   isForInEnv() {
-    return this._config.isForInEnv;
+    return this._config[ENV_DICTS.isForInEnv];
   }
 
   isForEnv() {
-    return this.isForOfEnv() || this.isForInEnv() || this._config.isForEnv
+    return this.isForOfEnv() || this.isForInEnv() || this._config[ENV_DICTS.isForEnv]
       || (this.parent && this.parent.isForEnv())
   }
 
   isWhileEnv() {
-    return this._config.isWhileEnv || (this.parent && this.parent.isWhileEnv());
+    return this._config[ENV_DICTS.isWhileEnv] || (this.parent && this.parent.isWhileEnv());
   }
 
   hadBreak() {
-    return this._config.breakFlag;
+    return this._config[ENV_DICTS.breakFlag];
   }
 
   hadContinue() {
-    return this._config.continueFlag;
+    return this._config[ENV_DICTS.continueFlag];
   }
 
 
   getNearBreakContinueable() {
-    if (this._config.isForEnv || this._config.isWhileEnv) {
+    if (this._config[ENV_DICTS.isForEnv] || this._config[ENV_DICTS.isWhileEnv]) {
       return this;
     }
     return this.parent && this.parent.getNearBreakContinueable()
@@ -215,7 +215,7 @@ export default class Environment {
     if (!this.isForEnv() && !this.isWhileEnv()) {
       throw new Error('不在for 循环 或者while循环中无法 break')
     }
-    this._config.breakFlag = flag;
+    this._config[ENV_DICTS.breakFlag] = flag;
     if (this !== this.getNearBreakContinueable()) {
       this.parent.setBreakFlag(flag)
     }
@@ -225,22 +225,29 @@ export default class Environment {
     if (!this.isForEnv() && !this.isWhileEnv()) {
       throw new Error('不在for 或者while循环中无法 continue')
     }
-    this._config.continueFlag = flag;
+    this._config[ENV_DICTS.continueFlag] = flag;
     if (this !== this.getNearBreakContinueable()) {
       this.parent.setContinueFlag(flag)
     }
   }
 
   setReturnValue(value) {
-    this._config.returnFlag = true;
-    this._config.returnValue = value
+    this._config[ENV_DICTS.returnFlag] = true;
+    this._config[ENV_DICTS.returnValue] = value
     if (!this.isFunctionEnv()) {
       this.parent.setReturnValue(value);
     }
   }
 
   getReturnValue() {
-    return this._config.returnValue;
+    return this._config[ENV_DICTS.returnValue];
+  }
+
+  isInUseStrict() {
+    if (this._config[ENV_DICTS.isUseStrict]) {
+      return true
+    }
+    return this.parent && this.parent.isInUseStrict()
   }
 
   reset() {
@@ -283,8 +290,8 @@ export default class Environment {
 
     runInnerAst([
       _reflectAst,
-      _FunctionApplyAst,
-      _FunctionCallAst,
+      // _FunctionApplyAst, // 这俩种方式会导致this带有一个变量。
+      // _FunctionCallAst,
       _FunctionBindAst,
     ])
     
@@ -316,8 +323,8 @@ export default class Environment {
       const oldDescripor = objRv.getPropertyDescriptor(
         parseRuntimeValue(attrRv)
       );
-      // console.log(oldDescripor)
-      return createObject(
+   
+      return oldDescripor ?  createObject(
         _.pick(oldDescripor, [
         'configurable',
         'enumerable',
@@ -325,7 +332,7 @@ export default class Environment {
         'writable',
         'set',
         'get',
-      ]))
+      ])) : getUndefinedValue()
     }))
 
     runInnerAst([
@@ -406,7 +413,6 @@ export const FunctionPrototypeV = new RuntimeRefValue(RUNTIME_VALUE_TYPE.class, 
   [RuntimeValue.symbolEnv]: Environment.window,
   [RuntimeValue.symbolName]: 'Function$Prototype',
 }, {
-  [RuntimeValue._prototype]: getUndefinedValue(),
   [RuntimeValue.proto]: ObjectPrototypeV,
 });
 
@@ -432,7 +438,39 @@ export const FunctionClassV = generateFn('Function', ([argsRv]) => {
 })
 
 FunctionClassV.setProtoType(FunctionPrototypeV);
-FunctionPrototypeV.set('constructor', FunctionClassV)
+FunctionPrototypeV.set('constructor', FunctionClassV);
+
+FunctionPrototypeV.set('call', generateFn('call', ([newThisRv, ...argsRv], { _this: fnRv, env }) => {
+  if (!isFunctionRuntimeValue(fnRv)) {
+    throw new Error('call 函数不能调用在非函数上')
+  }
+  const middleEnv = new Environment(env._envName + '_call', env) 
+  middleEnv.addConst(RUNTIME_LITERAL.this, newThisRv);
+  return parseAst({
+    type: "CallExpression",
+    callee: createRuntimeValueAst(fnRv, fnRv.getDefinedName()+ '.call'),
+    arguments: _.map(argsRv, (c, i) => createRuntimeValueAst(c, 'args' + i )),
+    optional: false
+  },middleEnv)
+}))
+
+FunctionPrototypeV.set('apply', generateFn('apply', ([newThisRv, argsRv], { _this: fnRv, env }) => {
+  if (!isFunctionRuntimeValue(fnRv)) {
+    console.error(fnRv);
+    throw new Error('apply 函数不能调用在非函数上')
+  }
+  if (![RUNTIME_VALUE_TYPE.arguments, RUNTIME_VALUE_TYPE.array].includes(argsRv.type)){
+    throw new Error('apply 函数第二个参数必须是类数组')
+  }
+  const middleEnv = new Environment(env._envName + '_apply', env) 
+  middleEnv.addConst(RUNTIME_LITERAL.this, newThisRv);
+  return parseAst({
+    type: "CallExpression",
+    callee: createRuntimeValueAst(fnRv, fnRv.getDefinedName()+ '.apply'),
+    arguments: _.map(argsRv.value, (c, i) => createRuntimeValueAst(c, 'args' + i )),
+    optional: false
+  },middleEnv)
+}))
 
 // FunctionPrototypeV.set('constructor', FunctionClassV)
 
@@ -471,11 +509,11 @@ ObjectPrototypeV.set('hasOwnProperty', generateFn('Object$hasOwnProperty', ([att
   return  _this.hasOwnProperty(parseRuntimeValue(attrRv)) ?  getTrueV() : getFalseV()
 }))
 
-const get__proto__Rv = generateFn('Object$__proto__', ([], { _this }) => {
+const get__proto__Rv = generateFn('Object$prototype$__proto__', ([], { _this }) => {
   return _this === ObjectPrototypeV ? get__proto__Rv : _this.get(RUNTIME_LITERAL.$__proto__)
 });
 
-const set__proto__Rv = generateFn('Object$__proto__', ([argsRv], { _this }) => {
+const set__proto__Rv = generateFn('Object$prototype$__proto__', ([argsRv], { _this }) => {
  return _this.set(RUNTIME_LITERAL.$__proto__, argsRv);
 });
 
@@ -525,15 +563,12 @@ consoleV.set('log', generateFn('console$log', (args) => {
       const outputValue = parseRuntimeValue(rv, {
         [DEBUGGER_DICTS.isOutputConsoleFlag]: true,
       });
-      const isOutputConsoleFlag = outputValue[DEBUGGER_DICTS.isOutputConsoleFlag]
+    // const isOutputConsoleFlag = outputValue[DEBUGGER_DICTS.isOutputConsoleFlag]
       // console[isOutputConsoleFlag? 'groupCollapsed': 'group']('%c%s', 'color: green', isOutputConsoleFlag
       // ? outputValue.title
       // : ( getRuntimeValueCreateByClassName(rv) + '{}'))
-      if (isOutputConsoleFlag) {
-        console.log(outputValue.content)
-      } else {
+     
         console.log( outputValue)
-      }
       // console.groupEnd()
       return;
     }

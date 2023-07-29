@@ -1,7 +1,7 @@
 import parseAst from "..";
 import Environment, { createString } from "../Environment";
 import RuntimeValue from "../Environment/RuntimeValue";
-import { RUNTIME_VALUE_TYPE } from "../constant";
+import { ENV_DICTS, RUNTIME_VALUE_TYPE } from "../constant";
 import setExpression from "./setExpression";
 import setPattern from "./setPattern";
 
@@ -21,7 +21,7 @@ export default function parseForInStatement(ast, env) {
         );
         const childEnv = new Environment('for in let/const statement body' + index++, paramsEnv, {
           isForInEnv: true,
-          isForEnv: true,
+          [ENV_DICTS.isForEnv]: true,
         })
         setPattern(value, left,  paramsEnv, {});
         parseAst(body, childEnv);
@@ -38,7 +38,7 @@ export default function parseForInStatement(ast, env) {
     for(const attr in arrV.value) {
       const childEnv = new Environment('for in var/noVariableDeclaration statement body' + i, env, {
         isForInEnv: true,
-        isForEnv: true,
+        [ENV_DICTS.isForEnv]: true,
       })
       // 数组下标0 需要变成 ‘0’
       const value = createString(`${attr}`);

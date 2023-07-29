@@ -26,7 +26,6 @@ const runtimeValueToJSFunction = (rv, config) => {
    // 以下是定义时候的源码字符串
    \`${generateCode(RuntimeRefValue.transformInnerAst(ast.body, {
     [DEBUGGER_DICTS.isHTMLMode]: true,
-    noWrapRuntimeValue: true,
     [DEBUGGER_DICTS.prefixSpaceCount]: 4,
   }), { [DEBUGGER_DICTS.isTextMode]: true })
     }\`
@@ -82,7 +81,6 @@ const runtimeValueToJSClass = (rv, config) => {
    // 以下是定义时候的源码字符串
    \`${generateCode(RuntimeRefValue.transformInnerAst(ast.body, {
     [DEBUGGER_DICTS.isHTMLMode]: true,
-    noWrapRuntimeValue: true,
     [DEBUGGER_DICTS.prefixSpaceCount]: 4,
   }), { [DEBUGGER_DICTS.isTextMode]: true })
     }\`
@@ -92,7 +90,12 @@ const runtimeValueToJSClass = (rv, config) => {
 
   const obj =  {
     [className]: eval(`(()=> {
-      return class ${className} {
+      ${ast.superClass ? `
+      class ${ast.superClass.name} {
+
+      }
+      ` : ''}
+      return class ${className} ${ast.superClass ? `extends ${ast.superClass.name}` : ''}{
         [${bodyCode}]
 }})()`),
   }
@@ -115,9 +118,9 @@ const runtimeValueToJSClass = (rv, config) => {
   // config.weakMap.set(rv, ret);
   runtimeValueKeysToJsObject(ret, rv, newConfig)
 
-  Reflect.defineProperty(ret, Symbol('_prototype'), {
-    value: parseRuntimeValue(prototype, newConfig)
-  })
+  // Reflect.defineProperty(ret, Symbol('_prototype'), {
+  //   value: parseRuntimeValue(prototype, newConfig)
+  // })
   Reflect.defineProperty(ret, Symbol('[[__proto__]]'), {
     value: parseRuntimeValue(proto, newConfig)
   })
@@ -257,9 +260,9 @@ export default function parseRuntimeValue(rv, config = {}) {
       }
   
       cloneObj['[[Prototype]]'] = parseRuntimeValue(rv.getProto(), subConfigLevel(config)) ?? null
-      if (!isUndefinedRuntimeValue(rv.getProtoType())) {
-        cloneObj['$prototype'] = parseRuntimeValue(rv.getProtoType(), subConfigLevel(config)) ?? null
-      }
+      // if (!isUndefinedRuntimeValue(rv.getProtoType())) {
+      //   cloneObj['$prototype'] = parseRuntimeValue(rv.getProtoType(), subConfigLevel(config)) ?? null
+      // }
 
       if (rv.type === RUNTIME_VALUE_TYPE.class
         && !config[DEBUGGER_DICTS.isOutputConsoleFlag]

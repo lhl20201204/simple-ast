@@ -1,7 +1,7 @@
 import parseAst from "..";
 import Environment, { FunctionClassV, FunctionPrototypeV, createObjectExtends, getFunctionPrototype } from "../Environment";
 import RuntimeValue, { RuntimeRefValue, getFalseV, getUndefinedValue } from "../Environment/RuntimeValue";
-import { DEBUGGER_DICTS, RUNTIME_LITERAL, RUNTIME_VALUE_TYPE } from "../constant";
+import { DEBUGGER_DICTS, ENV_DICTS, RUNTIME_LITERAL, RUNTIME_VALUE_TYPE } from "../constant";
 import parseRuntimeValue from "../Environment/parseRuntimeValue";
 import generateCode, { getAstCode } from "../Generate";
 import setPattern from "./setPattern";
@@ -362,9 +362,13 @@ export default function parseClassDeclaration(ast, env) {
   const { id, body: bodyAst, superClass } = ast;
   const idText = id ? getAstCode(id, { text: true }) : '匿名类';
   const classDefinedEnv = new Environment('class_' + (idText) + '_defined_env',
-    env)
+    env,  {
+      [ENV_DICTS.isUseStrict]: true,
+    })
   const classPrototypeDefinedEnv = new Environment('class_' + (idText) + '_of_prototype_defined_env',
-    env)
+    env, {
+      [ENV_DICTS.isUseStrict]: true,
+    })
   // console.log('class 声明 的时候创建的环境', classDefinedEnv.getEnvPath());
   const weakMap = new WeakMap();
   _.forEach(_.filter(bodyAst.body, c => c.computed), c => {

@@ -1,6 +1,6 @@
 import { getAstCode } from '.';
 import RuntimeValue from '../Environment/RuntimeValue';
-import { RUNTIME_LITERAL } from '../constant';
+import { DEBUGGER_DICTS, RUNTIME_LITERAL } from '../constant';
 import { space, prefixSpace, purple, red, blue, numGreen, remark, 
   tabSpace,
   letInObjectLeftKey,
@@ -125,8 +125,12 @@ export function getLiteralCode(ast, config) {
 }
 
 export function getElememtCode(ast, config) {
-  const children = _.map(ast, a => getAstCode(a, config))
-  let isLong = children.length > 3
+  const children = _.map(ast, a => getAstCode(a, tabSpace(config)))
+  let temp
+  let isLong = children.length > 3 || (temp =  _.map(ast, a => getAstCode(a, {
+    ...config,
+    [DEBUGGER_DICTS.isHTMLMode]: false,
+  })) ,temp.length > 0 && temp.some(x => x.length > 15))
   // const ret = children.join(`,${space(config)}`);
   return isLong ? 
    (

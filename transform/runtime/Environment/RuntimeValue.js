@@ -52,16 +52,6 @@ export default class RuntimeValue {
     this.type = type;
     
     this.value = value;
-    if (Reflect.has(restConfig, proto)) {
-      if (!isInstanceOf(restConfig[proto], RuntimeValue)) {
-        throw new Error('原型链初始化失败')
-      }
-    }
-    if (Reflect.has(restConfig, _prototype)) {
-      if (!isInstanceOf(restConfig[_prototype], RuntimeValue)) {
-        throw new Error('原型链初始化失败')
-      }
-    }
     this.restConfig = restConfig;
   }
 
@@ -119,6 +109,20 @@ export class RuntimeRefValue extends RuntimeValue{
         value: v,
       }))
     })
+
+    if (Reflect.has(this.restConfig, proto)) {
+      if (!isInstanceOf(this.restConfig[proto], RuntimeValue)) {
+        throw new Error('原型链初始化失败')
+      }
+    }
+    if (Reflect.has(this.restConfig, _prototype)) {
+      if (!isInstanceOf(this.restConfig[_prototype], RuntimeValue)) {
+        throw new Error('原型链初始化失败')
+      }
+      this.propertyDescriptors.set(RUNTIME_LITERAL.$prototype, new PropertyDescriptor({
+        value: this.restConfig[_prototype],
+      }))
+    }
     // console.log(this.propertyDescriptors);
   }
 
@@ -239,6 +243,10 @@ export class RuntimeRefValue extends RuntimeValue{
       throw new Error('原型链指向失败')
     }
     this.restConfig[_prototype] = rv;
+    // TODO 可能要加点限制
+    this.propertyDescriptors.set(RUNTIME_LITERAL.$prototype, new PropertyDescriptor({
+      value: rv,
+    }))
   }
 
   getProtoType() {

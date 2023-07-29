@@ -5,7 +5,7 @@ import RuntimeValue, { RuntimeRefValue, getUndefinedValue } from "../Environment
 import { getWindowObject } from "../Environment/getWindow";
 import parseRuntimeValue from "../Environment/parseRuntimeValue";
 import { getAstCode } from "../Generate";
-import { RUNTIME_LITERAL, RUNTIME_VALUE_TYPE } from "../constant";
+import { ENV_DICTS, RUNTIME_LITERAL, RUNTIME_VALUE_TYPE } from "../constant";
 import { getMemberPropertyKey } from "./parseMemberExpression";
 import setPattern from "./setPattern";
 
@@ -47,8 +47,9 @@ export default function parseCallExpression(ast, env) {
   let nativeFnRetRv;
   let nativeTempArgsRvValue
   if (callee.type === 'Identifier') {
-    fnAst = env.get(callee.name).value;
-    _this = getWindowObject()
+    const fnRv= env.get(callee.name);
+    fnAst = fnRv.value;
+    _this = fnRv.getDefinedEnv().isInUseStrict() ? getUndefinedValue() : getWindowObject()
     name = callee.name
   } else if (callee.type === 'FunctionExpression') {
     fnAst = parseAst(callee, env).value;
@@ -61,8 +62,19 @@ export default function parseCallExpression(ast, env) {
   } else if (callee.type === 'RuntimeValue') {
     const rv = callee.value;
     fnAst = rv.value;
-    _this = rv.getDefinedEnv().get(RUNTIME_LITERAL.this)
+    _this = env.get(RUNTIME_LITERAL.this)
     name = rv.getDefinedName();
+    const { nativeFnCb } = _.get(fnAst, RuntimeValue.symbolAst, {})
+    if (nativeFnCb) {
+
+      nativeTempArgsRvValue = getCallParams(args, callee, env);
+      // console.log('劫持', name , _this, nativeTempArgsRvValue);
+      nativeFnRetRv = nativeFnCb(nativeTempArgsRvValue, { _this, env })
+      if (nativeFnRetRv && !isInstanceOf(nativeFnRetRv, RuntimeValue)) {
+        throw new Error('内置函数必须返回runtimeValue')
+      }
+    }
+    // console.error('进来');
     // console.log('RuntimeValue', fnAst, _this, name)
   } else if (callee.type === 'Super') {
     // console.log('执行super时候的环境', env, env.getEnvPath())
@@ -128,7 +140,7 @@ export default function parseCallExpression(ast, env) {
   if (restParamsAst) {
     setPattern(new RuntimeRefValue(RUNTIME_VALUE_TYPE.arguments, restArgsRVValue), restParamsAst.argument, childEnv, {});
   }
-  const fnEnv = new Environment('function_' + (name || '匿名函数') + '_execute_body', childEnv, { isFunctionEnv: true });
+  const fnEnv = new Environment('function_' + (name || '匿名函数') + '_execute_body', childEnv, { [ENV_DICTS.isFunctionEnv]: true });
   fnEnv.addConst(RUNTIME_LITERAL.this, _this);
   fnEnv.addConst('arguments', new RuntimeRefValue(RUNTIME_VALUE_TYPE.arguments, argsRVValue));
   const ret = parseAst(body, fnEnv);

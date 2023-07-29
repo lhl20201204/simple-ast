@@ -2,6 +2,7 @@ import parseAst from "..";
 import Environment from "../Environment";
 import { getUndefinedValue } from "../Environment/RuntimeValue";
 import parseRuntimeValue from "../Environment/parseRuntimeValue";
+import { ENV_DICTS } from "../constant";
 
 export default function parseForStatement(ast, env) {
   const { init, test, update, body } = ast;
@@ -18,7 +19,7 @@ export default function parseForStatement(ast, env) {
   parseAst(init, initEnv)
   while(parseRuntimeValue(parseAst(test, initEnv))) {
     bodyEnv = new Environment('for let/const statement body', initEnv, {
-      isForEnv: true,
+      [ENV_DICTS.isForEnv]: true,
     })
     parseAst(body, bodyEnv);
     if (bodyEnv.hadBreak()) {
