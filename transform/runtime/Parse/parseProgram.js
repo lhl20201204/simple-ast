@@ -2,6 +2,7 @@ import _ from "lodash";
 import parseAst from "..";
 import { getWindowEnv } from "../Environment/getWindow";
 import { RUNTIME_LITERAL } from "../constant";
+import { initEnviroment } from "../Environment/initEnviroment";
 export function geStatement(statements) {
   const fnS = []
   const varS = [];
@@ -98,7 +99,7 @@ export function geStatement(statements) {
 
 export default function parseProgram(ast) {
   const env = getWindowEnv()
-  env.reset();
+  initEnviroment()
   const statements = geStatement(ast.body);
   _.forEach(statements, c => {
     parseAst(c, env)

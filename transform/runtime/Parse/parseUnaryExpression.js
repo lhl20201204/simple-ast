@@ -1,6 +1,6 @@
 import parseAst from "..";
-import { createString } from "../Environment";
-import RuntimeValue, {  getFalseV, getTrueV, getUndefinedValue } from "../Environment/RuntimeValue";
+import RuntimeValue from "../Environment/RuntimeValue";
+import { createString, getFalseV, getTrueV, getUndefinedValue } from "../Environment/RuntimeValueInstance";
 import parseRuntimeValue from "../Environment/parseRuntimeValue";
 import { JS_TO_RUNTIME_VALUE_TYPE, OUTPUT_TYPE, RUNTIME_VALUE_TO_OUTPUT_TYPE, RUNTIME_VALUE_TYPE } from "../constant";
 import { getMemberPropertyKey } from "./parseMemberExpression";
@@ -11,12 +11,12 @@ function getUpdate(ast, env, step = 1) {
   const { prefix, argument } = ast;
   const rv = parseAst(argument, env)
   const value = parseRuntimeValue(rv);
-  const updateRvValue = value + 1* step
+  const updateRvValue = value + 1 * step
   const updateRv = new RuntimeValue(JS_TO_RUNTIME_VALUE_TYPE(updateRvValue), updateRvValue)
   setPattern(updateRv, argument, env, {
     useSet: true,
   });
-  return prefix ? rv : updateRv;
+  return prefix ? updateRv :  rv;
 }
 
 export function getTypeOf(ast, env) {
@@ -34,7 +34,8 @@ export function getTypeOf(ast, env) {
     RUNTIME_VALUE_TYPE.undefined,
     RUNTIME_VALUE_TYPE.number,
     RUNTIME_VALUE_TYPE.string,
-    RUNTIME_VALUE_TYPE.boolean
+    RUNTIME_VALUE_TYPE.boolean,
+    RUNTIME_VALUE_TYPE.symbol,
     ].includes(rv.type)) {
     return createString(RUNTIME_VALUE_TO_OUTPUT_TYPE(rv.type) )
   }

@@ -1,11 +1,13 @@
 import parseAst from ".."
 import { RuntimeValueAst, isInstanceOf } from "../../commonApi"
-import { OUTPUT_TYPE, RUNTIME_VALUE_TO_OUTPUT_TYPE, RUNTIME_VALUE_TYPE } from "../constant"
-import RuntimeValue, { createString, getFalseV, getTrueV } from "./RuntimeValue"
+import { OUTPUT_TYPE, PROPERTY_DESCRIPTOR_DICTS, RUNTIME_LITERAL, RUNTIME_VALUE_TO_OUTPUT_TYPE, RUNTIME_VALUE_TYPE } from "../constant"
+import PropertyDescriptor from "./PropertyDescriptor"
+import RuntimeValue from "./RuntimeValue"
+import { getFalseV, getReflectDefinedPropertyV, getTrueV, getUndefinedValue } from "./RuntimeValueInstance"
 import parseRuntimeValue from "./parseRuntimeValue"
 
 export function typeOfRuntimeValue(rv, ...args) {
-  if (!isInstanceOf(rv , RuntimeValue)) {
+  if (!isInstanceOf(rv, RuntimeValue)) {
     throw new Error('typeof 必须接一个RuntimeValue')
   }
   // console.log('----typeOfRuntimeValue----', rv)
@@ -15,7 +17,7 @@ export function typeOfRuntimeValue(rv, ...args) {
       "type": "UnaryExpression",
       "operator": "typeof",
       "prefix": true,
-      "argument": createRuntimeValueAst(rv,  ...args)
+      "argument": createRuntimeValueAst(rv, ...args)
     }
   }, {}))
 }
@@ -34,26 +36,34 @@ export function getRuntimeValueType(rv) {
     RUNTIME_VALUE_TYPE.number,
     RUNTIME_VALUE_TYPE.string,
     RUNTIME_VALUE_TYPE.boolean
-    ].includes(rv.type)) {
+  ].includes(rv.type)) {
     return RUNTIME_VALUE_TO_OUTPUT_TYPE(rv.type)
   }
-  return  OUTPUT_TYPE.object
+  return OUTPUT_TYPE.object
 }
 
-export function isUndefinedRuntimeValue(rv,  ...args) {
-  return getRuntimeValueType(rv,  ...args) === OUTPUT_TYPE.undefined
+export function isRuntimeValueTrue(rv) {
+  return rv === getTrueV()
 }
 
-export function isFunctionRuntimeValue(rv,  ...args) {
-  return getRuntimeValueType(rv,  ...args) === OUTPUT_TYPE.function
+export function isRuntimeValueFalse(rv) {
+  return rv === getFalseV()
 }
 
-export function isObjectRuntimeValue(rv,  ...args) {
-  return getRuntimeValueType(rv,  ...args) === OUTPUT_TYPE.object
+export function isUndefinedRuntimeValue(rv, ...args) {
+  return getRuntimeValueType(rv, ...args) === OUTPUT_TYPE.undefined
+}
+
+export function isFunctionRuntimeValue(rv, ...args) {
+  return getRuntimeValueType(rv, ...args) === OUTPUT_TYPE.function
+}
+
+export function isObjectRuntimeValue(rv, ...args) {
+  return getRuntimeValueType(rv, ...args) === OUTPUT_TYPE.object
 }
 
 export function createRuntimeValueAst(value, name, ast) {
-  if (!isInstanceOf(value, RuntimeValue)) {
+  if (!isInstanceOf(value, RuntimeValue) && !_.isFunction(value)) {
     console.error(value)
     throw new Error('创建失败')
   }
@@ -64,6 +74,28 @@ export function createRuntimeValueAst(value, name, ast) {
     ast,
   });
   return ret;
+}
+
+export function createLiteralAst(str){
+  if (_.isObject(str)) {
+    console.error('有object类型的Literal')
+  }
+  return {
+    type: 'Literal',
+    value: str,
+    raw: `${str}`,
+  }
+}
+
+export function createStringLiteralAst(str){
+  if (_.isObject(str)) {
+    console.error('有object类型的Literal')
+  }
+  return {
+    type: 'Literal',
+    value: `${str}`,
+    raw: `'${str}'`,
+  }
 }
 
 export function instanceOfRuntimeValue(left, right) {
@@ -83,17 +115,17 @@ export function instanceOfRuntimeValue(left, right) {
     console.error(left, right)
     throw new Error('instanceof 右边必须是有prototype的function')
   }
-  while(parseRuntimeValue(t) && t !== rightPrototypeRv) {
+  while (parseRuntimeValue(t) && t !== rightPrototypeRv) {
     t = t.getProto();
   }
- 
+
   // console.log('enter-instanceOf')
   return t === rightPrototypeRv ? getTrueV() : getFalseV()
 }
 
 
 export function getBindRuntimeValue(env, fn, ...args) {
-  if (isInstanceOf(fn , RuntimeValue)) {
+  if (isInstanceOf(fn, RuntimeValue)) {
     throw new Error('bind绑定不能是RuntimeValue,应该将其先转成ast')
   }
   return parseAst({
@@ -133,9 +165,223 @@ export function parseFunctionCallRuntimeValue(env, fn, ...args) {
       computed: false,
       optional: false
     },
-    arguments:  [
+    arguments: [
       ...args
     ],
     optional: false
   }, env)
+}
+
+export function isREFLECT_DEFINE_PROPERTYPropertyDescriptor(pd) {
+  if (!isInstanceOf(pd, PropertyDescriptor)) {
+    throw new Error('不是PropertyDescriptor实例')
+  }
+  return pd.kind === PROPERTY_DESCRIPTOR_DICTS.REFLECT_DEFINE_PROPERTY
+}
+
+export function getPropertyDesctiptorConfigAst(name, TF) {
+  return {
+    type: "Property",
+    method: false,
+    shorthand: false,
+    computed: false,
+    key: {
+      type: "Identifier",
+      name,
+    },
+    value: createLiteralAst(TF),
+    kind: "init"
+  }
+}
+
+export function createPropertyDesctiptor(objRv, attr, propertyDescriptorConfig, config) {
+  if (!_.isObject(config)) {
+    throw new Error('config 必传');
+  }
+  const { kind } = config;
+  if (!kind) {
+    throw new Error('kind 必传');
+  }
+
+  const getHasSet = (c) =>  Reflect.has(c, RUNTIME_LITERAL.set)
+  const getHasGet = (c) =>  Reflect.has(c, RUNTIME_LITERAL.get)
+  const getHasValue = (c) => Reflect.has(c, 'value');
+  const getHasWritable = (c) => Reflect.has(c, PROPERTY_DESCRIPTOR_DICTS.writable);
+
+  const hasSet = getHasSet(propertyDescriptorConfig)
+  const hasGet = getHasGet(propertyDescriptorConfig)
+  const hasValue = getHasValue(propertyDescriptorConfig)
+  const hasWritable = getHasWritable(propertyDescriptorConfig);
+
+  if (hasSet
+    && hasValue) {
+      console.error(propertyDescriptorConfig)
+    throw new Error('不能同时设置' + RUNTIME_LITERAL.set + ' 和 value')
+  }
+  if (hasGet
+    && hasValue) {
+    throw new Error('不能同时设置' + RUNTIME_LITERAL.get + ' 和 value')
+  }
+
+  if (hasSet && hasWritable) {
+    throw new Error('不能同时设置' + RUNTIME_LITERAL.set + ' 和 value')
+  }
+
+  if (hasGet && hasWritable) {
+    throw new Error('不能同时设置' + RUNTIME_LITERAL.get + ' 和 value')
+  }
+
+  const hasSetOrGet = hasSet || hasGet
+
+  const undefinedV = getUndefinedValue()
+  const trueV = getTrueV();
+  const falseV = getFalseV();
+
+ // 这里可能获取的是原型链上的
+  const oldPropertyDescriptor = objRv.getPropertyDescriptor(attr);
+  if (!oldPropertyDescriptor) {
+    const { value } = propertyDescriptorConfig;
+    if (kind === PROPERTY_DESCRIPTOR_DICTS.init) {
+      return new PropertyDescriptor({
+        value,
+        [PROPERTY_DESCRIPTOR_DICTS.writable]: trueV,
+        [PROPERTY_DESCRIPTOR_DICTS.enumerable]: trueV,
+        [PROPERTY_DESCRIPTOR_DICTS.configurable]: trueV,
+        kind,
+      })
+    }
+
+    if ( [PROPERTY_DESCRIPTOR_DICTS.REFLECT_DEFINE_PROPERTY].includes(kind)) {
+      if (!hasSetOrGet) {
+        propertyDescriptorConfig.value = propertyDescriptorConfig.value ?? undefinedV;
+        propertyDescriptorConfig[PROPERTY_DESCRIPTOR_DICTS.writable] = propertyDescriptorConfig[PROPERTY_DESCRIPTOR_DICTS.writable] ?? falseV;
+      } else {
+        propertyDescriptorConfig.set = propertyDescriptorConfig.set ?? undefinedV;
+        propertyDescriptorConfig.get = propertyDescriptorConfig.get ?? undefinedV;
+      }
+      propertyDescriptorConfig[PROPERTY_DESCRIPTOR_DICTS.enumerable] = propertyDescriptorConfig[PROPERTY_DESCRIPTOR_DICTS.enumerable] ?? falseV;
+      propertyDescriptorConfig[PROPERTY_DESCRIPTOR_DICTS.configurable] = propertyDescriptorConfig[PROPERTY_DESCRIPTOR_DICTS.configurable] ?? falseV;
+      propertyDescriptorConfig.kind = PROPERTY_DESCRIPTOR_DICTS.REFLECT_DEFINE_PROPERTY;
+      return new PropertyDescriptor(propertyDescriptorConfig)
+    }
+  } else {
+    if (!oldPropertyDescriptor.isPropertyDescriptorConfigurable()) {
+      console.error(`Reflect.defineProperty不能重新定义${attr}属性`)
+    }
+    // oldPropertyDescriptor.setCurrentState(kind);
+    if (kind === PROPERTY_DESCRIPTOR_DICTS.init) {
+      const { value } = propertyDescriptorConfig;
+      return new PropertyDescriptor({
+        ..._.pick(oldPropertyDescriptor, [PROPERTY_DESCRIPTOR_DICTS.writable, PROPERTY_DESCRIPTOR_DICTS.enumerable, PROPERTY_DESCRIPTOR_DICTS.configurable]),
+        value,
+        kind,
+      })
+    }
+    if ([PROPERTY_DESCRIPTOR_DICTS.REFLECT_DEFINE_PROPERTY].includes(kind)) {
+      if (hasSetOrGet) {
+        // console.warn('attr-set-get', attr, {
+        //   [PROPERTY_DESCRIPTOR_DICTS.enumerable]: propertyDescriptorConfig[PROPERTY_DESCRIPTOR_DICTS.enumerable] ?? oldPropertyDescriptor[PROPERTY_DESCRIPTOR_DICTS.enumerable],
+        //   [PROPERTY_DESCRIPTOR_DICTS.configurable]: propertyDescriptorConfig[PROPERTY_DESCRIPTOR_DICTS.configurable] ?? oldPropertyDescriptor[PROPERTY_DESCRIPTOR_DICTS.configurable],
+        //   [RUNTIME_LITERAL.set]: propertyDescriptorConfig[RUNTIME_LITERAL.set] ?? oldPropertyDescriptor[RUNTIME_LITERAL.set] ?? undefinedV,
+        //   [RUNTIME_LITERAL.get]: propertyDescriptorConfig[RUNTIME_LITERAL.get] ?? oldPropertyDescriptor[RUNTIME_LITERAL.get] ?? undefinedV,
+        //   kind,
+        // }, oldPropertyDescriptor)
+        return new PropertyDescriptor({
+          [PROPERTY_DESCRIPTOR_DICTS.enumerable]: propertyDescriptorConfig[PROPERTY_DESCRIPTOR_DICTS.enumerable] ?? oldPropertyDescriptor[PROPERTY_DESCRIPTOR_DICTS.enumerable],
+          [PROPERTY_DESCRIPTOR_DICTS.configurable]: propertyDescriptorConfig[PROPERTY_DESCRIPTOR_DICTS.configurable] ?? oldPropertyDescriptor[PROPERTY_DESCRIPTOR_DICTS.configurable],
+          [RUNTIME_LITERAL.set]: propertyDescriptorConfig[RUNTIME_LITERAL.set] ?? oldPropertyDescriptor[RUNTIME_LITERAL.set] ?? undefinedV,
+          [RUNTIME_LITERAL.get]: propertyDescriptorConfig[RUNTIME_LITERAL.get] ?? oldPropertyDescriptor[RUNTIME_LITERAL.get] ?? undefinedV,
+          kind,
+        });
+      } else {
+        // console.warn('attr-value', attr, propertyDescriptorConfig)
+        return new PropertyDescriptor({
+          [PROPERTY_DESCRIPTOR_DICTS.enumerable]: propertyDescriptorConfig[PROPERTY_DESCRIPTOR_DICTS.enumerable] ?? oldPropertyDescriptor[PROPERTY_DESCRIPTOR_DICTS.enumerable],
+          [PROPERTY_DESCRIPTOR_DICTS.configurable]: propertyDescriptorConfig[PROPERTY_DESCRIPTOR_DICTS.configurable] ?? oldPropertyDescriptor[PROPERTY_DESCRIPTOR_DICTS.configurable],
+          [PROPERTY_DESCRIPTOR_DICTS.writable]: propertyDescriptorConfig[PROPERTY_DESCRIPTOR_DICTS.writable] ?? oldPropertyDescriptor[PROPERTY_DESCRIPTOR_DICTS.writable] ?? falseV,
+          'value': propertyDescriptorConfig.value ?? oldPropertyDescriptor['value'],
+          kind,
+        });
+      }
+    }
+  }
+
+  console.error(...arguments)
+  throw new Error('未处理的PropertyDesctiptor类型')
+}
+
+export function createSimplePropertyDescriptor(config) {
+  const trueV = getTrueV();
+  return new PropertyDescriptor({
+    [PROPERTY_DESCRIPTOR_DICTS.writable]: config[PROPERTY_DESCRIPTOR_DICTS.writable] ?? trueV,
+    [PROPERTY_DESCRIPTOR_DICTS.enumerable]: config[PROPERTY_DESCRIPTOR_DICTS.enumerable] ?? trueV,
+    [PROPERTY_DESCRIPTOR_DICTS.configurable]: config[PROPERTY_DESCRIPTOR_DICTS.configurable] ?? trueV,
+    value: config.value ?? getUndefinedValue(),
+    kind: PROPERTY_DESCRIPTOR_DICTS.init,
+  })
+}
+
+export function getReflectDefinePropertyAst(argumentAst) {
+  if (!Array.isArray(argumentAst)) {
+    throw new Error(`argumentAst必须是ast数组`)
+  }
+  return {
+    type: "ExpressionStatement",
+    expression: {
+      type: "CallExpression",
+      callee: createRuntimeValueAst(getReflectDefinedPropertyV(), 'Reflect$defineProperty'),
+      arguments: argumentAst,
+      optional: false
+    }
+  }
+}
+
+
+export function getObjectAttrOfPropertyDescriptor(objRv, attr, valueRv, { kind, env }) {
+  if (!env) {
+    throw new Error('env 漏传')
+  }
+  if (!kind) {
+    throw new Error('kind 漏传')
+  }
+  const oldDescriptor = objRv.getPropertyDescriptor(attr) ?? createSimplePropertyDescriptor({
+    value: valueRv,
+  })
+
+  oldDescriptor.setCurrentState(kind)
+  
+  // console.log('enter------->', kind, oldDescriptor, oldDescriptor.isPropertyDescriptorUnWritable());
+  if ([RUNTIME_LITERAL.set, RUNTIME_LITERAL.get].includes(kind)) {
+    // console.error(attr);
+    oldDescriptor.deleteAttr('value')
+    oldDescriptor.deleteAttr(PROPERTY_DESCRIPTOR_DICTS.writable)
+    oldDescriptor.setRuntimeValue(kind, valueRv)
+  } else if (kind === PROPERTY_DESCRIPTOR_DICTS.init) {
+    if (oldDescriptor.isPropertyDescriptorUnWritable()) {
+      if (env.isInUseStrict()) {
+        throw new Error('严格环境下，writable设为false，赋值会报错')
+      }
+      return oldDescriptor;
+    }
+
+    // if (attr === 'fn') {
+    //   console.warn('enter', valueRv, oldDescriptor);
+    // }
+
+    // if (!['value', 'configurable', 'enumerable', 'writable', 'get', 'set'].includes(attr)){
+    //   console.warn(attr, valueRv, oldDescriptor)
+    // }
+   
+  //  console.warn('enter', attr, valueRv)
+    // oldDescriptor.deleteAttr(RUNTIME_LITERAL.set)
+    // oldDescriptor.deleteAttr( RUNTIME_LITERAL.get)
+    if (!oldDescriptor.isHaveSetterOrGetter()) {
+      oldDescriptor.setRuntimeValue('value', valueRv)
+    }
+  }
+
+  // if (attr === 'a') {
+  //   console.error('----', oldDescriptor)
+  // }
+  return oldDescriptor;
 }

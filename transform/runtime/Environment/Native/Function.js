@@ -39,7 +39,11 @@ Function.prototype.apply = function apply(context, args) {
 `
 
 const code3 = `
-Function.prototype.bind = function bind(...args1) {
+Reflect.defineProperty(Function.prototype, 'bind', {
+  writable: true,
+  enumerable: false,
+  configurable: true,
+  value: function bind(...args1) {
   const _this = this;
   if (typeof _this !== 'function') {
     console.error(_this, typeof _this, 'bind不能作用在非函数上');
@@ -50,9 +54,10 @@ Function.prototype.bind = function bind(...args1) {
     return _this.call(...args1, ...args2);
   }
 }
+})
 `
 
-export const _FunctionCallAst =  {
+export const _FunctionCallAst = {
   "type": "ExpressionStatement",
   "start": 0,
   "end": 457,
@@ -1051,233 +1056,149 @@ export const _FunctionApplyAst = {
 export const _FunctionBindAst = {
   "type": "ExpressionStatement",
   "start": 0,
-  "end": 296,
+  "end": 396,
   "expression": {
-    "type": "AssignmentExpression",
+    "type": "CallExpression",
     "start": 0,
-    "end": 296,
-    "operator": "=",
-    "left": {
+    "end": 396,
+    "callee": {
       "type": "MemberExpression",
       "start": 0,
-      "end": 23,
+      "end": 22,
       "object": {
-        "type": "MemberExpression",
+        "type": "Identifier",
         "start": 0,
-        "end": 18,
+        "end": 7,
+        "name": "Reflect"
+      },
+      "property": {
+        "type": "Identifier",
+        "start": 8,
+        "end": 22,
+        "name": "defineProperty"
+      },
+      "computed": false,
+      "optional": false
+    },
+    "arguments": [
+      {
+        "type": "MemberExpression",
+        "start": 23,
+        "end": 41,
         "object": {
           "type": "Identifier",
-          "start": 0,
-          "end": 8,
+          "start": 23,
+          "end": 31,
           "name": "Function"
         },
         "property": {
           "type": "Identifier",
-          "start": 9,
-          "end": 18,
+          "start": 32,
+          "end": 41,
           "name": "prototype"
         },
         "computed": false,
         "optional": false
       },
-      "property": {
-        "type": "Identifier",
-        "start": 19,
-        "end": 23,
-        "name": "bind"
+      {
+        "type": "Literal",
+        "start": 43,
+        "end": 49,
+        "value": "bind",
+        "raw": "'bind'"
       },
-      "computed": false,
-      "optional": false
-    },
-    "right": {
-      "type": "FunctionExpression",
-      "start": 26,
-      "end": 296,
-      "id": {
-        "type": "Identifier",
-        "start": 35,
-        "end": 39,
-        "name": "bind"
-      },
-      "expression": false,
-      "generator": false,
-      "async": false,
-      "params": [
-        {
-          "type": "RestElement",
-          "start": 40,
-          "end": 48,
-          "argument": {
-            "type": "Identifier",
-            "start": 43,
-            "end": 48,
-            "name": "args1"
-          }
-        }
-      ],
-      "body": {
-        "type": "BlockStatement",
-        "start": 50,
-        "end": 296,
-        "body": [
+      {
+        "type": "ObjectExpression",
+        "start": 51,
+        "end": 395,
+        "properties": [
           {
-            "type": "VariableDeclaration",
-            "start": 54,
-            "end": 73,
-            "declarations": [
-              {
-                "type": "VariableDeclarator",
-                "start": 60,
-                "end": 72,
-                "id": {
-                  "type": "Identifier",
-                  "start": 60,
-                  "end": 65,
-                  "name": "_this"
-                },
-                "init": {
-                  "type": "ThisExpression",
-                  "start": 68,
-                  "end": 72
-                }
-              }
-            ],
-            "kind": "const"
+            "type": "Property",
+            "start": 55,
+            "end": 69,
+            "method": false,
+            "shorthand": false,
+            "computed": false,
+            "key": {
+              "type": "Identifier",
+              "start": 55,
+              "end": 63,
+              "name": "writable"
+            },
+            "value": {
+              "type": "Literal",
+              "start": 65,
+              "end": 69,
+              "value": true,
+              "raw": "true"
+            },
+            "kind": "init"
           },
           {
-            "type": "IfStatement",
-            "start": 76,
-            "end": 209,
-            "test": {
-              "type": "BinaryExpression",
-              "start": 80,
-              "end": 107,
-              "left": {
-                "type": "UnaryExpression",
-                "start": 80,
-                "end": 92,
-                "operator": "typeof",
-                "prefix": true,
-                "argument": {
-                  "type": "Identifier",
-                  "start": 87,
-                  "end": 92,
-                  "name": "_this"
-                }
-              },
-              "operator": "!==",
-              "right": {
-                "type": "Literal",
-                "start": 97,
-                "end": 107,
-                "value": "function",
-                "raw": "'function'"
-              }
+            "type": "Property",
+            "start": 73,
+            "end": 90,
+            "method": false,
+            "shorthand": false,
+            "computed": false,
+            "key": {
+              "type": "Identifier",
+              "start": 73,
+              "end": 83,
+              "name": "enumerable"
             },
-            "consequent": {
-              "type": "BlockStatement",
-              "start": 109,
-              "end": 209,
-              "body": [
-                {
-                  "type": "ExpressionStatement",
-                  "start": 115,
-                  "end": 167,
-                  "expression": {
-                    "type": "CallExpression",
-                    "start": 115,
-                    "end": 166,
-                    "callee": {
-                      "type": "MemberExpression",
-                      "start": 115,
-                      "end": 128,
-                      "object": {
-                        "type": "Identifier",
-                        "start": 115,
-                        "end": 122,
-                        "name": "console"
-                      },
-                      "property": {
-                        "type": "Identifier",
-                        "start": 123,
-                        "end": 128,
-                        "name": "error"
-                      },
-                      "computed": false,
-                      "optional": false
-                    },
-                    "arguments": [
-                      {
-                        "type": "Identifier",
-                        "start": 129,
-                        "end": 134,
-                        "name": "_this"
-                      },
-                      {
-                        "type": "UnaryExpression",
-                        "start": 136,
-                        "end": 148,
-                        "operator": "typeof",
-                        "prefix": true,
-                        "argument": {
-                          "type": "Identifier",
-                          "start": 143,
-                          "end": 148,
-                          "name": "_this"
-                        }
-                      },
-                      {
-                        "type": "Literal",
-                        "start": 150,
-                        "end": 165,
-                        "value": "bind不能作用在非函数上",
-                        "raw": "'bind不能作用在非函数上'"
-                      }
-                    ],
-                    "optional": false
-                  }
-                },
-                {
-                  "type": "ThrowStatement",
-                  "start": 172,
-                  "end": 205,
-                  "argument": {
-                    "type": "NewExpression",
-                    "start": 178,
-                    "end": 204,
-                    "callee": {
-                      "type": "Identifier",
-                      "start": 182,
-                      "end": 187,
-                      "name": "Error"
-                    },
-                    "arguments": [
-                      {
-                        "type": "Literal",
-                        "start": 188,
-                        "end": 203,
-                        "value": "bind不能作用在非函数上",
-                        "raw": "'bind不能作用在非函数上'"
-                      }
-                    ]
-                  }
-                }
-              ]
+            "value": {
+              "type": "Literal",
+              "start": 85,
+              "end": 90,
+              "value": false,
+              "raw": "false"
             },
-            "alternate": null
+            "kind": "init"
           },
           {
-            "type": "ReturnStatement",
-            "start": 215,
-            "end": 294,
-            "argument": {
+            "type": "Property",
+            "start": 94,
+            "end": 112,
+            "method": false,
+            "shorthand": false,
+            "computed": false,
+            "key": {
+              "type": "Identifier",
+              "start": 94,
+              "end": 106,
+              "name": "configurable"
+            },
+            "value": {
+              "type": "Literal",
+              "start": 108,
+              "end": 112,
+              "value": true,
+              "raw": "true"
+            },
+            "kind": "init"
+          },
+          {
+            "type": "Property",
+            "start": 116,
+            "end": 393,
+            "method": false,
+            "shorthand": false,
+            "computed": false,
+            "key": {
+              "type": "Identifier",
+              "start": 116,
+              "end": 121,
+              "name": "value"
+            },
+            "value": {
               "type": "FunctionExpression",
-              "start": 222,
-              "end": 294,
+              "start": 123,
+              "end": 393,
               "id": {
                 "type": "Identifier",
-                "start": 231,
-                "end": 235,
+                "start": 132,
+                "end": 136,
                 "name": "bind"
               },
               "expression": false,
@@ -1286,81 +1207,268 @@ export const _FunctionBindAst = {
               "params": [
                 {
                   "type": "RestElement",
-                  "start": 236,
-                  "end": 244,
+                  "start": 137,
+                  "end": 145,
                   "argument": {
                     "type": "Identifier",
-                    "start": 239,
-                    "end": 244,
-                    "name": "args2"
+                    "start": 140,
+                    "end": 145,
+                    "name": "args1"
                   }
                 }
               ],
               "body": {
                 "type": "BlockStatement",
-                "start": 246,
-                "end": 294,
+                "start": 147,
+                "end": 393,
                 "body": [
                   {
-                    "type": "ReturnStatement",
-                    "start": 252,
-                    "end": 290,
-                    "argument": {
-                      "type": "CallExpression",
-                      "start": 259,
-                      "end": 289,
-                      "callee": {
-                        "type": "MemberExpression",
-                        "start": 259,
-                        "end": 269,
-                        "object": {
+                    "type": "VariableDeclaration",
+                    "start": 151,
+                    "end": 170,
+                    "declarations": [
+                      {
+                        "type": "VariableDeclarator",
+                        "start": 157,
+                        "end": 169,
+                        "id": {
                           "type": "Identifier",
-                          "start": 259,
-                          "end": 264,
+                          "start": 157,
+                          "end": 162,
                           "name": "_this"
                         },
-                        "property": {
+                        "init": {
+                          "type": "ThisExpression",
+                          "start": 165,
+                          "end": 169
+                        }
+                      }
+                    ],
+                    "kind": "const"
+                  },
+                  {
+                    "type": "IfStatement",
+                    "start": 173,
+                    "end": 306,
+                    "test": {
+                      "type": "BinaryExpression",
+                      "start": 177,
+                      "end": 204,
+                      "left": {
+                        "type": "UnaryExpression",
+                        "start": 177,
+                        "end": 189,
+                        "operator": "typeof",
+                        "prefix": true,
+                        "argument": {
                           "type": "Identifier",
-                          "start": 265,
-                          "end": 269,
-                          "name": "call"
-                        },
-                        "computed": false,
-                        "optional": false
+                          "start": 184,
+                          "end": 189,
+                          "name": "_this"
+                        }
                       },
-                      "arguments": [
+                      "operator": "!==",
+                      "right": {
+                        "type": "Literal",
+                        "start": 194,
+                        "end": 204,
+                        "value": "function",
+                        "raw": "'function'"
+                      }
+                    },
+                    "consequent": {
+                      "type": "BlockStatement",
+                      "start": 206,
+                      "end": 306,
+                      "body": [
                         {
-                          "type": "SpreadElement",
-                          "start": 270,
-                          "end": 278,
-                          "argument": {
-                            "type": "Identifier",
-                            "start": 273,
-                            "end": 278,
-                            "name": "args1"
+                          "type": "ExpressionStatement",
+                          "start": 212,
+                          "end": 264,
+                          "expression": {
+                            "type": "CallExpression",
+                            "start": 212,
+                            "end": 263,
+                            "callee": {
+                              "type": "MemberExpression",
+                              "start": 212,
+                              "end": 225,
+                              "object": {
+                                "type": "Identifier",
+                                "start": 212,
+                                "end": 219,
+                                "name": "console"
+                              },
+                              "property": {
+                                "type": "Identifier",
+                                "start": 220,
+                                "end": 225,
+                                "name": "error"
+                              },
+                              "computed": false,
+                              "optional": false
+                            },
+                            "arguments": [
+                              {
+                                "type": "Identifier",
+                                "start": 226,
+                                "end": 231,
+                                "name": "_this"
+                              },
+                              {
+                                "type": "UnaryExpression",
+                                "start": 233,
+                                "end": 245,
+                                "operator": "typeof",
+                                "prefix": true,
+                                "argument": {
+                                  "type": "Identifier",
+                                  "start": 240,
+                                  "end": 245,
+                                  "name": "_this"
+                                }
+                              },
+                              {
+                                "type": "Literal",
+                                "start": 247,
+                                "end": 262,
+                                "value": "bind不能作用在非函数上",
+                                "raw": "'bind不能作用在非函数上'"
+                              }
+                            ],
+                            "optional": false
                           }
                         },
                         {
-                          "type": "SpreadElement",
-                          "start": 280,
-                          "end": 288,
+                          "type": "ThrowStatement",
+                          "start": 269,
+                          "end": 302,
+                          "argument": {
+                            "type": "NewExpression",
+                            "start": 275,
+                            "end": 301,
+                            "callee": {
+                              "type": "Identifier",
+                              "start": 279,
+                              "end": 284,
+                              "name": "Error"
+                            },
+                            "arguments": [
+                              {
+                                "type": "Literal",
+                                "start": 285,
+                                "end": 300,
+                                "value": "bind不能作用在非函数上",
+                                "raw": "'bind不能作用在非函数上'"
+                              }
+                            ]
+                          }
+                        }
+                      ]
+                    },
+                    "alternate": null
+                  },
+                  {
+                    "type": "ReturnStatement",
+                    "start": 312,
+                    "end": 391,
+                    "argument": {
+                      "type": "FunctionExpression",
+                      "start": 319,
+                      "end": 391,
+                      "id": {
+                        "type": "Identifier",
+                        "start": 328,
+                        "end": 332,
+                        "name": "bind"
+                      },
+                      "expression": false,
+                      "generator": false,
+                      "async": false,
+                      "params": [
+                        {
+                          "type": "RestElement",
+                          "start": 333,
+                          "end": 341,
                           "argument": {
                             "type": "Identifier",
-                            "start": 283,
-                            "end": 288,
+                            "start": 336,
+                            "end": 341,
                             "name": "args2"
                           }
                         }
                       ],
-                      "optional": false
+                      "body": {
+                        "type": "BlockStatement",
+                        "start": 343,
+                        "end": 391,
+                        "body": [
+                          {
+                            "type": "ReturnStatement",
+                            "start": 349,
+                            "end": 387,
+                            "argument": {
+                              "type": "CallExpression",
+                              "start": 356,
+                              "end": 386,
+                              "callee": {
+                                "type": "MemberExpression",
+                                "start": 356,
+                                "end": 366,
+                                "object": {
+                                  "type": "Identifier",
+                                  "start": 356,
+                                  "end": 361,
+                                  "name": "_this"
+                                },
+                                "property": {
+                                  "type": "Identifier",
+                                  "start": 362,
+                                  "end": 366,
+                                  "name": "call"
+                                },
+                                "computed": false,
+                                "optional": false
+                              },
+                              "arguments": [
+                                {
+                                  "type": "SpreadElement",
+                                  "start": 367,
+                                  "end": 375,
+                                  "argument": {
+                                    "type": "Identifier",
+                                    "start": 370,
+                                    "end": 375,
+                                    "name": "args1"
+                                  }
+                                },
+                                {
+                                  "type": "SpreadElement",
+                                  "start": 377,
+                                  "end": 385,
+                                  "argument": {
+                                    "type": "Identifier",
+                                    "start": 380,
+                                    "end": 385,
+                                    "name": "args2"
+                                  }
+                                }
+                              ],
+                              "optional": false
+                            }
+                          }
+                        ]
+                      }
                     }
                   }
                 ]
               }
-            }
+            },
+            "kind": "init"
           }
         ]
       }
-    }
+    ],
+    "optional": false
   }
 }

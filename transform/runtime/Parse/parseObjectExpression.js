@@ -1,8 +1,9 @@
 import parseAst from "..";
-import { createObject } from "../Environment";
 import PropertyDescriptor from "../Environment/PropertyDescriptor";
+import { createObject, getFalseV, getUndefinedValue } from "../Environment/RuntimeValueInstance";
 import parseRuntimeValue from "../Environment/parseRuntimeValue";
-import { RUNTIME_LITERAL } from "../constant";
+import { createPropertyDesctiptor, createSimplePropertyDescriptor, getObjectAttrOfPropertyDescriptor } from "../Environment/utils";
+import { PROPERTY_DESCRIPTOR_DICTS, RUNTIME_LITERAL } from "../constant";
 
 export function getKeyString(key, computed,  env) {
   if (!env) {
@@ -28,18 +29,6 @@ export function getObjectPropertyExpressionKey(ast, env) {
   return getKeyString(key, computed, env)
 }
 
-export function getObjectPropertyDescriptor(objRv, attr, valueRv, kind) {
-  const oldDescriptor = objRv.getPropertyDescriptor(attr) ?? new PropertyDescriptor({
-    value: valueRv,
-  })
-    
-  if ([RUNTIME_LITERAL.set, RUNTIME_LITERAL.get].includes(kind)) {
-      oldDescriptor.setRuntimeValue(kind, valueRv)
-  } else if (kind === 'init') {
-    oldDescriptor.setRuntimeValue('value', valueRv)
-  }
-  return oldDescriptor;
-}
 
 export default function parseObjectExpression(ast, env) {
   //  const obj = {};
@@ -49,21 +38,16 @@ export default function parseObjectExpression(ast, env) {
       const rv = parseAst(c.argument, env);
       for(const x of rv.keys()) {
         // obj[x] = rv.value[x];
-        objRv.set(x, rv.get(x), rv.getPropertyDescriptor(x))
+        // 这里不用clone
+        objRv.set(x, rv.get(x), rv.getOwnPropertyDescriptor(x))
       }
       return;
     }
     const { value, kind } = c;
     let k = getObjectPropertyExpressionKey(c, env)
     const valueRv = parseAst(value, env)
-    // const oldDescriptor = objRv.getPropertyDescriptor(k) ?? new PropertyDescriptor({})
-    
-    // if ([RUNTIME_LITERAL.set, RUNTIME_LITERAL.get].includes(kind)) {
-    //   oldDescriptor.setRuntimeValue(kind, valueRv)
-    // }
-    
 
-    objRv.set(k, valueRv, getObjectPropertyDescriptor(objRv, k, valueRv, kind))
+    objRv.set(k, valueRv, getObjectAttrOfPropertyDescriptor(objRv, k, valueRv, { kind, env }))
     // obj[k] = valueRv;
    })
    return objRv

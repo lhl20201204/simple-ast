@@ -1,5 +1,5 @@
 import parseAst from "..";
-import RuntimeValue, { getNullValue } from "../Environment/RuntimeValue";
+import { getNullValue } from "../Environment/RuntimeValueInstance";
 import parseRuntimeValue from "../Environment/parseRuntimeValue";
 
 function parseAnd(ast1, ast2, env) {

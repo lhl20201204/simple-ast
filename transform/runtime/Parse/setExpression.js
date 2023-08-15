@@ -1,6 +1,7 @@
 import parseAst from "..";
-import { RUNTIME_LITERAL } from "../constant";
+import { PROPERTY_DESCRIPTOR_DICTS, RUNTIME_LITERAL } from "../constant";
 import parseRuntimeValue from "../Environment/parseRuntimeValue";
+import { createLiteralAst, getObjectAttrOfPropertyDescriptor } from "../Environment/utils";
 import { getMemberPropertyKey } from "./parseMemberExpression";
 const undefinedAst = {
   type: 'Identifier',
@@ -27,8 +28,10 @@ export function setMemberExpression(left, right, env, config) {
   // }
   // console.log(k, config)
   const value = parseAst(right, env);
-  // console.error(objectRV, k, value, '---.');
-  objectRV.set(k, value)
+  // if (k === 'a') {
+  //   console.error(objectRV, k, value, '---.');
+  // }
+  objectRV.set(k, value, getObjectAttrOfPropertyDescriptor(objectRV,k, value, { kind: PROPERTY_DESCRIPTOR_DICTS.init, env }))
   // console.log(objectRV, k, value);
   // objectRV.value[k] = value;
   return value;
@@ -51,11 +54,7 @@ export function setArrayPattern(left, right, env, config) {
      setExpression(a, {
       type: 'MemberExpression',
       object: right,
-      property: {
-        type: 'Literal',
-        value: i,
-        raw: `${i}`,
-      },
+      property: createLiteralAst(i),
       computed: true,
       optional: false,
      }, env, config)

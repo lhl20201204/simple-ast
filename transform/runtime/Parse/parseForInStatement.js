@@ -1,6 +1,7 @@
 import parseAst from "..";
-import Environment, { createString } from "../Environment";
+import Environment from "../Environment";
 import RuntimeValue from "../Environment/RuntimeValue";
+import { createString } from "../Environment/RuntimeValueInstance";
 import { ENV_DICTS, RUNTIME_VALUE_TYPE } from "../constant";
 import setExpression from "./setExpression";
 import setPattern from "./setPattern";

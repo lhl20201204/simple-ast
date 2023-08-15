@@ -29,283 +29,116 @@
     // }
 
     // 开始添加类
-    function test () {
-    const obj7 = {
-        x : 1,
-        run  () {
-            console.log(this, this.x)
-        } /* function end */
-    };
-    obj7.run()
-    const t4 = obj7.run;
-    t4()
-    console.log('hh-----h')
-    window.sfd?.error?.('jfdofs')
-    this.w  =  '3'
-    const o1 = {
-        hhhh : 'kklfl',
-        c : [1]
-    };
-    const o2 = {
-        a : 'fff',
-        ...o1
-    };
-    console.log(o2)
-    o1.c[2]  =  2
-    console.log(o2, o2.c[1])
-    const fn = '1';
-    let b = 'temp';
-    class A {
-        ff = 'tt';
-        [ (() => {
-            console.log(this)
-            return 'run2'
-        })() ] = function () {
-            console.log(this, this.ff)
-        } /* function end */;
-        static ff = 'A of FF';
-        static g = 'h';
-        static [ fn + '2' + this.w ] = this.ff;
+    function test() {
+      const obj = {};
+      let t = 6;
+      Reflect.defineProperty(obj, 'b', { value: 4 })
+      const old = Reflect.getOwnPropertyDescriptor(obj, 'b');
+      console.log(
+        obj.b,
+        old,
+        old === Reflect.getOwnPropertyDescriptor(obj, 'b')
+      )
+      obj.b = 8
+      const old2 = Reflect.getOwnPropertyDescriptor(obj, 'b');
+      console.log(
+        'b',
+        obj.b,
+        old2,
+        old === old2
+      )
+      obj.a = 5
+      console.log(
+        obj.a,
+        Reflect.getOwnPropertyDescriptor(obj, 'a')
+      )
+      Reflect.defineProperty(
+        obj,
+        'a',
+        {
+          set(x) {
+            return this
+          } /* function end */,
+          enumerable: false
+        }
+      )
+      console.log(
+        obj.a,
+        Reflect.getOwnPropertyDescriptor(obj, 'a')
+      )
+      Reflect.defineProperty(obj, 'a', { value: 2 })
+      console.log(
+        obj.a,
+        Reflect.getOwnPropertyDescriptor(obj, 'a')
+      )
+      Reflect.defineProperty(
+        obj,
+        'a',
+        { writable: true }
+      )
+      console.log(
+        obj.a,
+        Reflect.getOwnPropertyDescriptor(obj, 'a')
+      )
+      const language = {
+        set current(name) {
+          console.log(this, name)
+          this.log.push(name)
+        } /* function end */,
+        log: []
+      };
+      language.current = 'EN'
+      language.current = 'FA'
+      console.log(language.log)
+      const x = Symbol('11');
+      console.log(
+        x,
+        Symbol('11') !== Symbol('11'),
+        typeof x,
+        x.__proto__,
+        x.toString,
+        x.toString(),
+        typeof x.toString()
+      )
+      class A {
         z = 4;
-        [ 4 ];
-        x = 8;
-        fn = function (...args) {
-            A.prototype.constructor?.call?.(...args)
+        constructor(x, y) {
+          this.x = x
+          this.y = y
         } /* function end */;
-        constructor (x) {
-            console.log(x)
-        } /* function end */;
-        run (a) {
-            console.log(
-                'A 的实例 of run',
-                this.__proto__ === B.prototype
-            )
-            return this.x * a
-        } /* function end */;
-        static run  = function(...args) {
-            console.log('A of run', this === B)
-            console.log(
-                this,
-                B,
-                ...[1, 2, 3],
-                ...args
-            )
-        } /* function end */;
-        gg () {
-            console.log(
-                'A.protopyte.gg'
-            )
-        } /* function end */
-    } /*class declaration end */
-    class B extends A {
-        constructor (x, y) {
-            super(x)
-            console.log(
-                '开始获取super',
-                super.ff,
-                super.x,
-                super.z
-            )
-            this.y  =  y
-        } /* function end */;
-        go = () => {
-            console.error('---')
-            console.log(
-                this,
-                super.ff,
-                super.gg,
-                super.__proto__ === B.prototype
-            )
-        } /* arrow function end */;
-        gg = {
-            jlj : 'tedt'
-        };
-        run () {
-            console.log(
-                'B 的实例 of run',
-                super.gg,
-                this.gg,
-                super.gg === this.gg
-            )
-            super.gg()
-            console.log(
-                'run in run',
-                this,
-                super.prototype,
-                'super.__proto__',
-                super.__proto__,
-                'A.prototype',
-                A.prototype,
-                'B.prototype',
-                B.prototype,
-                super.__proto__ === B.prototype
-            )
-            super.run()
-            console.log('更改super的值')
-            this.xx  =  23
-            console.log(this.xx)
-            super.xx  =  22
-            console.log(super.__proto__)
-            console.log(
-                [super.xx, this.xx],
-                A.prototype,
-                super.prototype,
-                super.__proto__.prototype,
-                B.prototype.__proto__ === A.prototype,
-                super.__proto__.__proto__ === A.prototype
-            )
-            B.prototype.xx  =  'jfodjsd0ofj'
-            console.log(
-                '-----',
-                super.xx,
-                this.xx,
-                B.prototype.xx
-            )
-        } /* function end */;
-        gg () {
-            console.log(
-                'B.protopyte.gg'
-            )
-        } /* function end */;
-        static run () {
-            super.run()
-            console.log(
-                'B of run',
-                super.fn,
-                super.ff,
-                [
-                    B.__proto__.hasOwnProperty('prototype'),
-                    Object.prototype.hasOwnProperty('prototype'),
-                    A.hasOwnProperty('prototype')
-                ],
-                super.prototype === A.prototype,
-                super.prototype === B.prototype,
-                super.__proto__ === A
-            )
-        } /* function end */;
-        static fn () {
-            return this.x * this.y
-        } /* function end */;
-        static [ fn ] = b  =  function * () {
-            yield 1
-            console.log(this)
-        } /* function end */;
-        [ fn + fn ] = async () => {
-            await 2
-            console.log(this)
-        } /* arrow function end */
-    } /*class declaration end */
-    console.log(
-        '------class----'
-    )
-    B.run()
-    console.log(
-        '---jingtai-----'
-    )
-    const y = new A (4);
-    const x = new B (1, 2);
-    x.run()
-    console.log('---run---end')
-    x.go()
-    console.log(
-        'A的实例',
+        w = {}
+      } /*class declaration end */
+      class B extends A {
+        static g = { h: 1 }
+      } /*class declaration end */
+      const y = new B(2, 3);
+      console.log(
         y,
-        'B的实例',
-        x
-    )
-    const obj = {
-        x : 100,
-        run : y.run,
-        run2 : y.run2
-    };
-    console.log(A, B, A['123'])
-    console.log(
-        '开始测试bind，call，apply----'
-    )
-    function bb2 (...args) {
-        console.log(this, this.x, ...args)
+        B.constructor === Function,
+        B.prototype.constructor,
+        B.prototype.constructor === B,
+        B.prototype.constructor.g === B.g
+      )
     } /* function end */
-    const cc2 = (...args) => {
-        console.log(this, this.x, ...args)
-    } /* arrow function end */;
-    console.log(cc2.__proto__)
-    console.log(cc2.bind)
-    const fn0 = cc2.bind(
-        {
-            x : 'gg89i9j'
-        }
-    );
-    console.log('第一个bind函数', fn0)
-    fn0('jofjofjf', '绑定cc2')
-    console.log(this)
-    console.log('第一个bind函数执行完毕')
-    const obj5 = {
-        x : 'gg89i9j'
-    };
-    const fn1 = bb2.bind(obj5, [6, 7, 7], '绑定bb2函数1111');
-    console.log(fn1, fn1.bind)
-    fn1.apply(
-        {
-            x : 'hhhh'
-        },
-        [1, 2],
-        3,
-        '绑定bb2函数2222'
-    )
-    console.log(obj5)
-    const fn2 = fn1.bind(
-        {
-            x : 'jojdoljfs'
-        }
-    );
-    console.log(fn2.bind, fn1 === fn2)
-    fn2.call(
-        {
-            x : 'hhhh'
-        },
-        1,
-        2,
-        3
-    )
+
+   test()
+
+    function test38 () {
     console.log(
         [
-            B.__proto__ === A,
-            null === null,
-            x.__proto__ === B.prototype,
-            B.prototype.__proto__ === A.prototype,
-            A.prototype.__proto__ === Object.prototype,
-            Object.prototype.__proto__ === null,
-            B.__proto__ === A,
-            A.__proto__ === Function.prototype,
-            Function.prototype.__proto__ === Object.prototype,
-            Object.prototype.__proto__ === null,
-            Function.__proto__ === Function.prototype,
+            console.log,
+            Function.constructor,
+            Object,
+            Object.constructor,
+            Object.constructor === Function,
+            Object.prototype.constructor === Object,
             Function.prototype === Function.__proto__,
-            Object.__proto__ === Function.prototype
+            typeof Function,
+            typeof Object,
+            typeof Function.prototype,
+            typeof Object.prototype
         ]
     )
-    A.run('test', 'fsdfsdf')
-    const t = A.run;
-    t({x: 'oooo'},'test2')
-    y.run2()
-    obj.run2()
-} /* function end */
-test()
-
-    function test35 () {
-    console.log([
-        console.log,
-        Function.constructor,
-        Object,
-        Object.constructor,
-        Object.constructor === Function,
-        Object.prototype.constructor === Object,
-        Function.prototype === Function.__proto__,
-        typeof Function,
-        typeof Object,
-        typeof Function.prototype,
-        typeof Object.prototype
-    ])
     console.log(
         'hh-----h',
         Object.prototype.__proto__,
@@ -313,7 +146,7 @@ test()
         true
     )
     window.sfd?.error?.('jfdofs')
-    this.w  =  '3'
+    const w = '3';
     const fn = '1';
     let b = 'temp';
     class A {
@@ -322,8 +155,8 @@ test()
                 a  () {
 
                 } /* function end */
-            }
-        };
+             }
+         };
         ff = 2 + super[b];
         static ffasdf = super.sx?.('sdf', this.ff);
         get a () {
@@ -354,13 +187,18 @@ test()
         static ff = 'A of FF';
         static {
             this.fffff('....')
-            console.log([
-                this.__proto__,
-                this.__proto__ === Function.prototype,
-                Function.prototype.call,
-                Reflect.getOwnPropertyDescriptor(Function.prototype, 'call'),
-                this.__proto__.hasOwnProperty('call')
-            ])
+            console.log(
+                [
+                    this.__proto__,
+                    this.__proto__ === Function.prototype,
+                    Function.prototype.call,
+                    Reflect.getOwnPropertyDescriptor(
+                        Function.prototype,
+                        'call'
+                    ),
+                    this.__proto__.hasOwnProperty('call')
+                ]
+            )
             console.log(
                 'static block',
                 A,
@@ -369,20 +207,18 @@ test()
                 this.ff,
                 this.g
             )
-            console.log([super.fn, super.__proto__ === Function.prototype])
+            console.log(
+                [
+                    super.fn,
+                    super.__proto__ === Function.prototype
+                ]
+            )
         } /* static Block end */;
         static g = 'h';
-        static get fn () {
-            console.log(
-                'A static get',
-                this,
-                super.__proto__,
-                super.call === Function.prototype.call,
-                typeof super.call
-            )
-            return this.ff
+        static fn () {
+            console.log('no get Or set')
         } /* function end */;
-        static set fn (x) {
+        static set [ 'f' + 'n' ] (x) {
             this.ff  =  'dfasdf'
             super.xx  =  22
             console.log(this.xx)
@@ -394,7 +230,20 @@ test()
             )
             console.log(this)
         } /* function end */;
-        static [ fn + '2' + this.w ] = this.ff;
+        static get fn () {
+            console.log(
+                'A static get',
+                this,
+                super.__proto__,
+                super.call === Function.prototype.call,
+                typeof super.call,
+                Reflect.getOwnPropertyDescriptor(B, 'ff'),
+                Object.keys(B),
+                B.ff
+            )
+            return this.ff
+        } /* function end */;
+        static [ fn + '2' + w ] = this.ff;
         z = 4;
         [ 4 ];
         x = 8;
@@ -405,7 +254,10 @@ test()
             console.log(x)
         } /* function end */;
         run (a) {
-            console.log('A 的实例 of run', this.__proto__ === B.prototype)
+            console.log(
+                'A 的实例 of run',
+                this.__proto__ === B.prototype
+            )
             return this.x * a
         } /* function end */;
         static fffff (xxx) {
@@ -421,9 +273,15 @@ test()
             )
         } /* function end */;
         gg () {
-            console.log('A.protopyte.gg')
+            console.log(
+                'A.protopyte.gg'
+            )
         } /* function end */
     } /*class declaration end */
+    console.log(
+        '---',
+        Reflect.getOwnPropertyDescriptor(A, 'run')
+    )
     class B extends A {
         constructor (x, y) {
             super(x)
@@ -435,9 +293,7 @@ test()
             )
             this.y  =  y
         } /* function end */;
-        gg = {
-            jlj : 'tedt'
-        };
+        gg = { jlj : 'tedt' };
         run () {
             console.log(
                 'B 的实例 of run',
@@ -469,7 +325,9 @@ test()
             )
         } /* function end */;
         gg () {
-            console.log('B.protopyte.gg')
+            console.log(
+                'B.protopyte.gg'
+            )
         } /* function end */;
         static ff = 'B of FF';
         static run () {
@@ -490,7 +348,11 @@ test()
             console.log(this)
         } /* function end */;
         static get ff () {
-            console.log('B static get ff', this, super.ff)
+            console.log(
+                'B static get ff',
+                this,
+                super.ff
+            )
             return super.gdsf
         } /* function end */;
         [ fn + fn ] = async () => {
@@ -498,30 +360,55 @@ test()
             console.log(this)
         } /* arrow function end */
     } /*class declaration end */
+    console.log(
+        'A.fn',
+        Reflect.getOwnPropertyDescriptor(A, 'fn')
+    )
     console.log('----start---')
-    console.log([
-        B instanceof Object,
-        B.__proto__.hasOwnProperty('__proto__'),
-        Reflect.get(Object.prototype, '__proto__', B),
-        Reflect.get(B.__proto__, '__proto__', B),
-        Reflect.get(B.__proto__, '__proto__', B) === B.__proto__,
-        Reflect.get(B.__proto__, 'fn', B),
-        B.__proto__ === A
-    ])
-    console.log('------class----', [
-        B instanceof A,
-        B.__proto__ === A,
-        B.__proto__.__proto__ === Function.prototype,
-        B instanceof Function
-    ])
+    console.log(
+        [
+            B instanceof Object,
+            B.__proto__.hasOwnProperty('__proto__'),
+            Reflect.get(
+                Object.prototype,
+                '__proto__',
+                B
+            ),
+            Reflect.get(B.__proto__, '__proto__', B),
+            Reflect.get(B.__proto__, '__proto__', B) === B.__proto__,
+            Reflect.get(B.__proto__, 'fn', B),
+            B.__proto__ === A
+        ]
+    )
+    console.log(
+        '------class----',
+        [
+            B instanceof A,
+            B.__proto__ === A,
+            B.__proto__.__proto__ === Function.prototype,
+            B instanceof Function
+        ]
+    )
     B.run()
-    console.log('---jingtai-----')
+    console.log(
+        '---jingtai-----'
+    )
     const y = new A (4);
-    console.log('---test-a-set-get')
+    console.error(
+        '---test-a-set-get'
+    )
+    console.log(
+        y,
+        Object.keys(y),
+        Reflect.getOwnPropertyDescriptor(y, 'a'),
+        Reflect.getOwnPropertyDescriptor(A.prototype, 'a')
+    )
     console.log('y.a', y.a)
     y.a  =  30
     console.log('y.a', y.a)
-    console.log('------test-a-set-get--end--')
+    console.log(
+        '------test-a-set-get--end--'
+    )
     const x = new B (1, 2);
     x.run()
     console.log(
@@ -530,22 +417,922 @@ test()
         'B的实例',
         x
     )
-    const obj = {
-        x : 2
-    };
-    const obj2 = {
-        x : 4
-    };
+    const obj = { x : 2 };
+    const obj2 = { x : 4 };
     Reflect.set(
         obj,
         'x',
         3,
         obj2
     )
-    console.log(obj, obj2, Reflect.get(obj, 'x'))
+    console.log(
+        obj,
+        obj2,
+        Reflect.get(obj, 'x')
+    )
     test.A  =  A
     console.log(test)
 } /* function end */
+
+    function test35 () {
+    console.log(
+        [
+            console.log,
+            Function.constructor,
+            Object,
+            Object.constructor,
+            Object.constructor === Function,
+            Object.prototype.constructor === Object,
+            Function.prototype === Function.__proto__,
+            typeof Function,
+            typeof Object,
+            typeof Function.prototype,
+            typeof Object.prototype
+        ]
+    )
+    console.log(
+        'hh-----h',
+        Object.prototype.__proto__,
+        Object.prototype.__proto__ === null,
+        true
+    )
+    window.sfd?.error?.('jfdofs')
+    const w = '3';
+    const fn = '1';
+    let b = 'temp';
+    class A {
+        g = {
+            f : {
+                a  () {
+
+                } /* function end */
+             }
+         };
+        ff = 2 + super[b];
+        static ffasdf = super.sx?.('sdf', this.ff);
+        get a () {
+            console.log('触发get', this, super.call)
+            return this.ff * 1000
+        } /* function end */;
+        set a (x) {
+            console.log('触发set', this, x)
+            this.ff  +=  x
+            console.log('更改super的值')
+            super.xx  =  22
+            console.log(this.xx)
+            Reflect.set(
+                A.prototype.__proto__,
+                'xx',
+                33,
+                this
+            )
+            console.log(this.xx)
+            return true
+        } /* function end */;
+        [ (() => {
+            console.log(this)
+            return 'run2'
+        })() ] = function () {
+            console.log(this, this.ff)
+        } /* function end */;
+        static ff = 'A of FF';
+        static {
+            this.fffff('....')
+            console.log(
+                [
+                    this.__proto__,
+                    this.__proto__ === Function.prototype,
+                    Function.prototype.call,
+                    Reflect.getOwnPropertyDescriptor(
+                        Function.prototype,
+                        'call'
+                    ),
+                    this.__proto__.hasOwnProperty('call')
+                ]
+            )
+            console.log(
+                'static block',
+                A,
+                Reflect.get(this.__proto__, 'call', this),
+                super.call.xx,
+                this.ff,
+                this.g
+            )
+            console.log(
+                [
+                    super.fn,
+                    super.__proto__ === Function.prototype
+                ]
+            )
+        } /* static Block end */;
+        static g = 'h';
+        static fn () {
+            console.log('no get Or set')
+        } /* function end */;
+        static set [ 'f' + 'n' ] (x) {
+            this.ff  =  'dfasdf'
+            super.xx  =  22
+            console.log(this.xx)
+            Reflect.set(
+                B.prototype.__proto__,
+                'xx',
+                33,
+                this
+            )
+            console.log(this)
+        } /* function end */;
+        static get fn () {
+            console.log(
+                'A static get',
+                this,
+                super.__proto__,
+                super.call === Function.prototype.call,
+                typeof super.call
+            )
+            return this.ff
+        } /* function end */;
+        static [ fn + '2' + w ] = this.ff;
+        z = 4;
+        [ 4 ];
+        x = 8;
+        fn = function (...args) {
+            A.prototype.constructor?.call?.(...args)
+        } /* function end */;
+        constructor (x) {
+            console.log(x)
+        } /* function end */;
+        run (a) {
+            console.log(
+                'A 的实例 of run',
+                this.__proto__ === B.prototype
+            )
+            return this.x * a
+        } /* function end */;
+        static fffff (xxx) {
+            console.log(xxx)
+        } /* function end */;
+        static run (...args) {
+            console.log('A of run', this === B, super.call)
+            console.log(
+                this,
+                B,
+                ...[1, 2, 3],
+                ...args
+            )
+        } /* function end */;
+        gg () {
+            console.log(
+                'A.protopyte.gg'
+            )
+        } /* function end */
+    } /*class declaration end */
+    console.log(
+        '--->',
+        Reflect.getOwnPropertyDescriptor(A, 'run')
+    )
+    class B extends A {
+        constructor (x, y) {
+            super(x)
+            console.log(
+                '开始获取super',
+                super.ff,
+                super.x,
+                super.z
+            )
+            this.y  =  y
+        } /* function end */;
+        gg = { jlj : 'tedt' };
+        run () {
+            console.log(
+                'B 的实例 of run',
+                super.gg,
+                this.gg,
+                super.gg === this.gg
+            )
+            super.gg()
+            console.log(
+                'run in run',
+                this,
+                super.prototype,
+                'super.__proto__',
+                super.__proto__,
+                'A.prototype',
+                A.prototype,
+                'B.prototype',
+                B.prototype,
+                super.__proto__ === B.prototype
+            )
+            super.run()
+            console.log(
+                this.xx,
+                super.xx,
+                A.prototype,
+                super.__proto__.prototype,
+                B.prototype.__proto__ === A.prototype,
+                super.__proto__.__proto__ === A.prototype
+            )
+        } /* function end */;
+        gg () {
+            console.log(
+                'B.protopyte.gg'
+            )
+        } /* function end */;
+        static ff = 'B of FF';
+        static run () {
+            console.log(
+                A.run,
+                Reflect.get(B.__proto__, 'run', this),
+                A.hasOwnProperty('run'),
+                Reflect.getOwnPropertyDescriptor(A, 'run')
+            )
+            super.run()
+            console.log('B of run')
+        } /* function end */;
+        static fn () {
+            return this.x * this.y
+        } /* function end */;
+        static [ fn ] = b  =  function * () {
+            yield 1
+            console.log(this)
+        } /* function end */;
+        static get ff () {
+            console.log(
+                'B static get ff',
+                this,
+                super.ff
+            )
+            return super.gdsf
+        } /* function end */;
+        [ fn + fn ] = async () => {
+            await 2
+            console.log(this)
+        } /* arrow function end */
+    } /*class declaration end */
+    console.log(
+        'A.fn',
+        Reflect.getOwnPropertyDescriptor(A, 'fn')
+    )
+    console.log('----start---')
+    console.log(
+        [
+            B instanceof Object,
+            B.__proto__.hasOwnProperty('__proto__'),
+            Reflect.get(
+                Object.prototype,
+                '__proto__',
+                B
+            ),
+            Reflect.get(B.__proto__, '__proto__', B),
+            Reflect.get(B.__proto__, '__proto__', B) === B.__proto__,
+            Reflect.get(B.__proto__, 'fn', B),
+            B.__proto__ === A
+        ]
+    )
+    console.log(
+        '------class----',
+        [
+            B instanceof A,
+            B.__proto__ === A,
+            B.__proto__.__proto__ === Function.prototype,
+            B instanceof Function
+        ]
+    )
+    B.run()
+    console.log(
+        '---jingtai-----'
+    )
+    const y = new A (4);
+    console.log(
+        '---test-a-set-get'
+    )
+    console.log('y.a', y.a)
+    y.a  =  30
+    console.log('y.a', y.a)
+    console.log(
+        '------test-a-set-get--end--'
+    )
+    const x = new B (1, 2);
+    x.run()
+    console.log(
+        'A的实例',
+        y,
+        'B的实例',
+        x
+    )
+    const obj = { x : 2 };
+    const obj2 = { x : 4 };
+    Reflect.set(
+        obj,
+        'x',
+        3,
+        obj2
+    )
+    console.log(
+        obj,
+        obj2,
+        Reflect.get(obj, 'x')
+    )
+    test.A  =  A
+    console.log(test)
+} /* function end */
+ function test37 () {
+    console.log(
+        [
+            Reflect.getOwnPropertyDescriptor(Object, 'create'),
+            Reflect.getOwnPropertyDescriptor(
+                Function.prototype,
+                'bind'
+            ),
+            console.log,
+            Function.constructor,
+            Object,
+            Object.constructor,
+            Object.constructor === Function,
+            Object.prototype.constructor === Object,
+            Function.prototype === Function.__proto__,
+            typeof Function,
+            typeof Object,
+            typeof Function.prototype,
+            typeof Object.prototype
+        ]
+    )
+    console.log(
+        'hh-----h',
+        Object.prototype.__proto__,
+        Object.prototype.__proto__ === null,
+        true
+    )
+    window.sfd?.error?.('jfdofs')
+    const w = '3';
+    const fn = '1';
+    let b = 'temp';
+    class A {
+        g = {
+            f : {
+                a  () {
+
+                } /* function end */
+             }
+         };
+        ff = 2 + super[b];
+        static ffasdf = super.sx?.('sdf', this.ff);
+        get a () {
+            console.log(
+                '触发get',
+                [
+                    this,
+                    super.__proto__,
+                    super.__proto__ === A.prototype,
+                    super.call
+                ]
+            )
+            return this.ff * 1000
+        } /* function end */;
+        set a (x) {
+            console.log('触发set', this, x)
+            this.ff  +=  x
+            console.log('更改super的值')
+            super.xx  =  22
+            console.log(this.xx)
+            Reflect.set(
+                A.prototype.__proto__,
+                'xx',
+                33,
+                this
+            )
+            console.log(this.xx)
+            return true
+        } /* function end */;
+        [ (() => {
+            console.log(this)
+            return 'run2'
+        })() ] = function () {
+            console.log(this, this.ff)
+        } /* function end */;
+        static ff = 'A of FF';
+        static {
+            this.fffff('....')
+            console.log(
+                [
+                    this.__proto__,
+                    this.__proto__ === Function.prototype,
+                    Function.prototype.call,
+                    Reflect.getOwnPropertyDescriptor(
+                        Function.prototype,
+                        'call'
+                    ),
+                    this.__proto__.hasOwnProperty('call')
+                ]
+            )
+            console.log(
+                'static block',
+                A,
+                Reflect.get(this.__proto__, 'call', this),
+                super.call.xx,
+                this.ff,
+                this.g
+            )
+            console.log(
+                [
+                    super.fn,
+                    super.__proto__ === Function.prototype
+                ]
+            )
+        } /* static Block end */;
+        static g = 'h';
+        static fn () {
+            console.log('no get Or set')
+        } /* function end */;
+        static set [ 'f' + 'n' ] (x) {
+            this.ff  =  'dfasdf'
+            super.xx  =  22
+            console.log(this.xx)
+            Reflect.set(
+                B.prototype.__proto__,
+                'xx',
+                33,
+                this
+            )
+            console.log(this)
+        } /* function end */;
+        static get fn () {
+            console.log(
+                'A static get',
+                this,
+                super.__proto__,
+                super.call === Function.prototype.call,
+                typeof super.call,
+                Reflect.getOwnPropertyDescriptor(B, 'ff'),
+                Object.keys(B),
+                B.ff
+            )
+            return this.ff
+        } /* function end */;
+        static [ fn + '2' + w ] = this.ff;
+        z = 4;
+        [ 4 ];
+        x = 8;
+        fn = function (...args) {
+            A.prototype.constructor?.call?.(...args)
+        } /* function end */;
+        constructor (x) {
+            console.log(x)
+        } /* function end */;
+        run (a) {
+            console.log(
+                'A 的实例 of run',
+                this.__proto__ === B.prototype
+            )
+            return this.x * a
+        } /* function end */;
+        static fffff (xxx) {
+            console.log(xxx)
+        } /* function end */;
+        static run (...args) {
+            console.log('A of run', this === B, super.call)
+            console.log(
+                this,
+                B,
+                ...[1, 2, 3],
+                ...args
+            )
+        } /* function end */;
+        gg () {
+            console.log(
+                'A.protopyte.gg'
+            )
+        } /* function end */
+    } /*class declaration end */
+    console.log(
+        '---',
+        Reflect.getOwnPropertyDescriptor(A, 'run')
+    )
+    class B extends A {
+        constructor (x, y) {
+            super(x)
+            console.log(
+                '开始获取super',
+                super.ff,
+                super.x,
+                super.z
+            )
+            this.y  =  y
+        } /* function end */;
+        gg = { jlj : 'tedt' };
+        run () {
+            console.log(
+                'B 的实例 of run',
+                super.gg,
+                this.gg,
+                super.gg === this.gg
+            )
+            super.gg()
+            console.log(
+                'run in run',
+                this,
+                super.prototype,
+                'super.__proto__',
+                super.__proto__,
+                'A.prototype',
+                A.prototype,
+                'B.prototype',
+                B.prototype,
+                super.__proto__ === B.prototype
+            )
+            super.run()
+            console.log(
+                this.xx,
+                super.xx,
+                A.prototype,
+                super.__proto__.prototype,
+                B.prototype.__proto__ === A.prototype,
+                super.__proto__.__proto__ === A.prototype
+            )
+        } /* function end */;
+        gg () {
+            console.log(
+                'B.protopyte.gg'
+            )
+        } /* function end */;
+        static ff = 'B of FF';
+        static run () {
+            console.log(
+                A.run,
+                Reflect.get(B.__proto__, 'run', this),
+                A.hasOwnProperty('run'),
+                Reflect.getOwnPropertyDescriptor(A, 'run')
+            )
+            super.run()
+            console.log('B of run')
+        } /* function end */;
+        static fn () {
+            return this.x * this.y
+        } /* function end */;
+        static [ fn ] = b  =  function * () {
+            yield 1
+            console.log(this)
+        } /* function end */;
+        static get ff () {
+            console.log(
+                'B static get ff',
+                this,
+                super.ff
+            )
+            return super.gdsf
+        } /* function end */;
+        [ fn + fn ] = async () => {
+            await 2
+            console.log(this)
+        } /* arrow function end */
+    } /*class declaration end */
+    console.log(
+        'A.fn',
+        Object.keys(A),
+        Reflect.getOwnPropertyDescriptor(A, 'fn'),
+        A.fn
+    )
+    console.log('----start---', Object.keys(B.prototype), Reflect.getOwnPropertyDescriptor(B.prototype,'a'))
+    console.log(
+        [
+            B instanceof Object,
+            B.__proto__.hasOwnProperty('__proto__'),
+            Reflect.get(
+                Object.prototype,
+                '__proto__',
+                B
+            ),
+            Reflect.get(B.__proto__, '__proto__', B),
+            Reflect.get(B.__proto__, '__proto__', B) === B.__proto__,
+            Reflect.get(B.__proto__, 'fn', B),
+            B.__proto__ === A
+        ]
+    )
+    console.log(
+        '------class----',
+        [
+            B instanceof A,
+            B.__proto__ === A,
+            B.__proto__.__proto__ === Function.prototype,
+            B instanceof Function
+        ]
+    )
+    B.run()
+    console.log(
+        '---jingtai-----'
+    )
+    const y = new A (4);
+    console.error(
+        '---test-a-set-get'
+    )
+    console.log(
+        y,
+        Object.keys(y),
+        Reflect.getOwnPropertyDescriptor(y, 'a'),
+        Reflect.getOwnPropertyDescriptor(A.prototype, 'a')
+    )
+    console.log('y.a', y.a)
+    console.log(
+        '开始set',
+        Reflect.getOwnPropertyDescriptor(A.prototype, 'a')
+    )
+    y.a  =  30
+    console.log(
+        '结束set',
+        Reflect.getOwnPropertyDescriptor(y, 'a'),
+        Object.keys(y),
+        Reflect.getOwnPropertyDescriptor(A.prototype, 'a')
+    )
+    console.log('y.a', y.a)
+    console.log(
+        '------test-a-set-get--end--'
+    )
+    const x = new B (1, 2);
+    x.run()
+    console.log(
+        'A的实例',
+        y,
+        'B的实例',
+        x
+    )
+    const obj = { x : 2 };
+    const obj2 = { x : 4 };
+    Reflect.set(
+        obj,
+        'x',
+        3,
+        obj2
+    )
+    console.log(
+        obj,
+        obj2,
+        Reflect.get(obj, 'x')
+    )
+    test.A  =  A
+    console.log(test)
+} /* function end */
+
+    
+    function test36() {
+      const obj7 = {
+        x: 1,
+        run() {
+          console.log(this, this.x)
+        } /* function end */
+      };
+      obj7.run()
+      const t4 = obj7.run;
+      t4()
+      console.log('hh-----h')
+      window.sfd?.error?.('jfdofs')
+      this.w = '3'
+      const o1 = {
+        hhhh: 'kklfl',
+        c: [1]
+      };
+      const o2 = {
+        a: 'fff',
+        ...o1
+      };
+      console.log(o2)
+      o1.c[2] = 2
+      console.log(o2, o2.c[1])
+      const fn = '1';
+      let b = 'temp';
+      class A {
+        ff = 'tt';
+        [(() => {
+          console.log(this)
+          return 'run2'
+        })()] = function () {
+          console.log(this, this.ff)
+        } /* function end */;
+        static ff = 'A of FF';
+        static g = 'h';
+        static [fn + '2' + this.w] = this.ff;
+        z = 4;
+        [4];
+        x = 8;
+        fn = function (...args) {
+          A.prototype.constructor?.call?.(...args)
+        } /* function end */;
+        constructor(x) {
+          console.log(x)
+        } /* function end */;
+        run(a) {
+          console.log(
+            'A 的实例 of run',
+            this.__proto__ === B.prototype
+          )
+          return this.x * a
+        } /* function end */;
+        static run = function (...args) {
+          console.log('A of run', this === B)
+          console.log(
+            this,
+            B,
+            ...[1, 2, 3],
+            ...args
+          )
+        } /* function end */;
+        gg() {
+          console.log(
+            'A.protopyte.gg'
+          )
+        } /* function end */
+      } /*class declaration end */
+      class B extends A {
+        constructor(x, y) {
+          super(x)
+          console.log(
+            '开始获取super',
+            super.ff,
+            super.x,
+            super.z
+          )
+          this.y = y
+        } /* function end */;
+        go = () => {
+          console.error('---')
+          console.log(
+            this,
+            super.ff,
+            super.gg,
+            super.__proto__ === B.prototype
+          )
+        } /* arrow function end */;
+        gg = {
+          jlj: 'tedt'
+        };
+        run() {
+          console.log(
+            'B 的实例 of run',
+            super.gg,
+            this.gg,
+            super.gg === this.gg
+          )
+          super.gg()
+          console.log(
+            'run in run',
+            this,
+            super.prototype,
+            'super.__proto__',
+            super.__proto__,
+            'A.prototype',
+            A.prototype,
+            'B.prototype',
+            B.prototype,
+            super.__proto__ === B.prototype
+          )
+          super.run()
+          console.log('更改super的值')
+          this.xx = 23
+          console.log(this.xx)
+          super.xx = 22
+          console.log(super.__proto__)
+          console.log(
+            [super.xx, this.xx],
+            A.prototype,
+            super.prototype,
+            super.__proto__.prototype,
+            B.prototype.__proto__ === A.prototype,
+            super.__proto__.__proto__ === A.prototype
+          )
+          B.prototype.xx = 'jfodjsd0ofj'
+          console.log(
+            '-----',
+            super.xx,
+            this.xx,
+            B.prototype.xx
+          )
+        } /* function end */;
+        gg() {
+          console.log(
+            'B.protopyte.gg'
+          )
+        } /* function end */;
+        static run() {
+          super.run()
+          console.log(
+            'B of run',
+            super.fn,
+            super.ff,
+            [
+              B.__proto__.hasOwnProperty('prototype'),
+              Object.prototype.hasOwnProperty('prototype'),
+              A.hasOwnProperty('prototype')
+            ],
+            super.prototype === A.prototype,
+            super.prototype === B.prototype,
+            super.__proto__ === A
+          )
+        } /* function end */;
+        static fn() {
+          return this.x * this.y
+        } /* function end */;
+        static [fn] = b = function* () {
+          yield 1
+          console.log(this)
+        } /* function end */;
+        [fn + fn] = async () => {
+          await 2
+          console.log(this)
+        } /* arrow function end */
+      } /*class declaration end */
+      console.log(
+        '------class----'
+      )
+      B.run()
+      console.log(
+        '---jingtai-----'
+      )
+      const y = new A(4);
+      const x = new B(1, 2);
+      x.run()
+      console.log('---run---end')
+      x.go()
+      console.log(
+        'A的实例',
+        y,
+        'B的实例',
+        x
+      )
+      const obj = {
+        x: 100,
+        run: y.run,
+        run2: y.run2
+      };
+      console.log(A, B, A['123'])
+      console.log(
+        '开始测试bind，call，apply----'
+      )
+      function bb2(...args) {
+        console.log(this, this.x, ...args)
+      } /* function end */
+      const cc2 = (...args) => {
+        console.log(this, this.x, ...args)
+      } /* arrow function end */;
+      console.log(cc2.__proto__)
+      console.log(cc2.bind)
+      const fn0 = cc2.bind(
+        {
+          x: 'gg89i9j'
+        }
+      );
+      console.log('第一个bind函数', fn0)
+      fn0('jofjofjf', '绑定cc2')
+      console.log(this)
+      console.log('第一个bind函数执行完毕')
+      const obj5 = {
+        x: 'gg89i9j'
+      };
+      const fn1 = bb2.bind(obj5, [6, 7, 7], '绑定bb2函数1111');
+      console.log(fn1, fn1.bind)
+      fn1.apply(
+        {
+          x: 'hhhh'
+        },
+        [1, 2],
+        3,
+        '绑定bb2函数2222'
+      )
+      console.log(obj5)
+      const fn2 = fn1.bind(
+        {
+          x: 'jojdoljfs'
+        }
+      );
+      console.log(fn2.bind, fn1 === fn2)
+      fn2.call(
+        {
+          x: 'hhhh'
+        },
+        1,
+        2,
+        3
+      )
+      console.log(
+        [
+          B.__proto__ === A,
+          null === null,
+          x.__proto__ === B.prototype,
+          B.prototype.__proto__ === A.prototype,
+          A.prototype.__proto__ === Object.prototype,
+          Object.prototype.__proto__ === null,
+          B.__proto__ === A,
+          A.__proto__ === Function.prototype,
+          Function.prototype.__proto__ === Object.prototype,
+          Object.prototype.__proto__ === null,
+          Function.__proto__ === Function.prototype,
+          Function.prototype === Function.__proto__,
+          Object.__proto__ === Function.prototype
+        ]
+      )
+      A.run('test', 'fsdfsdf')
+      const t = A.run;
+      t({ x: 'oooo' }, 'test2')
+      y.run2()
+      obj.run2()
+    } /* function end */
 
     function test34() {
       const obj3 = {
@@ -846,7 +1633,7 @@ test()
       console.log(obj, obj2, Reflect.get(obj, 'x'))
     } /* function end */
 
-    
+
 
 
     function test31() {

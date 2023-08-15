@@ -1,27 +1,23 @@
 import parseAst from "..";
-import Environment, { FunctionClassV, FunctionPrototypeV, createObjectExtends, getFunctionPrototype } from "../Environment";
-import RuntimeValue, { RuntimeRefValue, getFalseV, getUndefinedValue } from "../Environment/RuntimeValue";
-import { DEBUGGER_DICTS, ENV_DICTS, RUNTIME_LITERAL, RUNTIME_VALUE_TYPE } from "../constant";
+import Environment from "../Environment";
+import RuntimeValue, { RuntimeRefValue } from "../Environment/RuntimeValue";
+import { DEBUGGER_DICTS, ENV_DICTS, PROPERTY_DESCRIPTOR_DICTS, RUNTIME_LITERAL, RUNTIME_VALUE_DICTS, RUNTIME_VALUE_TYPE } from "../constant";
 import parseRuntimeValue from "../Environment/parseRuntimeValue";
 import generateCode, { getAstCode } from "../Generate";
 import setPattern from "./setPattern";
-import { createObject } from "../Environment";
-import { createRuntimeValueAst } from "../Environment/utils";
+import { createLiteralAst, createRuntimeValueAst, createSimplePropertyDescriptor, createStringLiteralAst, getPropertyDesctiptorConfigAst, getReflectDefinePropertyAst } from "../Environment/utils";
 import PropertyDescriptor from "../Environment/PropertyDescriptor";
 import { getWrapAst, transformInnerAst } from "../Environment/WrapAst";
 import { isInstanceOf } from "../../commonApi";
-import { getObjectPropertyDescriptor } from "./parseObjectExpression";
+import { getObjectAttrOfPropertyDescriptor } from "./parseObjectExpression";
+import { createObject, createObjectExtends, getFalseV, getFunctionClassRv, getFunctionPrototypeRv, getUndefinedValue } from "../Environment/RuntimeValueInstance";
+import { _classConstructorSuperAst } from "../Environment/Native/ClassSuper";
 
 function IdentifierToLiteral(ast) {
   if (ast.type !== 'Identifier') {
     throw new Error('super 转换失败', ast);
   }
-  return {
-    type: "Literal",
-    // TODO 非计算属性一般只能是Identity类型
-    value: `${ast.name}`,
-    raw: `'${ast.name}'`,
-  }
+  return createStringLiteralAst(ast.name)
 }
 
 export const handleProperty = (targetRv, weakMap, classDefinedEnv, classRv) => (c) => {
@@ -33,7 +29,7 @@ export const handleProperty = (targetRv, weakMap, classDefinedEnv, classRv) => (
   }
   // 离开一小会，接下来做set， get属性
   let { key, computed, value, kind, static: isStatic, type } = c;
-
+  const isSetOrGet = isSetterOrGetter(kind)
   if (computed) {
     key = parseRuntimeValue(weakMap.get(c))
   }
@@ -59,20 +55,37 @@ export const handleProperty = (targetRv, weakMap, classDefinedEnv, classRv) => (
 
 
   const valueRv = value ? parseAst(newValueAst, classDefinedEnv) : getUndefinedValue();
-  if (computed) {
-    // todo key 为 object 之类的问题。
-    // const oldDescriptor = targetRv.getPropertyDescriptor(key) ?? new PropertyDescriptor({
-    //   value: valueRv,
-    // });
-    // if ([RUNTIME_LITERAL.set, RUNTIME_LITERAL.get].includes(kind)) {
-    //   oldDescriptor.set(kind, valueRv);
-    // }
-    targetRv.set(key, valueRv, getObjectPropertyDescriptor(targetRv,key, valueRv, kind ))
-  } else {
-    // console.error('class-set', key, kind, valueRv)
-    // console.log(key, newValueAst, generateCode(newValueAst, { [DEBUGGER_DICTS.isTextMode]: true }), kind)
-    setPattern(valueRv, key, targetRv, { useSet: true, kind })
+  // console.error(c.type, computed ? createStringLiteralAst(key) : IdentifierToLiteral(key));
+  const properties = [
+    {
+      type: "Property",
+      method: false,
+      shorthand: false,
+      computed: false,
+      key: {
+        type: "Identifier",
+        name: isSetOrGet ? kind : 'value',
+      },
+      value: createRuntimeValueAst(valueRv),
+      kind: "init"
+    },
+    getPropertyDesctiptorConfigAst(PROPERTY_DESCRIPTOR_DICTS.configurable, true),
+    getPropertyDesctiptorConfigAst(PROPERTY_DESCRIPTOR_DICTS.enumerable, (c.type === 'PropertyDefinition')),
+  ]
+  if (!isSetOrGet) {
+    properties.push(getPropertyDesctiptorConfigAst(PROPERTY_DESCRIPTOR_DICTS.writable, true))
   }
+  // console.warn(key.name, isSetOrGet, targetRv === classRv)
+  // console.log(key);
+  parseAst(getReflectDefinePropertyAst([
+    createRuntimeValueAst(targetRv),
+    computed ? createStringLiteralAst(key) : IdentifierToLiteral(key),
+    {
+      type: "ObjectExpression",
+      properties,
+    }
+  ]), Environment.window) // 任意env;
+
 }
 
 export function getSuperToReflectGet(t, targetRv, needPrototype, isTranformToClassSelf, config, value) {
@@ -199,103 +212,63 @@ export function transformSuper(ast, targetRv, needPrototype, isTranformToClassSe
   return retAst;
 }
 
-const createClassProperty = (weakMap, classRv) => function createClassProperty(ast, i) {
+const getCreateClassProperty = (weakMap, classRv) => function createClassProperty(ast, i) {
   // 特殊处理 get set
   // console.error(ast)
-  const propertyAst = ast.computed ? createRuntimeValueAst(weakMap.get(ast), {
-    type: 'Identifier',
-    name: '_ref' + i,
-  }, ast.key) : ast.key;
 
   const rightAst = transformSuper(ast.value, classRv, true, false) ?? {
     type: 'Identifier',
     name: `${RUNTIME_LITERAL.undefined}`,
   };
-  if (ast.type === 'MethodDefinition' && isSetterOrGetter(ast.kind)) {
+  const isSetOrGet = ast.type === 'MethodDefinition' && isSetterOrGetter(ast.kind);
+  // if () {
     // 转成 Reflect.defineProperty(this, attr, v, {})
     // TODO 等后续生成ast重构后
     // 直接 eval（‘Reflect.defineProperty(this, attr, {[ast.kind]: value})’）
-
-    const ret = {
-      type: "ExpressionStatement",
-      expression: {
-        type: "CallExpression",
-        callee: {
-          type: "MemberExpression",
-          object: {
-            type: "Identifier",
-            name: "Reflect"
-          },
-          property: {
-            type: "Identifier",
-            name: "defineProperty"
-          },
-          computed: false,
-          optional: false
-        },
-        arguments: [
-          {
-            type: "ThisExpression",
-          },
-          ast.computed ? createRuntimeValueAst(weakMap.get(ast), {
-            type: 'Identifier',
-            name: '_ref' + i,
-          }, ast.key) : IdentifierToLiteral(ast.key),
-          {
-            type: "ObjectExpression",
-            properties: [
-              {
-                type: "Property",
-                method: false,
-                shorthand: false,
-                computed: false,
-                key: {
-                  type: "Identifier",
-                  name: ast.kind,
-                },
-                value: rightAst,
-                kind: "init"
-              }
-            ]
-          }
-        ],
-        optional: false
-      }
-    }
-    // console.error('转', ret)
-    return ret;
-  }
-
-  return {
-    type: 'ExpressionStatement',
-    expression: {
-      type: "AssignmentExpression",
-      operator: "=",
-      left: {
-        type: 'MemberExpression',
-        object: {
-          type: 'ThisExpression',
-        },
-        property: propertyAst,
-        computed: ast.computed,
-        optional: false,
+    // console.warn(ast.kind);
+    const ret = getReflectDefinePropertyAst([
+      {
+        type: "ThisExpression",
       },
-      right: rightAst,
-    }
-  }
+      ast.computed ? createRuntimeValueAst(weakMap.get(ast), {
+        type: 'Identifier',
+        name: '_ref' + i,
+      }, ast.key) : IdentifierToLiteral(ast.key),
+      {
+        type: "ObjectExpression",
+        properties: [
+          {
+            type: "Property",
+            method: false,
+            shorthand: false,
+            computed: false,
+            key: {
+              type: "Identifier",
+              name: isSetOrGet ? ast.kind : 'value',
+            },
+            value: rightAst,
+            kind: "init"
+          },
+          getPropertyDesctiptorConfigAst(PROPERTY_DESCRIPTOR_DICTS.configurable, true),
+          getPropertyDesctiptorConfigAst(PROPERTY_DESCRIPTOR_DICTS.enumerable, !isSetOrGet),
+          ...isSetOrGet ? []: [getPropertyDesctiptorConfigAst(PROPERTY_DESCRIPTOR_DICTS.writable, true)]
+        ]
+      }
+    ]) 
+    return ret;
 }
 
 export function isSetterOrGetter(kind) {
   return [RUNTIME_LITERAL.set, RUNTIME_LITERAL.get].includes(kind);
 }
 
-export function createMergeCtorRv(idText, prototypeRv, classDefinedEnv, bodyAstArr) {
-  return parseAst({
+export function createMergeCtorRv(idText,  prototypeRv, classDefinedEnv, bodyAstList, weakMap, originConstructorRef) {
+  const ast = {
     type: 'FunctionExpression',
     expression: false,
     generator: false,
     async: false,
-    _fnName: `${idText}$prototype$constructor`,
+    _fnName: `${idText}`,
     params: [
       {
         type: "RestElement",
@@ -308,54 +281,87 @@ export function createMergeCtorRv(idText, prototypeRv, classDefinedEnv, bodyAstA
     body: {
       type: 'BlockStatement',
       body: [
-        ...bodyAstArr || [],
-        {
-          type: "ExpressionStatement",
-          expression: {
-            type: "ChainExpression",
-            expression: {
-              type: "CallExpression",
-              callee: {
-                type: "MemberExpression",
-                object: {
-                  type: "MemberExpression",
-                  object: createRuntimeValueAst(
-                    prototypeRv,
-                    `${idText}$prototype`
-                  ),
-                  property: {
-                    type: "Identifier",
-                    name: "constructor"
-                  },
-                  computed: false,
-                  optional: false
-                },
-                property: {
-                  type: "Identifier",
-                  name: "call"
-                },
-                computed: false,
-                optional: true
-              },
-              arguments: [
-                {
-                  type: 'ThisExpression'
-                },
-                {
-                  type: "SpreadElement",
-                  argument: {
-                    type: "Identifier",
-                    name: "args"
-                  }
-                }
-              ],
-              optional: true
-            }
-          }
-        }
       ]
     }
-  }, classDefinedEnv)
+  };
+  const rv = parseAst(ast, classDefinedEnv);
+  ast.body.body.push(
+    {
+      type: "IfStatement",
+      test:{
+        type: "UnaryExpression",
+        operator: "!",
+        prefix: true,
+        argument: {
+          type: "BinaryExpression",
+          left: {
+            type: "ThisExpression",
+          },
+          operator: "instanceof",
+          right: createRuntimeValueAst(rv, idText)
+        }
+        },
+      consequent: {
+        type: "BlockStatement",
+        body: [
+          {
+            type: "ThrowStatement",
+            argument: {
+              type: "NewExpression",
+              callee: {
+                type: "Identifier",
+                name: "Error"
+              },
+              arguments: [
+                createLiteralAst("类必须通过new调用")
+              ]
+            }
+          }
+        ]
+      },
+      alternate: null
+    }
+    ,..._.map(_.filter(bodyAstList, c => !c.static &&
+    (c.type === 'PropertyDefinition'
+      // || (c.type === 'MethodDefinition' && isSetterOrGetter(c.kind))
+    )
+  ), getCreateClassProperty(weakMap, rv)),
+    {
+      type: "ExpressionStatement",
+      expression: {
+        type: "ChainExpression",
+        expression: {
+          type: "CallExpression",
+          callee: {
+            type: "MemberExpression",
+            object: createRuntimeValueAst(
+              () => originConstructorRef.current,
+              `${idText}$prototype$_constructor`
+            ),
+            property: {
+              type: "Identifier",
+              name: "call"
+            },
+            computed: false,
+            optional: true
+          },
+          arguments: [
+            {
+              type: 'ThisExpression'
+            },
+            {
+              type: "SpreadElement",
+              argument: {
+                type: "Identifier",
+                name: "args"
+              }
+            }
+          ],
+          optional: true
+        }
+      }
+  })
+  return rv;
 }
 
 export default function parseClassDeclaration(ast, env) {
@@ -364,37 +370,53 @@ export default function parseClassDeclaration(ast, env) {
   const classDefinedEnv = new Environment('class_' + (idText) + '_defined_env',
     env,  {
       [ENV_DICTS.isUseStrict]: true,
+      [ENV_DICTS.$hideInHTML]: env.getHideInHtml()
     })
   const classPrototypeDefinedEnv = new Environment('class_' + (idText) + '_of_prototype_defined_env',
     env, {
       [ENV_DICTS.isUseStrict]: true,
+      [ENV_DICTS.$hideInHTML]: env.getHideInHtml()
     })
   // console.log('class 声明 的时候创建的环境', classDefinedEnv.getEnvPath());
   const weakMap = new WeakMap();
-  _.forEach(_.filter(bodyAst.body, c => c.computed), c => {
+
+  const bodyAstList = [...bodyAst.body];
+
+  const constructorAst = _.find(bodyAstList, c => !c.static && c.kind === 'constructor');
+
+  if (superClass && !constructorAst) {
+    bodyAstList.push(_classConstructorSuperAst)
+  }
+
+  _.forEach(_.filter(bodyAstList, c => c.computed), c => {
     weakMap.set(c, parseAst(c.key, env));
   });
   const superClassRv = superClass ? parseAst(superClass, env) : null;
   const prototypeRv = superClass ? createObjectExtends(superClassRv) : createObject({});
-  const classRv = new RuntimeRefValue(RUNTIME_VALUE_TYPE.class, {
-    [RuntimeValue.symbolAst]: ast,
-    [RuntimeValue.symbolEnv]: env,
-    [RuntimeValue.symbolName]: idText,
-    [RuntimeValue.symbolComputedMap]: weakMap,
-  }, {
-    [RuntimeValue.proto]: superClassRv ?? getFunctionPrototype(),
-    [RuntimeValue._prototype]: prototypeRv,
-  });
+ 
 
-  classRv.setMergeCtor(createMergeCtorRv(
+  const originConstructorRef = { current: null }
+  const classRv = createMergeCtorRv(
     idText,
+    // classRv,
     prototypeRv,
     classDefinedEnv,
-    _.map(_.filter(bodyAst.body, c => !c.static &&
-      (c.type === 'PropertyDefinition'
-        || (c.type === 'MethodDefinition' && isSetterOrGetter(c.kind))
-      )
-    ), createClassProperty(weakMap, classRv))))
+    bodyAstList, 
+    weakMap,
+    originConstructorRef,
+    );
+
+  classRv.setProto(superClassRv ?? getFunctionPrototypeRv())
+  classRv.setProtoType(prototypeRv);
+
+  classRv.setType(RUNTIME_VALUE_TYPE.class)
+
+  classRv.setOriginClassAst({...ast})
+  // newMergeRv.set
+  classRv.setMergeCtor(classRv)
+  // classRv.setCurrent(newMergeRv);
+  
+  // prototypeRv.set('constructor', classRv) 
 
   if (id) {
     setPattern(classRv, id, env, { kind: 'class' })
@@ -404,46 +426,62 @@ export default function parseClassDeclaration(ast, env) {
     // todo
     classDefinedEnv.addConst(RUNTIME_LITERAL.super, new RuntimeRefValue(RUNTIME_VALUE_TYPE.super, {
     }, {
-      [RuntimeValue.proto]: superClassRv,
-      [RuntimeValue.superproto]: superClassRv,
+      [RUNTIME_VALUE_DICTS.proto]: superClassRv,
     }))
     classPrototypeDefinedEnv.addConst(RUNTIME_LITERAL.super, new RuntimeRefValue(RUNTIME_VALUE_TYPE.super, {
-      [RuntimeValue.symbolMergeNewCtor]: superClassRv.getMergeCtor(),
+      [RUNTIME_VALUE_DICTS.symbolMergeNewCtor]: superClassRv.getMergeCtor(),
     }, {
-      [RuntimeValue.proto]: superClassRv.getProtoType(),
-      [RuntimeValue.superproto]: prototypeRv,
+      [RUNTIME_VALUE_DICTS.proto]: superClassRv.getProtoType(),
     }))
   } else {
     classDefinedEnv.addConst(RUNTIME_LITERAL.super, new RuntimeRefValue(RUNTIME_VALUE_TYPE.super, {
     }, {
-      [RuntimeValue.proto]: FunctionClassV,
-      [RuntimeValue.superproto]: FunctionPrototypeV,
+      [RUNTIME_VALUE_DICTS.proto]:  getFunctionClassRv(),
     }))
   }
-  // 如果是非static
-  // run () 且非 setter，getter
+
+ 
+  if (constructorAst && superClass && 
+    (_.get(constructorAst, 'value.body.body.0.expression.type') !== 'CallExpression'
+  || _.get(constructorAst, 'value.body.body.0.expression.callee.type') !== 'Super')) {
+    console.error(constructorAst);
+    throw new Error('拥有父类的类构造函数第一语句必须调用super')
+  }
+
+  // if (superClass && !constructorAst) {
+
+  // }
+
+  // 只要是方法
   _.forEach(
-    _.filter(bodyAst.body, c => !c.static && c.type === 'MethodDefinition' && !isSetterOrGetter(c.kind)),
+    _.filter(bodyAstList, c => !c.static && c.type === 'MethodDefinition'),
     handleProperty(prototypeRv, weakMap, classPrototypeDefinedEnv, classRv)
   )
 
 
-  _.forEach(_.filter(bodyAst.body, c => c.static && c.type === 'MethodDefinition' && !isSetterOrGetter(c.kind)),
+  _.forEach(_.filter(bodyAstList, c => c.static && c.type === 'MethodDefinition' && !isSetterOrGetter(c.kind)),
     handleProperty(classRv, weakMap, classDefinedEnv, classRv)
   )
 
   // static block 或者 static 方法且非setter， getter
-  _.forEach(_.filter(bodyAst.body, c =>
+  _.forEach(_.filter(bodyAstList, c =>
     (c.static && ((c.type === 'MethodDefinition' && isSetterOrGetter(c.kind))))
   ),
     handleProperty(classRv, weakMap, classDefinedEnv, classRv)
   )
-  _.forEach(_.filter(bodyAst.body, c =>
+  _.forEach(_.filter(bodyAstList, c =>
     (c.static && (c.type === 'PropertyDefinition'))
     || ['StaticBlock'].includes(c.type)
   ),
     handleProperty(classRv, weakMap, classDefinedEnv, classRv)
   )
+  originConstructorRef.current = prototypeRv.get(RUNTIME_LITERAL.constructor);
+  prototypeRv.set(RUNTIME_LITERAL.constructor, classRv, createSimplePropertyDescriptor({
+    value: classRv,
+    [PROPERTY_DESCRIPTOR_DICTS.enumerable]: getFalseV()
+  }))
+
+  // console.error(classRv);
 
   // console.error(classRv);
   // console.log('类定义的---', prototypeRv);

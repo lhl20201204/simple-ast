@@ -1,6 +1,6 @@
 import parseAst from "..";
 import Environment from "../Environment";
-import { getNullValue } from "../Environment/RuntimeValue";
+import { getNullValue } from "../Environment/RuntimeValueInstance";
 import parseRuntimeValue from "../Environment/parseRuntimeValue";
 import { geStatement } from "./parseProgram";
 

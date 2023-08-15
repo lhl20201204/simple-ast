@@ -1,4 +1,4 @@
-import { getNullValue } from "./Environment/RuntimeValue";
+import { getNullValue } from "./Environment/RuntimeValueInstance";
 import generateCode from "./Generate";
 import parseArrayExpression from "./Parse/parseArrayExpression";
 import parseArrowFunctionExpression from "./Parse/parseArrowFunctionExpression";
@@ -10,7 +10,9 @@ import parseBreakStatement from "./Parse/parseBreakStatement";
 import parseCallExpression from "./Parse/parseCallExpression";
 import parseChainExpression from "./Parse/parseChainExpression";
 import parseClassDeclaration from "./Parse/parseClassDeclaration";
+import parseConditionalExpression from "./Parse/parseConditionalExpression";
 import parseContinueStatement from "./Parse/parseContinueStatement";
+import parseDebuggerStatement from "./Parse/parseDebuggerStatement";
 import parseExpressionStatement from "./Parse/parseExpressionStatement";
 import parseForInStatement from "./Parse/parseForInStatement";
 import parseForOfStatement from "./Parse/parseForOfStatement";
@@ -59,9 +61,11 @@ export default function parseAst(ast, env) {
     case 'BlockStatement': return parseBlockStatement(ast, env);
     case 'BinaryExpression' : return parseBinaryExpression(ast, env); 
     case 'CallExpression': return parseCallExpression(ast, env);
+    case 'ConditionalExpression': return parseConditionalExpression(ast, env);
     case 'ChainExpression': return parseChainExpression(ast, env);
     case 'ContinueStatement': return parseContinueStatement(ast, env); 
     case 'ClassDeclaration': return parseClassDeclaration(ast, env);
+    case 'DebuggerStatement': return parseDebuggerStatement(ast, env);
     case 'ExpressionStatement': return parseExpressionStatement(ast, env);
     case 'EmptyStatement': return getNullValue();
     case 'ForStatement': return parseForStatement(ast, env);

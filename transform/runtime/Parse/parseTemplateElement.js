@@ -1,4 +1,5 @@
-import { createString } from "../Environment";
+import { createString } from "../Environment/RuntimeValueInstance";
+
 
 export default function parseTemplateElement(ast, env) {
 

@@ -1,7 +1,8 @@
-import Environment, { createFunction } from "../Environment";
 import RuntimeValue from "../Environment/RuntimeValue";
+import { createFunction } from "../Environment/RuntimeValueInstance";
 import { instanceOfRuntimeValue } from "../Environment/utils";
 import { getAstCode } from "../Generate";
+import { ENV_DICTS, RUNTIME_VALUE_DICTS } from "../constant";
 
 export function handleFunction (ast, env, add) {
   const { id } = ast;
@@ -15,9 +16,9 @@ export function handleFunction (ast, env, add) {
     }
   }
   const value = createFunction({
-    [RuntimeValue.symbolAst]: ast,
-    [RuntimeValue.symbolEnv]: env,
-    [RuntimeValue.symbolName]: id ? getAstCode(id, { text: true }) : (ast._fnName ?? '匿名函数')
+    [RUNTIME_VALUE_DICTS.symbolAst]: { ...ast, [ENV_DICTS.$hideInHTML]: env.getHideInHtml()},
+    [RUNTIME_VALUE_DICTS.symbolEnv]: env,
+    [RUNTIME_VALUE_DICTS.symbolName]: id ? getAstCode(id, { text: true }) : (ast._fnName ?? '匿名函数')
   });
   // const FunctionRv = Environment.window.get('Function');
   // console.log(FunctionRv)

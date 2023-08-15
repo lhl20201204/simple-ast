@@ -1,11 +1,12 @@
 import parseAst from "..";
 import { isInstanceOf } from "../../commonApi";
 import Environment from "../Environment";
-import RuntimeValue, { RuntimeRefValue, getUndefinedValue } from "../Environment/RuntimeValue";
+import RuntimeValue, { RuntimeRefValue } from "../Environment/RuntimeValue";
+import { getUndefinedValue } from "../Environment/RuntimeValueInstance";
 import { getWindowObject } from "../Environment/getWindow";
 import parseRuntimeValue from "../Environment/parseRuntimeValue";
 import { getAstCode } from "../Generate";
-import { ENV_DICTS, RUNTIME_LITERAL, RUNTIME_VALUE_TYPE } from "../constant";
+import { ENV_DICTS, RUNTIME_LITERAL, RUNTIME_VALUE_DICTS, RUNTIME_VALUE_TYPE } from "../constant";
 import { getMemberPropertyKey } from "./parseMemberExpression";
 import setPattern from "./setPattern";
 
@@ -51,6 +52,17 @@ export default function parseCallExpression(ast, env) {
     fnAst = fnRv.value;
     _this = fnRv.getDefinedEnv().isInUseStrict() ? getUndefinedValue() : getWindowObject()
     name = callee.name
+
+    const { nativeFnCb } = _.get(fnAst, RUNTIME_VALUE_DICTS.symbolAst, {})
+    if (nativeFnCb) {
+
+      nativeTempArgsRvValue = getCallParams(args, callee, env);
+      // console.log('劫持', name , _this, nativeTempArgsRvValue);
+      nativeFnRetRv = nativeFnCb(nativeTempArgsRvValue, { _this, env })
+      if (nativeFnRetRv && !isInstanceOf(nativeFnRetRv, RuntimeValue)) {
+        throw new Error('内置函数必须返回runtimeValue')
+      }
+    }
   } else if (callee.type === 'FunctionExpression') {
     fnAst = parseAst(callee, env).value;
     _this = getUndefinedValue()
@@ -60,11 +72,11 @@ export default function parseCallExpression(ast, env) {
     _this = env.get(RUNTIME_LITERAL.this)
     name = '自执行箭头函数'
   } else if (callee.type === 'RuntimeValue') {
-    const rv = callee.value;
+    const rv = parseAst(callee, env);
     fnAst = rv.value;
     _this = env.get(RUNTIME_LITERAL.this)
     name = rv.getDefinedName();
-    const { nativeFnCb } = _.get(fnAst, RuntimeValue.symbolAst, {})
+    const { nativeFnCb } = _.get(fnAst, RUNTIME_VALUE_DICTS.symbolAst, {})
     if (nativeFnCb) {
 
       nativeTempArgsRvValue = getCallParams(args, callee, env);
@@ -89,10 +101,13 @@ export default function parseCallExpression(ast, env) {
     // if (callee.object.type === 'Super') {
     //   _this =  _this.get
     //
+
     name = getMemberPropertyKey(callee, env);
+    
     const calleeRv = parseAst(callee, env)
+
     fnAst = calleeRv.value;
-    const { nativeFnCb } = _.get(fnAst, RuntimeValue.symbolAst, {})
+    const { nativeFnCb } = _.get(fnAst, RUNTIME_VALUE_DICTS.symbolAst, {})
     if (nativeFnCb) {
 
       nativeTempArgsRvValue = getCallParams(args, callee, env);
@@ -110,17 +125,20 @@ export default function parseCallExpression(ast, env) {
     console.log(callee, fnAst)
     throw new Error(`${name} 不是可执行函数`)
   }
-  const { [RuntimeValue.symbolAst]: { params, body, nativeFnCb, type }, [RuntimeValue.symbolEnv]: fnBeDefinedEnv } = fnAst;
+  const { [RUNTIME_VALUE_DICTS.symbolAst]: { params, body, [ENV_DICTS.$hideInHTML]: hideInHTML , type }, [RUNTIME_VALUE_DICTS.symbolEnv]: fnBeDefinedEnv } = fnAst;
 
   if (type === 'ArrowFunctionExpression') {
     _this = fnBeDefinedEnv.get(RUNTIME_LITERAL.this);
   }
   if (!functionType.includes(type)) {
+    // console.log(type);
     throw new Error(`${name} 不是函数`)
   }
   const tempParams = [...params];
   // console.log(params, body, args);
-  const childEnv = new Environment('params_of_function_' + (name || '匿名函数'), fnBeDefinedEnv);
+  const childEnv = new Environment('params_of_function_' + (name || '匿名函数'), fnBeDefinedEnv, {
+    [ENV_DICTS.$hideInHTML]: hideInHTML,
+  });
   const argsRVValue = nativeTempArgsRvValue ?? getCallParams(args, callee, env);
 
   const restI = _.findIndex(tempParams, c => c.type === 'RestElement');

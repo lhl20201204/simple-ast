@@ -1,15 +1,15 @@
 import _ from "lodash";
 import parseAst from "..";
-import RuntimeValue, { RuntimeRefValue, getUndefinedValue } from "../Environment/RuntimeValue";
+import RuntimeValue, { RuntimeRefValue } from "../Environment/RuntimeValue";
 import parseRuntimeValue from "../Environment/parseRuntimeValue";
 import Environment from "../Environment";
 import { getMemberPropertyKey } from "./parseMemberExpression";
-import { getObjectPropertyDescriptor, getObjectPropertyExpressionKey } from "./parseObjectExpression";
-import { RUNTIME_LITERAL, RUNTIME_VALUE_TYPE } from "../constant";
-import { createObject } from "../Environment";
-import { isUndefinedRuntimeValue } from "../Environment/utils";
+import { getObjectPropertyExpressionKey } from "./parseObjectExpression";
+import { PROPERTY_DESCRIPTOR_DICTS, RUNTIME_LITERAL, RUNTIME_VALUE_TYPE } from "../constant";
+import { getObjectAttrOfPropertyDescriptor, isUndefinedRuntimeValue } from "../Environment/utils";
 import PropertyDescriptor from "../Environment/PropertyDescriptor";
 import { isInstanceOf } from "../../commonApi";
+import { createArray, createObject, getUndefinedValue } from "../Environment/RuntimeValueInstance";
 
 function getType(restConfig, env) {
   if (restConfig.useSet || isInstanceOf(env , RuntimeValue)) {
@@ -26,7 +26,7 @@ export function setIdentifierPattern(argsRv, paramsAst, env, restConfig) {
   }
   if (isInstanceOf(env , RuntimeValue)) {
     const { kind } = restConfig;
-    const oldDescriptor = getObjectPropertyDescriptor(env, paramsAst.name, argsRv, kind ?? 'init');
+    const oldDescriptor = getObjectAttrOfPropertyDescriptor(env, paramsAst.name, argsRv, { kind: kind ?? PROPERTY_DESCRIPTOR_DICTS.init, env});
     // console.error('env-set', paramsAst.name, oldDescriptor)
     env[getType(restConfig, env)](paramsAst.name, argsRv, oldDescriptor);
   } else {
@@ -49,7 +49,7 @@ export function setArrayPattern(argsRv, paramsAst, env, restConfig) {
     throw new Error('解构数组只能放在最后一个位置');
   }
   const restAst = restI > -1 ? astArr[restI] : null;
-  const restRv =  new RuntimeRefValue(RUNTIME_VALUE_TYPE.array, restI > -1 ? argsRv.value.slice(restI) : [])
+  const restRv = createArray(restI > -1 ? argsRv.value.slice(restI) : [])
   _.forEach(restI > -1 ? astArr.slice(0, -1) : astArr, (a, i) => {
      setPattern(argsRv.value[i] ?? getUndefinedValue(), a, env, restConfig);
    })
@@ -95,7 +95,7 @@ export function setMemberExpression(v, ast, env, restConfig) {
   const objectRV = parseAst(object, env);
   let k = getMemberPropertyKey(ast, env);
   // console.error(k)
-  objectRV.set(k, v, getObjectPropertyDescriptor(objectRV, k, v, kind))
+  objectRV.set(k, v, getObjectAttrOfPropertyDescriptor(objectRV, k, v, { kind, env }))
 }
 
 export function setVariableDeclaration(v, ast, env, restConfig) {

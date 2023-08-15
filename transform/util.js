@@ -1,15 +1,18 @@
 import { EnvJSON, SPAN_TAG_HTML, isInstanceOf } from "./commonApi";
 import Environment from "./runtime/Environment";
+import PropertyDescriptor from "./runtime/Environment/PropertyDescriptor";
 import RuntimeValue, { RuntimeRefValue } from "./runtime/Environment/RuntimeValue";
 import { getWrapAst } from "./runtime/Environment/WrapAst";
 import parseRuntimeValue from "./runtime/Environment/parseRuntimeValue";
-import { isFunctionRuntimeValue } from "./runtime/Environment/utils";
-import { DEBUGGER_DICTS, RUNTIME_VALUE_TYPE } from "./runtime/constant";
+import { createPropertyDesctiptor, createSimplePropertyDescriptor, isFunctionRuntimeValue } from "./runtime/Environment/utils";
+import { DEBUGGER_DICTS, JS_TO_RUNTIME_VALUE_TYPE, PROPERTY_DESCRIPTOR_DICTS, RUNTIME_VALUE_DICTS, RUNTIME_VALUE_TYPE } from "./runtime/constant";
 let envId = 0;
 let rvId = 0;
+let debuggerEnvId = 0;
+let debuggerRvId = 0;
 const step = 4;
 
-function textReplace(text) {
+export function textReplace(text) {
   try {
     let t = text.replaceAll('\n', '<br/>')
     return t;
@@ -19,8 +22,17 @@ function textReplace(text) {
   }
 }
 
+function toString(str) {
+  let temp = str;
+  if (JS_TO_RUNTIME_VALUE_TYPE(temp) === RUNTIME_VALUE_TYPE.symbol) {
+    temp = temp.toString()
+  }
+  return temp;
+}
+
 const createRuntimeValueSpan = ([obj, prefix, config], text, { state }) => {
-  const spanId = 'text_span_runtime_value_span ' + rvId++;
+  const isDebuggering = config[DEBUGGER_DICTS.isDebuggering];
+  const spanId = ( isDebuggering ? 'debugger_text_span_runtime_value_span' + debuggerRvId++ : 'text_span_runtime_value_span ' + rvId++) ;
   const isNotFunction = ![RUNTIME_VALUE_TYPE.function, RUNTIME_VALUE_TYPE.arrow_func].includes(obj.type)
   const isClass = obj.type === RUNTIME_VALUE_TYPE.class;
   // console.log(obj, spanId)
@@ -30,6 +42,7 @@ const createRuntimeValueSpan = ([obj, prefix, config], text, { state }) => {
     if (!dom) {
       console.error(obj);
       console.error('没有dom元素为' + spanId)
+      return;
     }
     dom.addEventListener('click', (e) => {
       e.stopPropagation()
@@ -58,8 +71,28 @@ const createRuntimeValueSpan = ([obj, prefix, config], text, { state }) => {
             ((['Array', 'arguments'].includes(obj.type) ? "[\n" : '{\n') +
               (writeJSON(
                 parseRuntimeValue(
-                  isNotFunction ? obj : {
-                    prototype: obj.getProtoType(),
+                  isNotFunction ? obj : new RuntimeRefValue(RUNTIME_VALUE_TYPE.object, {
+                    ..._.reduce(obj.keys(), (obj2, k) => {
+                      // likaiyijui
+                      return Object.assign(obj2, {
+                        [k]: obj.get(k),
+                      })
+                    }, {}),
+                    [SPAN_TAG_HTML]: obj,
+                  }, {
+                    [RUNTIME_VALUE_DICTS.proto]: obj.getProto(),
+                    [RUNTIME_VALUE_DICTS.$propertyDescriptors]: (
+                      () => {
+                        const old = _.cloneDeep(obj.propertyDescriptors);
+                        old.set(SPAN_TAG_HTML, createSimplePropertyDescriptor({
+                          value: obj
+                        }))
+                        // console.log(old);
+                        return old;
+                      }
+                      )()
+                  }) ?? {
+                    // prototype: obj.getProtoType(),
                     '[[prototype]]': obj.getProto(),
                     [SPAN_TAG_HTML]: obj,
                   },
@@ -127,7 +160,8 @@ const createRuntimeValueSpan = ([obj, prefix, config], text, { state }) => {
 
 
 const createEnvJSONSpan = ([obj, prefix, config], text, { state }) => {
-  const spanId = 'text_span_Env_JSON_span ' + envId++;
+  const isDebuggering = config[DEBUGGER_DICTS.isDebuggering];
+  const spanId = ( isDebuggering? 'debugger_text_span_Env_JSON_span ' + debuggerEnvId++ : 'text_span_Env_JSON_span ' + envId++);
   // console.log(obj, spanId)
   setTimeout(() => {
     const dom = document.getElementById(spanId);
@@ -135,6 +169,7 @@ const createEnvJSONSpan = ([obj, prefix, config], text, { state }) => {
     if (!dom) {
       console.error(obj);
       console.error('没有dom元素为' + spanId)
+      return;
     }
     dom.addEventListener('click', (e) => {
       e.stopPropagation()
@@ -152,7 +187,7 @@ const createEnvJSONSpan = ([obj, prefix, config], text, { state }) => {
       state = !state;
       dom.setAttribute('title', (!state ? '展开' : '收起') + text)
     })
-  }, 0)
+  },  0)
   return `<span id="${spanId}" title="展开${text}" style="color: ${'black'};cursor: pointer;">${text}</span>`
 }
 
@@ -193,6 +228,11 @@ export default function writeJSON(obj, prefix, config, weakMap = new WeakMap()) 
       if (!hasObj) {
         ret = [createEnvJSONSpan([obj, prefix, config], obj._envName, { state: false })]
         weakMap.set(obj, ret);
+      } else {
+        console.log('进来')
+        const objCopy = _.cloneDeep(obj);
+        ret = [createEnvJSONSpan([objCopy, prefix, config], objCopy._envName, { state: false })]
+        weakMap.set(objCopy, ret);
       }
       return ret;
     }
@@ -209,15 +249,15 @@ export default function writeJSON(obj, prefix, config, weakMap = new WeakMap()) 
       return ret;
     } else if (isInstanceOf(obj, RuntimeValue)) {
       if (!hasObj) {
-        ret = [`<span style="color: #0055AA;">${parseRuntimeValue(obj, {
+        ret = [`<span style="color: #0055AA;">${toString(parseRuntimeValue(obj, {
           [DEBUGGER_DICTS.isHTMLMode]: true,
-        })}</span>`]
+        }))}</span>`]
         weakMap.set(obj, ret);
       } else {
         const objCopy = _.cloneDeep(obj);
-        ret = [`<span style="color: #0055AA;">${parseRuntimeValue(objCopy, {
+        ret = [`<span style="color: #0055AA;">${toString(parseRuntimeValue(objCopy, {
           [DEBUGGER_DICTS.isHTMLMode]: true,
-        })}</span>`]
+        }))}</span>`]
         weakMap.set(objCopy, ret);
       }
       // console.error(ret)

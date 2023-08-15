@@ -90,3 +90,10 @@ export function isElementInArray(config) {
     isElementInArray: true,
   }
 }
+
+export function letConfigBeNotHtml(config) {
+  return {
+    ...config,
+    [DEBUGGER_DICTS.isHTMLMode]: false,
+  }
+}

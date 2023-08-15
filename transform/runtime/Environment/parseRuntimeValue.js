@@ -4,6 +4,8 @@ import generateCode from "../Generate";
 import { DEBUGGER_DICTS, RUNTIME_LITERAL, RUNTIME_VALUE_TYPE, getRuntimeValueCreateByClassName } from "../constant";
 import RuntimeValue, { RuntimeRefValue } from "./RuntimeValue";
 import { SPAN_TAG_HTML, isInstanceOf } from "../../commonApi";
+import { getUndefinedValue } from "./RuntimeValueInstance";
+import PropertyDescriptor from "./PropertyDescriptor";
 
 
 const subConfigLevel = (config) => {
@@ -63,9 +65,10 @@ const runtimeValueToJSFunction = (rv, config) => {
   // config.weakMap.set(rv, ret);
   runtimeValueKeysToJsObject(ret, rv, newConfig)
 
-  Reflect.defineProperty(ret, Symbol('_prototype'), {
-    value: parseRuntimeValue(prototype, newConfig)
-  })
+  // Reflect.defineProperty(ret, Symbol('_prototype'), {
+  //   value: parseRuntimeValue(prototype, newConfig)
+  // })
+  
   // ret.prototype = parseRuntimeValue(prototype)
   return obj[fnName];
 }
@@ -100,7 +103,6 @@ const runtimeValueToJSClass = (rv, config) => {
 }})()`),
   }
   config.weakMap.set(rv, obj[className]);
-  const prototype = rv.getProtoType()
   const proto = rv.getProto();
   const ret = obj[className];
 
@@ -131,40 +133,43 @@ const runtimeValueKeysToJsObject = (cloneObj, rv, config) => {
   // if (config.weakMap.has(rv)) {
   //   return;
   // }
-  
+
+  // const undefinedV = getUndefinedValue()
+
   for (let key of rv.keys()) {
-    // in 循环会遍历原型链的，所以需要判断是否是当前对象的属性
-    const desctiptor = rv.getPropertyDescriptor(key);
-    if (!desctiptor) {
+    // 需要获取自己的属性而不是原型链上给的
+    const desctiptor = rv.getOwnPropertyDescriptor(key);
+    if (!isInstanceOf(desctiptor, PropertyDescriptor)) {
       console.error(rv);
       throw new Error('没有desctiptor')
     }
 
     const objDesc = {};
-    if (isFunctionRuntimeValue(desctiptor.getAttr('set'))) {
-      objDesc.set = parseRuntimeValue(desctiptor.getAttr('set'), (subConfigLevel(config)));
-    }
-
-    if (isFunctionRuntimeValue(desctiptor.getAttr('get'))) {
-      objDesc.get = parseRuntimeValue(desctiptor.getAttr('get'), (subConfigLevel(config)));
-    } else {
+    if (desctiptor.hasAttr('value'))  {
       objDesc.value = parseRuntimeValue(desctiptor.getAttr('value'), (subConfigLevel(config)));
+    } else {
+      objDesc.set = parseRuntimeValue(desctiptor.getAttr('set'), (subConfigLevel(config)));
+      objDesc.get = parseRuntimeValue(desctiptor.getAttr('get'), (subConfigLevel(config)));
     }
 
     if (config[DEBUGGER_DICTS.isOutputConsoleFlag]) {
-      Reflect.defineProperty(cloneObj, key, _.reduce(objDesc, (o, v, k) => {
-        return Object.assign(o, { [k]: parseRuntimeValue(v, config) })
-      }, {}))
+      const newDescriptor = _.reduce(objDesc, (o, v, k) => {
+        const dv = parseRuntimeValue(v, config);
+        return Object.assign(o, { [k]: dv  })
+      }, {});
+      // if (Reflect.has(objDesc, 'set') || Reflect.has(objDesc, 'get')) {
+      //   console.error(cloneObj, key, newDescriptor)
+      // }
+      Reflect.defineProperty(cloneObj, key, newDescriptor)
     } else {
-      if (objDesc.set) {
-        cloneObj['set ' + key] = objDesc.set;
-      }
 
-      if (objDesc.get) {
-        cloneObj['get ' + key] = objDesc.get;
-      } else {
+      if (Reflect.has(objDesc, 'value')) {
         cloneObj[key] = objDesc.value;
+      } else {
+        cloneObj['set ' + key] = objDesc.set;
+        cloneObj['get ' + key] = objDesc.get;
       }
+      
     }
   }
 }
@@ -218,13 +223,7 @@ export default function parseRuntimeValue(rv, config = {}) {
       const finalRet = (config[DEBUGGER_DICTS.isOutputConsoleFlag])
         ? (isFunctionType
           ? runtimeValueToJSFunction(rv, config)
-          : runtimeValueToJSClass(rv, config) ?? {
-            [DEBUGGER_DICTS.isOutputConsoleFlag]: true,
-            title: (funast.id ? generateCode(funast.id, {
-              [DEBUGGER_DICTS.isTextMode]: true,
-            }) : '匿名') + ' ' + rv.type,
-            content: ret
-          })
+          : runtimeValueToJSClass(rv, config))
         :  ret;
       return finalRet;
     }
@@ -252,9 +251,9 @@ export default function parseRuntimeValue(rv, config = {}) {
     if (isInstanceOf(rv, RuntimeRefValue)) {
       if (
         rv.type === RUNTIME_VALUE_TYPE.class
-        && !isUndefinedRuntimeValue(rv.getMergeCtor())
+        && !isUndefinedRuntimeValue(rv.getMergeCtorFunctionType())
       ) {
-        cloneObj['[[constructor]]'] = parseRuntimeValue(rv.getMergeCtor(), subConfigLevel({
+        cloneObj['[[constructor]]'] = parseRuntimeValue(rv.getMergeCtorFunctionType(), subConfigLevel({
           ...config,
         })) ?? null
       }

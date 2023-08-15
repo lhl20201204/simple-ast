@@ -1,7 +1,11 @@
 import Environment from ".";
 
+let windowEnv;
 export function getWindowObject() {
-  return Environment.window.getValue();
+  if (!windowEnv) {
+    windowEnv = getWindowEnv().getValue()
+  }
+  return windowEnv;
 }
 
 export function getWindowEnv() {

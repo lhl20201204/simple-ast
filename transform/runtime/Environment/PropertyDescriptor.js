@@ -1,47 +1,42 @@
 import _ from "lodash";
-import RuntimeValue, { getTrueV, getUndefinedValue } from "./RuntimeValue";
-import { isFunctionRuntimeValue, isUndefinedRuntimeValue } from "./utils";
-import generateCode from "../Generate";
+import RuntimeValue from "./RuntimeValue";
 import { isInstanceOf } from "../../commonApi";
+import { createObject, getFalseV, getTrueV, getUndefinedValue } from "./RuntimeValueInstance";
+import { PROPERTY_DESCRIPTOR_DICTS, RUNTIME_LITERAL } from "../constant";
 
 export default class PropertyDescriptor{
   constructor({
-    configurable,
-        enumerable,
-        value,
-        writable,
-        set,
-        get,
-  }, oldPropertyDescriptor) {
-    const undefinedRv = getUndefinedValue();
-    if ((!_.isNil(get) && get !== undefinedRv) && (!_.isNil(value) && value !== undefinedRv)) {
-      console.error(get, value)
-      throw new Error('get 和 value 不能同时定义')
+        kind,
+        ...rest
+  }) {
+    if (!kind) {
+      console.error('没有kind');
     }
-    configurable = configurable ?? oldPropertyDescriptor?.configurable
-    enumerable = enumerable ?? oldPropertyDescriptor?.enumerable
-    value = value ?? oldPropertyDescriptor?.value;
-    writable = writable ?? oldPropertyDescriptor?.writable 
-    set = set ?? oldPropertyDescriptor?.set;
-    get = get ?? oldPropertyDescriptor?.get;
+  
+    Reflect.defineProperty(this, 'kind', {
+      value: kind,
+      enumerable: false,
+      writable: true,
+    })
 
-   const trueV = getTrueV()
-   this.configurable = configurable ?? trueV
-   this.enumerable = enumerable ?? trueV
-   this.value = value ?? undefinedRv
-   this.writable = writable ?? trueV
-   this.set = set ?? undefinedRv
-   this.get = get ??undefinedRv
-   if (this.value !== undefinedRv && this.get !== undefinedRv) {
-    //
-    console.error('同时有get, value')
-    if (get) {
-      console.error('清空复制操作')
-      this.value = undefinedRv;
-    } else if (value) {
-      this.get = undefinedRv;
-    }
-   } 
+    Reflect.defineProperty(this, 'currentState', {
+      value: kind,
+      enumerable: false,
+      writable: true,
+    })
+
+    _.forEach(rest, (v, k) => {
+      this[k] = v
+    })
+
+  }
+
+  setCurrentState(kind){
+    this.currentState = kind;
+  }
+
+  isShouldTriggerSet() {
+    return this.hasAttr(RUNTIME_LITERAL.set) && this.currentState === PROPERTY_DESCRIPTOR_DICTS.init
   }
 
   setRuntimeValue(kind, rv) {
@@ -49,15 +44,37 @@ export default class PropertyDescriptor{
       throw new Error('rv 必须是 runtimeValue')
     }
     this[kind] = rv;
-    const undefinedRv = getUndefinedValue();
-    if (kind === 'get' && rv !== undefinedRv) {
-      this.value = undefinedRv
-    } else if (kind === 'value' && rv !== undefinedRv ) {
-      this.get = undefinedRv
-    }
+  }
+
+  isDefineType() {
+    return [PROPERTY_DESCRIPTOR_DICTS.REFLECT_DEFINE_PROPERTY].includes(this.kind)
+  }
+
+  isHaveSetterOrGetter() {
+    return this.hasAttr(RUNTIME_LITERAL.set) || this.hasAttr(RUNTIME_LITERAL.get)
+  }
+
+  isPropertyDescriptorUnWritable() {
+   return this.hasAttr(PROPERTY_DESCRIPTOR_DICTS.writable)  && this.getAttr(PROPERTY_DESCRIPTOR_DICTS.writable) === getFalseV()
+  }
+
+  isPropertyDescriptorConfigurable() {
+    return this.getAttr(PROPERTY_DESCRIPTOR_DICTS.configurable) === getTrueV()
+   }
+
+  hasAttr(attr) {
+    return Reflect.has(this, attr);
   }
 
   getAttr(attr) {
-    return this[attr];
+    return this[attr] ?? getUndefinedValue();
+  }
+
+  deleteAttr(attr) {
+    Reflect.deleteProperty(this, attr);
+  }
+
+  toRuntimeValue() {
+    return createObject({...this})
   }
 }

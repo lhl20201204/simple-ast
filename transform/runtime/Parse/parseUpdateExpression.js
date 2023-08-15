@@ -13,7 +13,7 @@ function getUpdate(ast, env, step = 1) {
   setPattern(updateRv, argument, env, {
     useSet: true,
   });
-  return prefix ? rv : updateRv;
+  return prefix ? updateRv: rv;
 }
 
 export default function parseUpdateExpression(ast, env) {

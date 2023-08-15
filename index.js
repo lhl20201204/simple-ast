@@ -6,8 +6,31 @@ import parseAst from "./transform/runtime";
 import Environment from "./transform/runtime/Environment";
 import { getWindowEnv } from "./transform/runtime/Environment/getWindow";
 import generateCode from "./transform/runtime/Generate";
-import writeJSON from "./transform/util";
+import writeJSON, { textReplace } from "./transform/util";
 import { DEBUGGER_DICTS } from "./transform/runtime/constant";
+
+source.onscroll= _.throttle(() => {
+  const dom =  document.getElementById('currentDebuggerSpan');
+  if (dom) {
+    const { left, top, width } = dom.getBoundingClientRect()
+    debuggerScene.style.left = `${left + width}px`;
+    debuggerScene.style.top =  `${top}px`;
+  }
+}, 50 , {
+  leading: false,
+  trailing: true
+})
+
+debuggerBtn.onclick = () => {
+  // console.log('点击');
+  const debuggerScene = document.getElementById('debuggerScene');
+  // if (debuggerScene.parentNode) {
+  //   debuggerScene.parentNode.removeChild(debuggerScene)
+  //   document.body.appendChild(debuggerScene);
+  // }
+  
+  debuggerScene.style.opacity = 0;
+}
 
 const throttle = (fn, t) => {
   let timer = null;
@@ -39,7 +62,7 @@ const writeAst = (ast) => {
       [DEBUGGER_DICTS.isStringTypeUseQuotationMarks]: true, 
       [DEBUGGER_DICTS.isHTMLMode]: true, 
       [DEBUGGER_DICTS.onlyShowEnvName]: false}).join("") + "}");
-    console.log(win)
+    // console.log(win)
     console.timeEnd('写操作花费时间')
   })
   // const test = new Ast()
@@ -67,7 +90,7 @@ source.addEventListener(
 );
 
 const inputAst = function (e) {
-  console.log(e.target.value)
+  // console.log(e.target.value)
   const ast = JSON.parse(e.target.value);
   source.innerHTML = textReplace(generateCode(ast, { [DEBUGGER_DICTS.isHTMLMode]: true }));
   AST.testingCode = '';
@@ -91,10 +114,6 @@ result.addEventListener(
   "input",
   inputAst,
 );
-function textReplace(text) {
-  let t = text.replaceAll('\n', '<br/>')
-  return t;
-}
 
 const change = (text) => {
   source.innerHTML = textReplace(text);
@@ -141,7 +160,7 @@ window.addEventListener("load", () => {
       mode.appendChild(option)
     }
     result.value = localStorage.getItem('ast-temp')
-    console.log(typeof result.value)
+    // console.log(typeof result.value)
     result.focus()
     inputAst({
       target: {

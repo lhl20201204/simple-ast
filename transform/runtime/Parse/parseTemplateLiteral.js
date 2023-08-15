@@ -1,8 +1,6 @@
 import parseAst from "..";
-import { createString } from "../Environment";
-import RuntimeValue from "../Environment/RuntimeValue";
+import { createString } from "../Environment/RuntimeValueInstance";
 import parseRuntimeValue from "../Environment/parseRuntimeValue";
-import { RUNTIME_VALUE_TYPE } from "../constant";
 
 
 export default function parseTemplateLiteral(ast, env) {

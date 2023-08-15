@@ -38,6 +38,8 @@ export const RUNTIME_LITERAL = {
   const: 'const',
   set: 'set',
   get: 'get',
+  debugger: 'debugger',
+  constructor: 'constructor',
 }
 
 export const ENV_DICTS = {
@@ -51,9 +53,33 @@ export const ENV_DICTS = {
   isFunctionEnv: 'isFunctionEnv',
   isForOfEnv: 'isForOfEnv',
   isForInEnv: 'isForInEnv',
+  $hideInHTML: '$hideInHTML',
+}
+
+export const RUNTIME_VALUE_DICTS = {
+  $propertyDescriptors: '$propertyDescriptors',
+  _sourceCode: `Symbol('_sourceCode')`,
+  proto: Symbol('__proto__'),
+  _prototype:  Symbol('__prototype__'),
+  symbolAst: Symbol('$__symbolAst__'),
+  symbolEnv:  Symbol('$__symbolEnv__'),
+  symbolName: Symbol('$__symbolName__'),
+  symbolMergeNewCtor : Symbol('$__symbolMergeNewCtor__'),
+  symbolOriginClassAst: Symbol('$__symbolOriginClassAst__'),
+}
+
+export const PROPERTY_DESCRIPTOR_DICTS = {
+  init: 'init',
+  REFLECT_DEFINE_PROPERTY: 'REFLECT_DEFINE_PROPERTY',
+  get: 'get',
+  set: 'set',
+  writable: 'writable',
+  enumerable: 'enumerable',
+  configurable: 'configurable',
 }
 
 export const DEBUGGER_DICTS = {
+  isDebuggering: '$___isDebuggering___',
   isOutputConsoleFlag: '$___isOutputConsole___',
   isRenderingHTMLFlag: '$___isRenderingHTML__',
   isStringTypeUseQuotationMarks: 'isStringTypeUseQuotationMarks',
@@ -86,6 +112,7 @@ export const RUNTIME_VALUE_TYPE = {
   string: 'string', 
   boolean: 'boolean',
   null: 'null',
+  symbol: 'symbol',
 }
 
 export const OUTPUT_TYPE = {
@@ -95,6 +122,7 @@ export const OUTPUT_TYPE = {
   number: 'runtime_output_number', 
   string: 'runtime_output_string', 
   boolean: 'runtime_output_boolean',
+  symbol: 'runtime_output_symbol',
 }
 
 export function JS_TO_RUNTIME_VALUE_TYPE(x) {
@@ -105,6 +133,7 @@ export function JS_TO_RUNTIME_VALUE_TYPE(x) {
     case 'number' : return RUNTIME_VALUE_TYPE.number
     case 'string' : return RUNTIME_VALUE_TYPE.string
     case 'boolean' : return RUNTIME_VALUE_TYPE.boolean
+    case 'symbol': return RUNTIME_VALUE_TYPE.symbol
   }
   console.error(typeof x);
   throw new Error('未处理的js TO runtimevalue转换')
@@ -124,6 +153,7 @@ export function RUNTIME_VALUE_TO_OUTPUT_TYPE(x) {
     case RUNTIME_VALUE_TYPE.number : return OUTPUT_TYPE.number
     case RUNTIME_VALUE_TYPE.string : return OUTPUT_TYPE.string
     case RUNTIME_VALUE_TYPE.boolean : return OUTPUT_TYPE.boolean
+    case RUNTIME_VALUE_TYPE.symbol: return OUTPUT_TYPE.symbol;
   }
   console.error(x);
   throw new Error('未处理的runtimevalue to output转换')
@@ -131,5 +161,6 @@ export function RUNTIME_VALUE_TO_OUTPUT_TYPE(x) {
 
 export function getRuntimeValueCreateByClassName(rv) {
   const protoRv = rv.getProto()
-  return protoRv.type === RUNTIME_VALUE_TYPE.null ? 'Object':  protoRv.get('constructor').getDefinedName()
+  // console.log(protoRv, protoRv.get(RUNTIME_LITERAL.constructor));
+  return protoRv.type === RUNTIME_VALUE_TYPE.null ? 'Object':  protoRv.get(RUNTIME_LITERAL.constructor).getDefinedName()
 }

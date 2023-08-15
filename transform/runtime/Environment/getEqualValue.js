@@ -24,6 +24,7 @@ export default function getEqualValue(rv) {
     RUNTIME_VALUE_TYPE.number,
     RUNTIME_VALUE_TYPE.string,
     RUNTIME_VALUE_TYPE.undefined, 
+    RUNTIME_VALUE_TYPE.symbol
    ].includes(rv.type)) {
     return rv.value;
   }

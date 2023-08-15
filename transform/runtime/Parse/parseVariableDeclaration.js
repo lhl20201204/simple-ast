@@ -1,5 +1,5 @@
 import parseAst from "..";
-import { getUndefinedValue } from "../Environment/RuntimeValue";
+import { getUndefinedValue } from "../Environment/RuntimeValueInstance";
 import setPattern from "./setPattern";
 
 export default function parseVariableDeclaration(ast, env) {

@@ -1,6 +1,6 @@
 import parseAst from "..";
 import Environment from "../Environment";
-import { getUndefinedValue } from "../Environment/RuntimeValue";
+import { getUndefinedValue } from "../Environment/RuntimeValueInstance";
 import parseRuntimeValue from "../Environment/parseRuntimeValue";
 import { ENV_DICTS } from "../constant";
 

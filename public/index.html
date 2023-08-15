@@ -18,6 +18,12 @@
     <textarea id="result"></textarea>
     <div id="excute"  contenteditable="true"></div>
    </div>
+  <div id="debuggerScene">
+    <div style="text-align: center;">
+      <button id="debuggerBtn">结束调试</button>
+    </div>
+    <div id="debuggerText" contenteditable="true"></div>
+  </div>
 </body>
 <style>
   *{
@@ -56,6 +62,26 @@
     margin: 1%;
     height: 100%;
     resize: none;
+  }
+
+  #debuggerScene{
+    z-index: 999;
+    opacity: 0;
+    border: 1px solid black;
+    background-color: black;
+    position : absolute;
+    left : 60px;
+    top : 0;
+    transform : translateY( -100%);
+  }
+
+  #debuggerText{
+    /* color: white; */
+    background: white;
+    padding: 20px;
+    width: 50vw;
+    max-height: 800px;
+    overflow: auto;
   }
 </style>
 </html>

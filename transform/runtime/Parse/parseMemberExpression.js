@@ -1,9 +1,9 @@
 import parseAst from "..";
 import { isUndefinedRuntimeValue } from "../Environment/utils";
-import { getUndefinedValue } from "../Environment/RuntimeValue";
 import { getKeyString } from "./parseObjectExpression";
 import generateCode from "../Generate";
 import { DEBUGGER_DICTS } from "../constant";
+import { getUndefinedValue } from "../Environment/RuntimeValueInstance";
 
 export function getMemberPropertyKey(ast, env) {
   if (ast.type !== 'MemberExpression') {
