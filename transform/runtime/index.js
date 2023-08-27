@@ -32,6 +32,7 @@ import parseReturnStatement from "./Parse/parseReturnStatement";
 import parseRuntimeValueExpression from "./Parse/parseRuntimeValueExpression";
 import parseSpreadElement from "./Parse/parseSpreadElement";
 import parseSuper from "./Parse/parseSuper";
+import parseSwitchStatement from "./Parse/parseSwitchStatement";
 import parseTemplateElement from "./Parse/parseTemplateElement";
 import parseTemplateLiteral from "./Parse/parseTemplateLiteral";
 import parseThisExpression from "./Parse/parseThisExpression";
@@ -40,7 +41,7 @@ import parseUnaryExpression from "./Parse/parseUnaryExpression";
 import parseUpdateExpression from "./Parse/parseUpdateExpression";
 import parseVariableDeclaration from "./Parse/parseVariableDeclaration";
 import parseWhileStatement from "./Parse/parseWhileStatement";
-import { DEBUGGER_DICTS } from "./constant";
+import { AST_DICTS, DEBUGGER_DICTS } from "./constant";
 
 let id = 0;
 export default function parseAst(ast, env) {
@@ -81,11 +82,11 @@ export default function parseAst(ast, env) {
     case 'NewExpression': return parseNewExpression(ast, env);
     case 'ObjectExpression': return parseObjectExpression(ast, env);
     case 'Program': return parseProgram(ast); 
-    case 'PreDeclaration': return parsePreDeclaration(ast, env);
     case 'ReturnStatement': return parseReturnStatement(ast,env);
     case 'RuntimeValue': return parseRuntimeValueExpression(ast, env);
     case 'Super': return parseSuper(ast, env);
     case 'SpreadElement': return parseSpreadElement(ast,env);
+    case 'SwitchStatement': return parseSwitchStatement(ast, env);
     case 'ThrowStatement': return parseThrowStatement(ast, env);
     case 'ThisExpression': return parseThisExpression(ast, env);
     case 'TemplateLiteral': return parseTemplateLiteral(ast, env);
@@ -94,6 +95,7 @@ export default function parseAst(ast, env) {
     case 'UpdateExpression': return parseUpdateExpression(ast, env);
     case 'VariableDeclaration': return parseVariableDeclaration(ast, env);
     case 'WhileStatement': return parseWhileStatement(ast, env);
+    case AST_DICTS.PreDeclaration: return parsePreDeclaration(ast, env);
   }
   console.warn('未匹配的parseAst', ast);
   return getNullValue()

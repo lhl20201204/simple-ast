@@ -1,5 +1,6 @@
 import parseAst from "..";
 import { getUndefinedValue } from "../Environment/RuntimeValueInstance";
+import { AST_DICTS } from "../constant";
 import { geStatement } from "./parseProgram";
 export default function parseBlockStatement(ast, env) {
   const stats = geStatement(ast.body)

@@ -30,6 +30,7 @@ export default class Environment {
     this.keyMap = new Map();
     this.constMap = new Map();
     this.placeholderMap = new Map();
+    this.switchPlaceHolderMap = new Map();
   }
 
   setHideInHtml(hide) {
@@ -53,13 +54,31 @@ export default class Environment {
     }
   }
 
+  hasAttrPlaceholded(key) {
+    return this.placeholderMap.has(key)
+      || this.switchPlaceHolderMap.has(key);
+  }
+
+  deleteAttrPlaceholded(key) {
+    if (this.placeholderMap.has(key)) {
+      this.placeholderMap.delete(key)
+    }
+    if (this.switchPlaceHolderMap.has(key)) {
+      this.switchPlaceHolderMap.delete(key)
+    }
+  }
+
+  checkPlaceHolded(key) {
+    if (this.hasAttrPlaceholded(key)) {
+      this.deleteAttrPlaceholded(key)
+    }
+  }
+
   addConst(key, value) {
     if (this.keyMap.has(key)) {
       throw new Error(`${key} 已被定义`);
     }
-    if (this.placeholderMap.has(key)) {
-      this.placeholderMap.delete(key)
-    }
+    this.checkPlaceHolded(key)
     this.constMap.set(key, value);
     this.addToWindow(key, value)
     this.keyMap.set(key, 'const');
@@ -79,27 +98,21 @@ export default class Environment {
       console.error(this.keyMap);
       throw new Error(`${key} 已经定义`);
     }
-    if (this.placeholderMap.has(key)) {
-      this.placeholderMap.delete(key)
-    }
+    this.checkPlaceHolded(key)
     this.map.set(key, value);
     this.addToWindow(key, value)
     this.keyMap.set(key, 'let')
   }
 
   addFunction(key, value) {
-    if (this.placeholderMap.has(key)) {
-      this.placeholderMap.delete(key)
-    }
+    this.checkPlaceHolded(key)
     this.map.set(key, value);
     this.addToWindow(key, value)
     this.keyMap.set(key, 'function')
   }
 
   addClass(key, value) {
-    if (this.placeholderMap.has(key)) {
-      this.placeholderMap.delete(key)
-    }
+    this.checkPlaceHolded(key)
     this.map.set(key, value);
     this.addToWindow(key, value)
     this.keyMap.set(key, 'class')
@@ -113,7 +126,7 @@ export default class Environment {
   }
 
   get(key) {
-    if (this.placeholderMap.has(key)) {
+    if (this.hasAttrPlaceholded(key)) {
       throw new Error(`Cannot access '${key}' before initialization`)
     }
     let env = this.getEnv(key);
@@ -124,7 +137,7 @@ export default class Environment {
   }
 
   set(key, value) {
-    if (this.placeholderMap.has(key)) {
+    if (this.hasAttrPlaceholded(key)) {
       throw new Error(`Cannot access '${key}' before initialization`)
     }
     const env = this.getEnv(key);
@@ -138,12 +151,18 @@ export default class Environment {
     this.addToWindow(key, value)
   }
 
-  placeholder(key, kind) {
-    if (this.placeholderMap.has(key)) {
-      throw new Error(`${key} 不能重新定义`)
+  placeholder(key, kind, isSwitchPreDeclaration) {
+    if (isSwitchPreDeclaration) {
+      if (this.switchPlaceHolderMap.has(key)) {
+        throw new Error(`${key} 不能重新定义`)
+      }
+      this.switchPlaceHolderMap.set(key, kind);
+    } else {
+      if (this.placeholderMap.has(key)) {
+        throw new Error(`${key} 不能重新定义`)
+      }
+      this.placeholderMap.set(key, kind);
     }
-    // console.log('预处理开始', key);
-    this.placeholderMap.set(key, kind);
   }
 
   findFunctionEnv() {
@@ -185,6 +204,10 @@ export default class Environment {
     return this._config[ENV_DICTS.isWhileEnv] || (this.parent && this.parent.isWhileEnv());
   }
 
+  isSwitchEnv() {
+    return this._config[ENV_DICTS.isSwitchEnv] || (this.parent && this.parent.isSwitchEnv());
+  }
+
   hadBreak() {
     return this._config[ENV_DICTS.breakFlag];
   }
@@ -195,15 +218,21 @@ export default class Environment {
 
 
   getNearBreakContinueable() {
-    if (this._config[ENV_DICTS.isForEnv] || this._config[ENV_DICTS.isWhileEnv]) {
+    if (this._config[ENV_DICTS.isForEnv]
+      || this._config[ENV_DICTS.isWhileEnv]
+      || this._config[ENV_DICTS.isSwitchEnv]) {
       return this;
     }
     return this.parent && this.parent.getNearBreakContinueable()
   }
 
+  isNoBreackableEnv() {
+    return !this.isForEnv() && !this.isWhileEnv() && !this.isSwitchEnv()
+  }
+
   setBreakFlag(flag) {
-    if (!this.isForEnv() && !this.isWhileEnv()) {
-      throw new Error('不在for 循环 或者while循环中无法 break')
+    if (this.isNoBreackableEnv()) {
+      throw new Error('不在for 循环 或者while或者switch循环中无法 break')
     }
     this._config[ENV_DICTS.breakFlag] = flag;
     if (this !== this.getNearBreakContinueable()) {
@@ -212,8 +241,8 @@ export default class Environment {
   }
 
   setContinueFlag(flag) {
-    if (!this.isForEnv() && !this.isWhileEnv()) {
-      throw new Error('不在for 或者while循环中无法 continue')
+    if (this.isNoBreackableEnv()) {
+      throw new Error('不在for 或者while 或者switch循环中无法 continue')
     }
     this._config[ENV_DICTS.continueFlag] = flag;
     if (this !== this.getNearBreakContinueable()) {

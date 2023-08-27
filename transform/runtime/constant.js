@@ -40,6 +40,9 @@ export const RUNTIME_LITERAL = {
   get: 'get',
   debugger: 'debugger',
   constructor: 'constructor',
+  switch: 'switch',
+  case: 'case',
+  default: 'default',
 }
 
 export const ENV_DICTS = {
@@ -50,10 +53,18 @@ export const ENV_DICTS = {
   returnFlag: 'returnFlag',
   returnValue: 'returnValue',
   isWhileEnv: 'isWhileEnv',
+  isSwitchEnv: 'isSwitchEnv',
   isFunctionEnv: 'isFunctionEnv',
   isForOfEnv: 'isForOfEnv',
   isForInEnv: 'isForInEnv',
   $hideInHTML: '$hideInHTML',
+}
+
+export const AST_DICTS = {
+  isSwitchPreDeclaration: 'isSwitchPreDeclaration',
+  BlockStatement: 'BlockStatement',
+  PreDeclaration: 'PreDeclaration',
+  VariableDeclaration: 'VariableDeclaration'
 }
 
 export const RUNTIME_VALUE_DICTS = {

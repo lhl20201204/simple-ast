@@ -1,7 +1,7 @@
 import _ from "lodash";
 import { getClassBodyCode, getClassDeclarationCode, getClassExpressionCode, getMethodDefinitionCode, getNewExpressionCode, getPropertyDefinitionCode, getSuperCode } from "./classCode";
-import { getArrayExpressionCode, getArrayPatternCode, getArrowFunctionExpressionCode, getAssignmentExpressionCode, getAssignmentPatternCode, getAwaitExpressionCode, getBinaryExpressionCode, getBlockStatementCode, getBreakStatementCode, getCallExpressionCode, getCallFunctionExpressionCode, getChainExpressionCode, getConditionalExpressionCode, getContinueStatementCode, getDebuggerStatementCode, getExpressionStatementCode, getForInStatementCode, getForOfStatementCode, getForStatementCode, getFunctionDeclarationCode, getFunctionExpressionCode, getIdentifierCode, getIfStatementCode, getLiteralCode, getLogicalExpressionCode, getMemberExpressionCode, getObjectExpressionCode, getObjectPatternCode, getProgramCode, getRestElementCode, getReturnStatementCode, getRuntimeValueCode, getSpreadElementCode, getStaticBlockCode, getTemplateElementCode, getTemplateLiteralCode, getThisExpressionCode, getThrowStatementCode, getUnaryExpressionCode, getUpdateExpressionCode, getVariableDeclarationCode, getWhileStatementCode, getYieldExpressionCode } from "./commonCode";
-import { DEBUGGER_DICTS } from "../constant";
+import { getArrayExpressionCode, getArrayPatternCode, getArrowFunctionExpressionCode, getAssignmentExpressionCode, getAssignmentPatternCode, getAwaitExpressionCode, getBinaryExpressionCode, getBlockStatementCode, getBreakStatementCode, getCallExpressionCode, getCallFunctionExpressionCode, getChainExpressionCode, getConditionalExpressionCode, getContinueStatementCode, getDebuggerStatementCode, getExpressionStatementCode, getForInStatementCode, getForOfStatementCode, getForStatementCode, getFunctionDeclarationCode, getFunctionExpressionCode, getIdentifierCode, getIfStatementCode, getLiteralCode, getLogicalExpressionCode, getMemberExpressionCode, getObjectExpressionCode, getObjectPatternCode, getPreDeclarationCode, getProgramCode, getRestElementCode, getReturnStatementCode, getRuntimeValueCode, getSpreadElementCode, getStaticBlockCode, getSwitchStatementCode, getTemplateElementCode, getTemplateLiteralCode, getThisExpressionCode, getThrowStatementCode, getUnaryExpressionCode, getUpdateExpressionCode, getVariableDeclarationCode, getWhileStatementCode, getYieldExpressionCode } from "./commonCode";
+import { AST_DICTS, DEBUGGER_DICTS } from "../constant";
 
 export function getAstCode(ast, config) {
   if (!config) {
@@ -53,6 +53,7 @@ export function getAstCode(ast, config) {
     case 'RuntimeValue': return getRuntimeValueCode(ast, config);
     case 'Super': return getSuperCode(ast, config);
     case 'StaticBlock': return getStaticBlockCode(ast, config);
+    case 'SwitchStatement': return getSwitchStatementCode(ast, config);
     case 'SpreadElement': return getSpreadElementCode(ast, config);
     case 'ThrowStatement': return getThrowStatementCode(ast, config);
     case 'ThisExpression': return getThisExpressionCode(ast, config);
@@ -63,6 +64,7 @@ export function getAstCode(ast, config) {
     case 'VariableDeclaration': return getVariableDeclarationCode(ast, config);
     case 'WhileStatement': return getWhileStatementCode(ast, config);
     case 'YieldExpression': return getYieldExpressionCode(ast, config);
+    case AST_DICTS.PreDeclaration: return getPreDeclarationCode(ast, config);
   }
   console.warn('ast to code fail', ast);
   return ''

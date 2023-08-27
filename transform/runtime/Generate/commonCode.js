@@ -1,6 +1,6 @@
 import { getAstCode } from '.';
 import RuntimeValue from '../Environment/RuntimeValue';
-import { DEBUGGER_DICTS, RUNTIME_LITERAL } from '../constant';
+import { DEBUGGER_DICTS, RUNTIME_LITERAL, AST_DICTS } from '../constant';
 import {
   space, prefixSpace, purple, red, blue, numGreen, remark,
   tabSpace,
@@ -109,12 +109,16 @@ export function getLogicalExpressionCode(ast, config) {
   return getTwoOperatorCode(ast, config)
 }
 
-export function getVariableDeclarationCode(ast, config) {
+export function getDeclarationCode(ast, config) {
   const { kind, declarations } = ast;
   return purple(kind, config) + `${space(config)}` + _.map(declarations, d => {
     const { id, init } = d;
     return getAstCode(id, config) + (init ? (`${space(config)}${RUNTIME_LITERAL.equal}${space(config)}` + getAstCode(init, config)) : '');
   }).join(`${space(config)},`) + (config.isVariableDeclarationInForOFStatement ? '' : ';');
+}
+
+export function getVariableDeclarationCode(ast, config) {
+   return getDeclarationCode(ast, config)
 }
 
 export function getObjectExpressionCode(ast, config) {
@@ -424,4 +428,28 @@ export function getDebuggerStatementCode(ast, config) {
     return `<span id="${spanId}" style="position:relative;">${text}</span>`
   }
   return text;
+}
+
+export function getSwitchStatementCode(ast, config) {
+  const tabSpaceConfig = tabSpace(config);
+  return `${purple(RUNTIME_LITERAL.switch, config)}(${wrapSpace(getAstCode(ast.discriminant, config), config)})${space(config)}{\n${
+    prefixSpace(tabSpaceConfig) +
+    _.map(ast.cases, c => {
+      return `${(c.test ? (purple(RUNTIME_LITERAL.case, config) + (
+         wrapSpace(getAstCode(c.test, tabSpaceConfig), config)
+      ) ) : purple(RUNTIME_LITERAL.default, config)) + space(config)}:${
+       _.size(c.consequent) ? '\n' : ''}${
+        getAstCode({
+          type: 'BlockStatement',
+          body: c.consequent,
+        }, tabSpace(tabSpaceConfig))
+      }`
+    }).join(`\n${prefixSpace(tabSpaceConfig)}`)
+  }\n${prefixSpace(config)}}`
+}
+
+export function getPreDeclarationCode(ast, config) {
+  return `${remark(`// 变量声明预提升`, config)}\n${
+    prefixSpace(config) + '//' + space(config) + getDeclarationCode(ast, config)
+  }`
 }

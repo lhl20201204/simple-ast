@@ -1,3 +1,5 @@
+import { AST_DICTS } from "../constant";
+
 function getIdentifierKey(ast, env, config ) {
   return [ast.name];
 }
@@ -45,10 +47,11 @@ function getDeclarationsKey(ast, env, config) {
 }
 
 export default function parsePreDeclaration(ast, env) {
+  const isSwitchPreDeclaration = ast[AST_DICTS.isSwitchPreDeclaration];
   _.forEach(ast.declarations, ({ id }) => {
      const keyList = getDeclarationsKey(id, env, {});
      _.forEach(keyList, key => {
-      env.placeholder(key, ast.kind);
+      env.placeholder(key, ast.kind, isSwitchPreDeclaration);
      })
    });
 }
