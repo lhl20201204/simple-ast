@@ -135,7 +135,7 @@ export class RuntimeRefValue extends RuntimeValue {
     }
     if (flag) {
       Reflect.defineProperty(this, RUNTIME_VALUE_DICTS._sourceCode, {
-        enumerable: true,
+        enumerable: false,
         configurable: false,
         get: () => parseRuntimeValue(this, {
           [DEBUGGER_DICTS.isOutputConsoleFlag]: true
@@ -444,7 +444,7 @@ export class RuntimeRefValue extends RuntimeValue {
           }
           origin.propertyDescriptors.delete(attr);
         })
-        console.log(origin);
+        // console.log(origin);
       }
       this.$privateMergeCtorFunctionType = origin;
     }

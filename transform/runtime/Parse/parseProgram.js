@@ -4,12 +4,17 @@ import { getWindowEnv } from "../Environment/getWindow";
 import { AST_DICTS, RUNTIME_LITERAL } from "../constant";
 import { initEnviroment } from "../Environment/initEnviroment";
 import generateCode from "../Generate";
-export function geStatement(statements, totalAst = {}) {
+export function getStatement(statements, env) {
   const fnS = []
   const varS = [];
   const letConstS = []
   const total = []
+  const isNoNeedLookUpVarEnv = env.isNoNeedLookUpVarEnv()
+ 
   const lookupVar = (c) => {
+    if (isNoNeedLookUpVarEnv) {
+      return;
+    }
     if (c.type === 'VariableDeclaration' && c.kind === 'var') {
       varS.push({
         ...c,
@@ -61,6 +66,12 @@ export function geStatement(statements, totalAst = {}) {
           body: c.consequent,
         })
       }
+    } else if (ast.type === 'TryStatement') {
+      findVarInForIf(ast.block);
+      findVarInForIf(ast.handler.body);
+      if (ast.finalizer) {
+        findVarInForIf(ast.finalizer);
+      }
     }
     lookupVar(ast)
   }
@@ -106,6 +117,7 @@ export function geStatement(statements, totalAst = {}) {
         } else {
           findVarInForIf(c)
         }
+        // 应该将 var a = xx 去掉var；
         total.push(c)
       }
     })
@@ -122,7 +134,7 @@ export function geStatement(statements, totalAst = {}) {
 export default function parseProgram(ast) {
   const env = getWindowEnv()
   initEnviroment()
-  const statements = geStatement(ast.body);
+  const statements = getStatement(ast.body, env);
   _.forEach(statements, c => {
     parseAst(c, env)
   });

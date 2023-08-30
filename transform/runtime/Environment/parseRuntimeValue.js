@@ -23,7 +23,6 @@ const runtimeValueToJSFunction = (rv, config) => {
     return config.weakMap.get(rv);
   }
   const ast = rv.getDefinedAst();
-  const prototype = rv.getProtoType()
   const bodyCode = `
    // 以下是定义时候的源码字符串
    \`${generateCode(RuntimeRefValue.transformInnerAst(ast.body, {
@@ -31,7 +30,7 @@ const runtimeValueToJSFunction = (rv, config) => {
     [DEBUGGER_DICTS.prefixSpaceCount]: 4,
   }), { [DEBUGGER_DICTS.isTextMode]: true })
     }\`
-  `;
+  `; 
   const args = [..._.map(ast.params, a => generateCode(a, { [DEBUGGER_DICTS.isTextMode]: true }))]
   
   const fnName = rv.getDefinedName() ?? '匿名函数';

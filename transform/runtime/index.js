@@ -37,6 +37,7 @@ import parseTemplateElement from "./Parse/parseTemplateElement";
 import parseTemplateLiteral from "./Parse/parseTemplateLiteral";
 import parseThisExpression from "./Parse/parseThisExpression";
 import parseThrowStatement from "./Parse/parseThrowStatement";
+import parseTryStatement from "./Parse/parseTryStatement";
 import parseUnaryExpression from "./Parse/parseUnaryExpression";
 import parseUpdateExpression from "./Parse/parseUpdateExpression";
 import parseVariableDeclaration from "./Parse/parseVariableDeclaration";
@@ -88,6 +89,7 @@ export default function parseAst(ast, env) {
     case 'SpreadElement': return parseSpreadElement(ast,env);
     case 'SwitchStatement': return parseSwitchStatement(ast, env);
     case 'ThrowStatement': return parseThrowStatement(ast, env);
+    case 'TryStatement': return parseTryStatement(ast, env);
     case 'ThisExpression': return parseThisExpression(ast, env);
     case 'TemplateLiteral': return parseTemplateLiteral(ast, env);
     case 'TemplateElement': return parseTemplateElement(ast, env);

@@ -23,6 +23,7 @@ export default function parseForInStatement(ast, env) {
         const childEnv = new Environment('for in let/const statement body' + index++, paramsEnv, {
           isForInEnv: true,
           [ENV_DICTS.isForEnv]: true,
+          [ENV_DICTS.noNeedLookUpVar]: true
         })
         setPattern(value, left,  paramsEnv, {});
         parseAst(body, childEnv);
@@ -40,6 +41,7 @@ export default function parseForInStatement(ast, env) {
       const childEnv = new Environment('for in var/noVariableDeclaration statement body' + i, env, {
         isForInEnv: true,
         [ENV_DICTS.isForEnv]: true,
+        [ENV_DICTS.noNeedLookUpVar]: true
       })
       // 数组下标0 需要变成 ‘0’
       const value = createString(`${attr}`);

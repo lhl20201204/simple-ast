@@ -12,10 +12,12 @@ import { isInstanceOf } from "../../commonApi";
 import { createArray, createObject, getUndefinedValue } from "../Environment/RuntimeValueInstance";
 
 function getType(restConfig, env) {
-  if (restConfig.useSet || isInstanceOf(env , RuntimeValue)) {
+  if (restConfig.useSet 
+    || isInstanceOf(env , RuntimeValue)) {
     return 'set';
   }
-  return 'add' + _.upperFirst( _.get(restConfig, 'kind', env === Environment.window ? 'var' : 'let'));
+  
+  return  'add' + _.upperFirst( _.get(restConfig, 'kind', env === Environment.window ? 'var' : 'let'));
 }
 
 export function setIdentifierPattern(argsRv, paramsAst, env, restConfig) {

@@ -7,6 +7,7 @@ export default function parseSwitchStatement(ast, env) {
 
   const childEnv = new Environment('switch_body_of_env', env, {
     [ENV_DICTS.isSwitchEnv]: true,
+    [ENV_DICTS.noNeedLookUpVar]: true
   });
 
   const { cases, discriminant } = ast;

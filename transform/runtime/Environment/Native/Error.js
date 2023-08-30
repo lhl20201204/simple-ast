@@ -4,10 +4,10 @@ function Error(message) {
 }
 `
 
-export const _ErrorAst =  {
+export const _ErrorAst = {
   "type": "FunctionDeclaration",
   "start": 0,
-  "end": 81,
+  "end": 52,
   "id": {
     "type": "Identifier",
     "start": 9,
@@ -28,74 +28,30 @@ export const _ErrorAst =  {
   "body": {
     "type": "BlockStatement",
     "start": 24,
-    "end": 81,
+    "end": 52,
     "body": [
       {
         "type": "ExpressionStatement",
         "start": 28,
-        "end": 54,
-        "expression": {
-          "type": "CallExpression",
-          "start": 28,
-          "end": 54,
-          "callee": {
-            "type": "MemberExpression",
-            "start": 28,
-            "end": 39,
-            "object": {
-              "type": "Identifier",
-              "start": 28,
-              "end": 35,
-              "name": "console"
-            },
-            "property": {
-              "type": "Identifier",
-              "start": 36,
-              "end": 39,
-              "name": "log"
-            },
-            "computed": false,
-            "optional": false
-          },
-          "arguments": [
-            {
-              "type": "Literal",
-              "start": 40,
-              "end": 47,
-              "value": "Error",
-              "raw": "'Error'"
-            },
-            {
-              "type": "ThisExpression",
-              "start": 49,
-              "end": 53
-            }
-          ],
-          "optional": false
-        }
-      },
-      {
-        "type": "ExpressionStatement",
-        "start": 57,
-        "end": 79,
+        "end": 50,
         "expression": {
           "type": "AssignmentExpression",
-          "start": 57,
-          "end": 79,
+          "start": 28,
+          "end": 50,
           "operator": "=",
           "left": {
             "type": "MemberExpression",
-            "start": 57,
-            "end": 69,
+            "start": 28,
+            "end": 40,
             "object": {
               "type": "ThisExpression",
-              "start": 57,
-              "end": 61
+              "start": 28,
+              "end": 32
             },
             "property": {
               "type": "Identifier",
-              "start": 62,
-              "end": 69,
+              "start": 33,
+              "end": 40,
               "name": "message"
             },
             "computed": false,
@@ -103,8 +59,8 @@ export const _ErrorAst =  {
           },
           "right": {
             "type": "Identifier",
-            "start": 72,
-            "end": 79,
+            "start": 43,
+            "end": 50,
             "name": "message"
           }
         }

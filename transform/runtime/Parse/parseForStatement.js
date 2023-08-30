@@ -20,6 +20,7 @@ export default function parseForStatement(ast, env) {
   while(parseRuntimeValue(parseAst(test, initEnv))) {
     bodyEnv = new Environment('for let/const statement body', initEnv, {
       [ENV_DICTS.isForEnv]: true,
+      [ENV_DICTS.noNeedLookUpVar]: true
     })
     parseAst(body, bodyEnv);
     if (bodyEnv.hadBreak()) {

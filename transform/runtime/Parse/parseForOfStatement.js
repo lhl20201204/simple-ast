@@ -22,6 +22,7 @@ export default function parseForOfStatement(ast, env) {
         const childEnv = new Environment('for of let/const statement body' + index++, paramsEnv, {
           isForOfEnv: true,
           [ENV_DICTS.isForEnv]: true,
+          [ENV_DICTS.noNeedLookUpVar]: true
         })
         setPattern(value, left,  paramsEnv, {});
         parseAst(body, childEnv);
@@ -39,6 +40,7 @@ export default function parseForOfStatement(ast, env) {
       const childEnv = new Environment('for of var/noVariableDeclaration statement body' + i, env, {
         isForOfEnv: true,
         [ENV_DICTS.isForEnv]: true,
+        [ENV_DICTS.noNeedLookUpVar]: true
       })
       setPattern(value, left, childEnv, { useSet: true });
       parseAst(body, childEnv);

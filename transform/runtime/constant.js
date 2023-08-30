@@ -43,6 +43,9 @@ export const RUNTIME_LITERAL = {
   switch: 'switch',
   case: 'case',
   default: 'default',
+  try: 'try',
+  catch: 'catch',
+  finally: 'finally',
 }
 
 export const ENV_DICTS = {
@@ -58,6 +61,10 @@ export const ENV_DICTS = {
   isForOfEnv: 'isForOfEnv',
   isForInEnv: 'isForInEnv',
   $hideInHTML: '$hideInHTML',
+  isTryEnv: 'isTryEnv',
+  isCatchEnv: 'isCatchEnv',
+  isFinallyEnv: 'isFinallyEnv',
+  noNeedLookUpVar: 'noNeedLookUpVar',
 }
 
 export const AST_DICTS = {

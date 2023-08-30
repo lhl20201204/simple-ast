@@ -195,6 +195,10 @@ export default class Environment {
     return this._config[ENV_DICTS.isForInEnv];
   }
 
+  isNoNeedLookUpVarEnv() {
+    return this._config[ENV_DICTS.noNeedLookUpVar];
+  }
+
   isForEnv() {
     return this.isForOfEnv() || this.isForInEnv() || this._config[ENV_DICTS.isForEnv]
       || (this.parent && this.parent.isForEnv())

@@ -8,7 +8,7 @@ export default function parseThrowStatement(ast, env) {
   const rv = parseAst(ast.argument, env);
   if (instanceOfRuntimeValue(rv, getWindowObject().get('Error'))) {
     const text = parseRuntimeValue(rv.get('message'))
-    console.error(text, '----')
+    // console.error(text, '----')
     throw new Error(`${text}`);
   }
 }

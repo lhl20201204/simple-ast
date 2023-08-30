@@ -453,3 +453,21 @@ export function getPreDeclarationCode(ast, config) {
     prefixSpace(config) + '//' + space(config) + getDeclarationCode(ast, config)
   }`
 }
+
+export function getTryStatementCode(ast, config) {
+  const getCode = (k, block) => {
+    return `${purple(k, config) + space(config)}{\n${getAstCode(block, tabSpace(config)) }\n${prefixSpace(config)}}`
+  }
+  const { block, handler, finalizer} = ast;
+ 
+  return `${getCode(RUNTIME_LITERAL.try, block)}${
+    wrapSpace(purple(RUNTIME_LITERAL.catch, config) + `(${
+      wrapSpace(getAstCode(handler.param, config), config)
+    })`,config)
+  }{\n${getAstCode(handler.body, tabSpace(config)) }\n${ prefixSpace(config)}}${
+    finalizer ? space(config) + getCode(RUNTIME_LITERAL.finally,{
+      type: 'BlockStatement',
+      body: finalizer.body,
+      }) : ''
+  }`
+}
