@@ -46,6 +46,8 @@ export const RUNTIME_LITERAL = {
   try: 'try',
   catch: 'catch',
   finally: 'finally',
+  arguments: 'arguments',
+  NaN: 'NaN',
 }
 
 export const ENV_DICTS = {
@@ -84,6 +86,7 @@ export const RUNTIME_VALUE_DICTS = {
   symbolName: Symbol('$__symbolName__'),
   symbolMergeNewCtor : Symbol('$__symbolMergeNewCtor__'),
   symbolOriginClassAst: Symbol('$__symbolOriginClassAst__'),
+  symbolPrimitiveValue: Symbol('[[PrimitiveValue]]'),
 }
 
 export const PROPERTY_DESCRIPTOR_DICTS = {
@@ -110,6 +113,11 @@ export const DEBUGGER_DICTS = {
   isInWrapFunction: 'isInWrapFunction',
   isInWrapClass: 'isInWrapClass',
   currentAttr: 'currentAttr',
+  replaceFunctionName: 'replaceFunctionName',
+  hideFunctionField: 'hideFunctionField',
+  isInCallExpressionCalleer: 'isInCallExpressionCalleer',
+  isFunctionEndNotRemark: 'isFunctionEndNotRemark',
+  isFunctionInClassMethodDefinition: 'isFunctionInClassMethodDefinition',
 }
 
 export const AST_LITERAL = {

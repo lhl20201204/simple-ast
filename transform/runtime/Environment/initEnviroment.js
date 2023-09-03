@@ -9,10 +9,12 @@ import { _FunctionBindAst } from "./Native/Function";
 import parseRuntimeValue from "./parseRuntimeValue";
 import PropertyDescriptor from "./PropertyDescriptor";
 import { _ErrorAst } from "./Native/Error";
-import { createArray, createObject, createString, describeNativeFunction, getFalseV, getFunctionClassRv, getFunctionPrototypeRv, getGenerateFn, getNullValue, getObjectPrototypeRv, getReflectDefinedPropertyV, getSymbolV, getTrueV, getUndefinedValue } from "./RuntimeValueInstance";
+import { createArray, createNumber, createObject, createString, describeNativeFunction, getFalseV, getFunctionClassRv, getFunctionPrototypeRv, getGenerateFn, getNullValue, getObjectPrototypeRv, getReflectDefinedPropertyV, getSymbolV, getTrueV, getUndefinedValue, runFunctionRuntimeValueInGlobalThis } from "./RuntimeValueInstance";
 import { getWindowEnv, getWindowObject } from "./getWindow";
-import { createLiteralAst, createPropertyDesctiptor, createSimplePropertyDescriptor } from "./utils";
+import { createLiteralAst, createPropertyDesctiptor, createRuntimeValueAst, createSimplePropertyDescriptor, isFunctionRuntimeValue } from "./utils";
 import { getConsoleV } from "./NativeRuntimeValue/console";
+import { getNumberFunctionV } from "./NativeRuntimeValue/number";
+import { getStringFunctionV } from "./NativeRuntimeValue/string";
 
 export function initEnviroment() {
   const windowRv = getWindowObject()
@@ -48,12 +50,41 @@ export function initEnviroment() {
     [PROPERTY_DESCRIPTOR_DICTS.writable]: getFalseV()
   }))
   
+  globalEnv.addVar(RUNTIME_LITERAL.NaN, createNumber(NaN));
+
+  console.log(globalEnv);
 
   globalEnv.addLet('console', consoleV);
 
   globalEnv.addLet('window', windowRv);
 
+  globalEnv.addFunction('setTimeout', generateFn('setTimeout', ([fnRv, tR]) => {
+    if (!isFunctionRuntimeValue(fnRv)) {
+      throw new Error('setTimeout需要接受一个函数')
+    }
+   return createNumber(setTimeout(()=> runFunctionRuntimeValueInGlobalThis(fnRv, windowRv), parseRuntimeValue(tR) ?? 0));
+  }))
+
+  globalEnv.addFunction('clearTimeout', generateFn('clearTimeout', ([tR]) => {
+     clearTimeout(parseRuntimeValue(tR) ?? 0)
+  }))
+
+  globalEnv.addFunction('setInterval', generateFn('setInterval', ([fnRv, tR]) => {
+    if (!isFunctionRuntimeValue(fnRv)) {
+      throw new Error('setInterval需要接受一个函数')
+    }
+   return createNumber(
+    setInterval(()=> runFunctionRuntimeValueInGlobalThis(fnRv, windowRv), parseRuntimeValue(tR) ?? 0)
+   );
+  }))
+
+  globalEnv.addFunction('clearInterval', generateFn('clearInterval', ([tR]) => {
+     clearInterval(parseRuntimeValue(tR) ?? 0)
+  }))
+
   globalEnv.addFunction('Symbol', getSymbolV());
+  globalEnv.addFunction('Number', getNumberFunctionV());
+  globalEnv.addFunction('String', getStringFunctionV());
   globalEnv.addConst(RUNTIME_LITERAL.this, windowRv);
 
   // console.error( '开始')

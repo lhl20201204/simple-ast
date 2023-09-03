@@ -61,7 +61,7 @@ export default function parseNewExpression(ast, env) {
     const ctorEnv = classRv.getDefinedEnv()
     const ctorName = classRv.getDefinedName();
     const classNewEnv =  new Environment('new_function_' + (ctorName) + '_of_env',
-    ctorEnv,
+    env,
   )
    classNewEnv.addConst(RUNTIME_LITERAL.this, objRv);
     const CtorRv = getBindRuntimeValue(classNewEnv, createRuntimeValueAst(classRv, ctorName));
@@ -69,6 +69,7 @@ export default function parseNewExpression(ast, env) {
    // 将实例对象的隐式原型指向构造函数的显式原型
     // e.__proto__ = Error.prototype
     objRv.setProto(classRv.getProtoType())
+   
     const retRv = parseAst({
       type: 'CallExpression',
       callee: createRuntimeValueAst(
@@ -79,6 +80,7 @@ export default function parseNewExpression(ast, env) {
       optional: false,
     }, classNewEnv)
      
+
    
     // todo 判断其是否是引用对象
     if (isObjectRuntimeValue(retRv)) {

@@ -2,6 +2,7 @@ import Environment from ".";
 import parseAst from "..";
 import { DEBUGGER_DICTS, ENV_DICTS, JS_TO_RUNTIME_VALUE_TYPE, PROPERTY_DESCRIPTOR_DICTS, RUNTIME_LITERAL, RUNTIME_VALUE_DICTS, RUNTIME_VALUE_TYPE } from "../constant";
 import { getArrayProtoTypeV } from "./NativeRuntimeValue/array";
+import { getStringProtoTypeV } from "./NativeRuntimeValue/string";
 import PropertyDescriptor from "./PropertyDescriptor";
 import RuntimeValue, { RuntimeRefValue } from "./RuntimeValue";
 import parseRuntimeValue from "./parseRuntimeValue";
@@ -21,8 +22,6 @@ let nullV;
 let undefinedV;
 
 let rootRv;
-
-
 
 export function ensureInitRoot() {
   const ObjectPrototypeV = new RuntimeRefValue(RUNTIME_VALUE_TYPE.object, {}, {
@@ -194,6 +193,34 @@ export function createArray(value) {
 
 export function createString(attr) {
   return new RuntimeValue(RUNTIME_VALUE_TYPE.string, attr);
+}
+
+export function createNumber(num) {
+  return new RuntimeValue(RUNTIME_VALUE_TYPE.number, num);
+}
+
+export function runFunctionRuntimeValueInGlobalThis(fnRv, windowRv) {
+  return parseAst(
+    {
+      "type": "ExpressionStatement",
+      "expression": {
+        "type": "CallExpression",
+        "callee": {
+          "type": "MemberExpression",
+          "object": createRuntimeValueAst(fnRv, 'setTimeout_handler'),
+          "property": {
+            "type": "Identifier",
+            "name": "call"
+          },
+          "computed": false,
+          "optional": false
+        },
+        "arguments": [
+          createRuntimeValueAst(windowRv.get('this'), 'globalThis')
+        ],
+        "optional": false
+      }
+    }, fnRv.getDefinedEnv())
 }
 
 export function createFunction(value) {

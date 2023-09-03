@@ -1,8 +1,10 @@
 import { isInstanceOf } from "../../commonApi";
 import generateCode from "../Generate";
 import { DEBUGGER_DICTS, PROPERTY_DESCRIPTOR_DICTS, RUNTIME_LITERAL, RUNTIME_VALUE_DICTS, RUNTIME_VALUE_TYPE } from "../constant";
+import { getNumberPrototypeV } from "./NativeRuntimeValue/number";
+import { getStringProtoTypeV } from "./NativeRuntimeValue/string";
 import PropertyDescriptor from "./PropertyDescriptor";
-import { getFalseV, getNullValue, getTrueV, getUndefinedValue } from "./RuntimeValueInstance";
+import { createNumber, getFalseV, getNullValue, getTrueV, getUndefinedValue } from "./RuntimeValueInstance";
 import parseRuntimeValue from "./parseRuntimeValue";
 import { createRuntimeValueAst, createSimplePropertyDescriptor, isFunctionRuntimeValue, isUndefinedRuntimeValue, parseFunctionCallRuntimeValue } from "./utils";
 
@@ -75,10 +77,27 @@ export default class RuntimeValue {
         return this.getProto().get(attr);
       }
     }
+
+    if ([RUNTIME_VALUE_TYPE.string, RUNTIME_VALUE_TYPE.number].includes(this.type)) {
+      if (attr === 'length') {
+        return createNumber(this.value.length)
+      } else if (attr === RUNTIME_LITERAL.$__proto__) {
+        return this.getProto()
+      } else {
+        return this.getProto().get(attr);
+      }
+    }
+
     return getUndefinedValue();
   }
 
   getProto() {
+    if (this.type === RUNTIME_VALUE_TYPE.string) {
+      return getStringProtoTypeV()
+    }
+    if (this.type === RUNTIME_VALUE_TYPE.number) {
+      return getNumberPrototypeV()
+    }
     return this.restConfig[proto] ?? getUndefinedValue();
   }
 

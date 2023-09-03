@@ -1,15 +1,15 @@
 import { getAstCode } from ".";
 import { RUNTIME_LITERAL } from "../constant";
-import { getElememtCode } from "./commonCode";
-import { letFunctionInClassMethodDefinition, prefixSpace, purple, remark, space, tabSpace, wrapSpace } from "./util";
+import { getElememtCode } from "./arrayCode";
+import { letFunctionInClassMethodDefinition, prefixSpace, purple, remark, space, tabSpace, wrapBigBrace, wrapSpace } from "./util";
 
 export function getClassCode(ast, config, type) {
   const { id, body, superClass } = ast;
   return `${purple(RUNTIME_LITERAL.class, config)}${space(config)}${getAstCode(id,config)}${
     superClass ? space(config) + purple(RUNTIME_LITERAL.extends, config) + space(config) + getAstCode(superClass, config) : ''
-  }${space(config)}{\n${prefixSpace(tabSpace(config))}${
-    getAstCode(body, config)
-  }\n${prefixSpace(config)}}${remark(` /*${RUNTIME_LITERAL.class} ` + type+ ' end */', config)}`
+  }${space(config)}${
+    wrapBigBrace(getAstCode(body, config), config)
+  }${remark(` /*${RUNTIME_LITERAL.class} ` + type+ ' end */', config)}`
 }
 
 

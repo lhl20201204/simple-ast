@@ -1,5 +1,5 @@
 const code = `
-function Object(x) {
+function Object(obj) {
   for(const attr in obj) {
       this[attr] = obj[attr]
   }
@@ -23,12 +23,12 @@ Reflect.defineProperty(Object, 'create', {
 
 export const _ObjectAst = {
   "type": "FunctionDeclaration",
-  "start": 0,
-  "end": 82,
+  "start": 1,
+  "end": 85,
   "id": {
     "type": "Identifier",
-    "start": 9,
-    "end": 15,
+    "start": 10,
+    "end": 16,
     "name": "Object"
   },
   "expression": false,
@@ -37,33 +37,33 @@ export const _ObjectAst = {
   "params": [
     {
       "type": "Identifier",
-      "start": 16,
-      "end": 17,
-      "name": "x"
+      "start": 17,
+      "end": 20,
+      "name": "obj"
     }
   ],
   "body": {
     "type": "BlockStatement",
-    "start": 19,
-    "end": 82,
+    "start": 22,
+    "end": 85,
     "body": [
       {
         "type": "ForInStatement",
-        "start": 23,
-        "end": 80,
+        "start": 26,
+        "end": 83,
         "left": {
           "type": "VariableDeclaration",
-          "start": 27,
-          "end": 37,
+          "start": 30,
+          "end": 40,
           "declarations": [
             {
               "type": "VariableDeclarator",
-              "start": 33,
-              "end": 37,
+              "start": 36,
+              "end": 40,
               "id": {
                 "type": "Identifier",
-                "start": 33,
-                "end": 37,
+                "start": 36,
+                "end": 40,
                 "name": "attr"
               },
               "init": null
@@ -73,37 +73,37 @@ export const _ObjectAst = {
         },
         "right": {
           "type": "Identifier",
-          "start": 41,
-          "end": 44,
+          "start": 44,
+          "end": 47,
           "name": "obj"
         },
         "body": {
           "type": "BlockStatement",
-          "start": 46,
-          "end": 80,
+          "start": 49,
+          "end": 83,
           "body": [
             {
               "type": "ExpressionStatement",
-              "start": 54,
-              "end": 76,
+              "start": 57,
+              "end": 79,
               "expression": {
                 "type": "AssignmentExpression",
-                "start": 54,
-                "end": 76,
+                "start": 57,
+                "end": 79,
                 "operator": "=",
                 "left": {
                   "type": "MemberExpression",
-                  "start": 54,
-                  "end": 64,
+                  "start": 57,
+                  "end": 67,
                   "object": {
                     "type": "ThisExpression",
-                    "start": 54,
-                    "end": 58
+                    "start": 57,
+                    "end": 61
                   },
                   "property": {
                     "type": "Identifier",
-                    "start": 59,
-                    "end": 63,
+                    "start": 62,
+                    "end": 66,
                     "name": "attr"
                   },
                   "computed": true,
@@ -111,18 +111,18 @@ export const _ObjectAst = {
                 },
                 "right": {
                   "type": "MemberExpression",
-                  "start": 67,
-                  "end": 76,
+                  "start": 70,
+                  "end": 79,
                   "object": {
                     "type": "Identifier",
-                    "start": 67,
-                    "end": 70,
+                    "start": 70,
+                    "end": 73,
                     "name": "obj"
                   },
                   "property": {
                     "type": "Identifier",
-                    "start": 71,
-                    "end": 75,
+                    "start": 74,
+                    "end": 78,
                     "name": "attr"
                   },
                   "computed": true,

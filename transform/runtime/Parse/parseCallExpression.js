@@ -127,7 +127,8 @@ export default function parseCallExpression(ast, env) {
   }
   const { [RUNTIME_VALUE_DICTS.symbolAst]: { params, body, [ENV_DICTS.$hideInHTML]: hideInHTML , type }, [RUNTIME_VALUE_DICTS.symbolEnv]: fnBeDefinedEnv } = fnAst;
 
-  if (type === 'ArrowFunctionExpression') {
+  const isArrowFunctionType = type === 'ArrowFunctionExpression';
+  if (isArrowFunctionType) {
     _this = fnBeDefinedEnv.get(RUNTIME_LITERAL.this);
   }
   if (!functionType.includes(type)) {
@@ -160,7 +161,9 @@ export default function parseCallExpression(ast, env) {
   }
   const fnEnv = new Environment('function_' + (name || '匿名函数') + '_execute_body', childEnv, { [ENV_DICTS.isFunctionEnv]: true });
   fnEnv.addConst(RUNTIME_LITERAL.this, _this);
-  fnEnv.addConst('arguments', new RuntimeRefValue(RUNTIME_VALUE_TYPE.arguments, argsRVValue));
+  if (!isArrowFunctionType) {
+    fnEnv.addConst(RUNTIME_LITERAL.arguments, new RuntimeRefValue(RUNTIME_VALUE_TYPE.arguments, argsRVValue));
+  }
   const ret = parseAst(body, fnEnv);
   return nativeFnRetRv ?? ret;
 }

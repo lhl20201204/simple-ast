@@ -1,19 +1,17 @@
 import { getAstCode } from '.';
-import RuntimeValue from '../Environment/RuntimeValue';
 import { DEBUGGER_DICTS, RUNTIME_LITERAL, AST_DICTS } from '../constant';
+import { getElememtCode } from './arrayCode';
 import {
   space, prefixSpace, purple, red, blue, numGreen, remark,
   tabSpace,
-  letInObjectLeftKey,
   letInObjectPropertyKey,
   letVariableDeclarationInForOFStatement,
   putParentOperator,
-  letFunctionInObjectRight,
   templateCount,
   wrapSpace,
   isInCallExpressionCalleer,
-  isElementInArray,
-  letConfigBeNotHtml,
+  wrapBigBrace,
+  wrapBlockWithBigBrace,
 } from './util'
 const priorityArr = [
   [
@@ -121,66 +119,14 @@ export function getVariableDeclarationCode(ast, config) {
    return getDeclarationCode(ast, config)
 }
 
-export function getObjectExpressionCode(ast, config) {
-  const { properties } = ast;
-  const childrenStr =(config) => _.map(properties, p => {
-    if (p.type === 'SpreadElement') {
-      return getAstCode(p, tabSpace(config))
-    }
-    const { key, value, computed, shorthand, method, kind } = p;
-    if (shorthand) {
-      return getAstCode(key, letInObjectLeftKey(config))
-    }
-    const kindAstCode = [RUNTIME_LITERAL.set, RUNTIME_LITERAL.get].includes(kind) ?
-      purple(kind, config) + space(config)
-      : ''
-    if (method) {
-      return `${kindAstCode
-        }${getAstCode(key, letInObjectLeftKey(config))}${space(config)}${getAstCode(value, tabSpace(letFunctionInObjectRight(config)))}`
-    }
-    const isFunctionType = ['ArrowFunctionExpression', 'FunctionExpression'].includes(value.type);
-    const valueAstCode = getAstCode(value, isFunctionType ? tabSpace(letFunctionInObjectRight(config)) : tabSpace(config));
-    const splitCode = isFunctionType ? '' : wrapSpace(':', config)
-    if (computed) {
-      return `${kindAstCode}[${getAstCode(key, config)}]${splitCode}${valueAstCode}`
-    }
-    return `${kindAstCode}${getAstCode(key, letInObjectLeftKey(config))}${splitCode}${valueAstCode
-      }`
-  });
-
-  let temp;
-  const isLong = _.size(properties) > 3 || (temp = childrenStr(letConfigBeNotHtml(config)), temp.length > 0 && temp.some(x => x.length > 15))
-
-  return `{${isLong ? '\n' + prefixSpace(tabSpace(config)) : space(config)}` + childrenStr(config).join(',' + (isLong ? ('\n' + prefixSpace((tabSpace(config)))) : space(config))) + `${isLong ? '\n' + prefixSpace(config) : ''}${space(config)}}`
-
-}
-
 export function getLiteralCode(ast, config) {
   return +ast.raw === +ast.value ? numGreen(ast.raw, config) : red(ast.raw, config)
 }
 
-export function getElememtCode(ast, config) {
-  const children = _.map(ast, a => getAstCode(a, tabSpace(config)))
-  let temp
-  let isLong = children.length > 3 || (temp = _.map(ast, a => getAstCode(a, letConfigBeNotHtml(config))), temp.length > 0 && temp.some(x => x.length > 15))
-  // const ret = children.join(`,${space(config)}`);
-  return isLong ?
-    (
-      ('\n' + prefixSpace((tabSpace(config)))) +
-      children.join(`,\n${prefixSpace((tabSpace(config)))}`)
-      + ('\n' + prefixSpace(config))
-    )
-    : children.join(`,${space(config)}`)
-}
-
-export function getArrayExpressionCode(ast, config) {
-  const { elements } = ast;
-  return `[${getElememtCode(elements, isElementInArray(config))}]`
-}
 
 export function getMemberExpressionCode(ast, config) {
   const { object, property, computed, optional } = ast;
-  const obj = getAstCode(object, config);
+  const obj = getAstCode(object, putParentOperator(config, prioritySet.get('exp.exp')));
   const p = getAstCode(property, letInObjectPropertyKey(config))
   if (computed) {
     return `${obj}${optional ? RUNTIME_LITERAL.optional : ''}[${p}]`
@@ -196,7 +142,7 @@ export function getCallExpressionCode(ast, config) {
 }
 
 export function getReturnStatementCode(ast, config) {
-  return `${RUNTIME_LITERAL.return} ${getAstCode(ast.argument, config)}`;
+  return `${purple(RUNTIME_LITERAL.return, config)} ${getAstCode(ast.argument, config)}`;
 }
 
 export function getAssignmentExpressionCode(ast, config) {
@@ -220,12 +166,16 @@ export function getExpressionStatementCode(ast, config) {
 
 export function getIfStatementCode(ast, config) {
   const { test, consequent, alternate } = ast;
-  const p = `${purple(RUNTIME_LITERAL.if, config)}${space(config)}(${getAstCode(test, config)})${space(config)}{\n${getAstCode(consequent, tabSpace(config))}\n${prefixSpace(config)}}`
+  const p = `${purple(RUNTIME_LITERAL.if, config)}${space(config)}(${getAstCode(test, config)})${space(config)
+    + wrapBlockWithBigBrace(consequent, config)
+  }`
   if (!alternate) {
     return p + `${remark(` /* ${RUNTIME_LITERAL.if} end */`, config)}`
   }
   if (alternate.type === 'BlockStatement') {
-    return p + ` ${purple(RUNTIME_LITERAL.else, config)}${space(config)}{\n${getAstCode(alternate, tabSpace(config))}\n${prefixSpace(config)}}${space(config)}${remark(` /* ${RUNTIME_LITERAL.else} ${RUNTIME_LITERAL.if} end */`, config)}`
+    return p + ` ${purple(RUNTIME_LITERAL.else, config)}${space(config)
+      + wrapBlockWithBigBrace(alternate, config)
+    }${space(config)}${remark(` /* ${RUNTIME_LITERAL.else} ${RUNTIME_LITERAL.if} end */`, config)}`
   }
   return p + ` ${purple(RUNTIME_LITERAL.else, config)} ${getAstCode(alternate, config)}`
 }
@@ -300,27 +250,6 @@ export function getForInStatementCode(ast, config) {
   return getForOfOrInStatementCode(ast, config, RUNTIME_LITERAL.in)
 }
 
-export function getObjectPatternCode(ast, config) {
-  const { properties } = ast;
-  return `{\n` + prefixSpace(tabSpace(config)) + _.map(properties, p => {
-
-    const { key, value, computed, shorthand, type } = p;
-    if (type === 'RestElement') {
-      return getAstCode(p, config)
-    }
-    if (shorthand) {
-      if (value.type === 'AssignmentPattern') {
-        return getAstCode(value, tabSpace(config));
-      }
-      return getAstCode(key, config)
-    }
-    if (computed) {
-      return `[${getAstCode(key, config)}]${space(config)}:${space(config)}${getAstCode(value, tabSpace(config))}`
-    }
-    return `${getAstCode(key, config)}${space(config)}:${space(config)}${getAstCode(value, config)}`
-  }).join(',\n' + prefixSpace(tabSpace(config))) + `\n${prefixSpace(config)}}`
-}
-
 export function getContinueStatementCode(ast, config) {
   return purple(RUNTIME_LITERAL.continue, config);
 }
@@ -329,9 +258,6 @@ export function getBreakStatementCode(ast, config) {
   return purple(RUNTIME_LITERAL.break, config);
 }
 
-export function getArrayPatternCode(ast, config) {
-  return `[${space(config)}${getElememtCode(ast.elements, config)}${space(config)}]`
-}
 
 export function getForStatementCode(ast, config) {
   const { init, test, update, body } = ast;
@@ -347,33 +273,16 @@ export function getUpdateExpressionCode(ast, config) {
 
 export function getWhileStatementCode(ast, config) {
   const { test, body } = ast;
-  const p = `${purple(RUNTIME_LITERAL.while, config)}${space(config)}(${getAstCode(test, config)})${space(config)}{\n${getAstCode(body, tabSpace(config))}\n${prefixSpace(config)}}`
+  const p = `${purple(RUNTIME_LITERAL.while, config)}${space(config)}(${getAstCode(test, config)})${space(config)
+   + wrapBlockWithBigBrace(body, config)}`
   return p + `${remark(` /* ${RUNTIME_LITERAL.while} end */`, config)}`
 }
 
-export function getFunctionDeclarationCode(ast, config) {
-  const { async, generator, id, body, params } = ast;
-  const GeneratorStr = generator ? wrapSpace('*', config) : space(config)
-  return `${async ? purple(RUNTIME_LITERAL.async, config) + space(config) : ''}${purple(RUNTIME_LITERAL.function, config)}${GeneratorStr}${getAstCode(id, config)}${space(config)}(${getElememtCode(params, config)})${space(config)}{\n${getAstCode(body, tabSpace(config))}\n${prefixSpace(config)
-    }}${remark(` /* ${RUNTIME_LITERAL.function} end */`, config)}`
-}
-
-export function getFunctionExpressionCode(ast, config) {
-  const { async, generator, params, body } = ast;
-  const GeneratorStr = generator ? wrapSpace('*', config) : space(config)
-  const ret = `${async ? purple(RUNTIME_LITERAL.async, config) + space(config) : ''}${config.isFunctionInObjectRight || config.isFunctionInClassMethodDefinition ? '' : purple(RUNTIME_LITERAL.function, config)}${GeneratorStr}(${getElememtCode(params, config)})${space(config)}{\n${getAstCode(body, tabSpace(config))}\n${prefixSpace(config)}}${config.isFunctionEndNotRemark ? '' : remark(` /* ${RUNTIME_LITERAL.function} end */`, config)}`
-  return config.isInCallExpressionCalleer ? `(${ret})` : ret;
-}
-
-export function getArrowFunctionExpressionCode(ast, config) {
-  const { async, params, body } = ast;
-  const ret = `${async ? purple(RUNTIME_LITERAL.async, config) + space(config) : ''}(${getElememtCode(params, config)})${space(config)}${purple('=>', config)}${space(config)}{\n${getAstCode(body, tabSpace(config))}\n${prefixSpace(config)}}${remark(
-    config.isInCallExpressionCalleer || config.isFunctionEndNotRemark ? "" : ` /* arrow ${RUNTIME_LITERAL.function} end */`, config)}`
-  return config.isInCallExpressionCalleer ? `(${ret})` : ret;
-}
 
 export function getYieldExpressionCode(ast, config) {
-  return `${purple(RUNTIME_LITERAL.yield, config)}${space(config)}${getAstCode(ast.argument, config)}`
+  return `${purple(RUNTIME_LITERAL.yield, config)}${ast.delegate ? wrapSpace(
+    '*'
+    ,config)  : space(config)}${getAstCode(ast.argument, config)}`
 }
 
 export function getAwaitExpressionCode(ast, config) {
@@ -401,8 +310,10 @@ export function getThrowStatementCode(ast, config) {
 
 
 export function getStaticBlockCode(ast, config) {
-  return purple(RUNTIME_LITERAL.static, config) + space(config) + `{\n${getAstCode({ type: 'BlockStatement', body: ast.body }, tabSpace(tabSpace(config)))}\n${prefixSpace(tabSpace(config))
-    }}${remark(` /* ${RUNTIME_LITERAL.static} Block end */`, config)}`
+  return purple(RUNTIME_LITERAL.static, config) + space(config) + 
+  `{\n${getAstCode({ type: 'BlockStatement', body: ast.body }, tabSpace(tabSpace(config)))}\n${prefixSpace(tabSpace(config))
+    }}${
+      remark(` /* ${RUNTIME_LITERAL.static} Block end */`, config)}`
 }
 
 export function getConditionalExpressionCode(ast, config) {
@@ -432,9 +343,9 @@ export function getDebuggerStatementCode(ast, config) {
 
 export function getSwitchStatementCode(ast, config) {
   const tabSpaceConfig = tabSpace(config);
-  return `${purple(RUNTIME_LITERAL.switch, config)}(${wrapSpace(getAstCode(ast.discriminant, config), config)})${space(config)}{\n${
-    prefixSpace(tabSpaceConfig) +
-    _.map(ast.cases, c => {
+  return `${purple(RUNTIME_LITERAL.switch, config)}(${wrapSpace(getAstCode(ast.discriminant, config), config)})${space(config)}${
+    
+    wrapBigBrace(_.map(ast.cases, c => {
       return `${(c.test ? (purple(RUNTIME_LITERAL.case, config) + (
          wrapSpace(getAstCode(c.test, tabSpaceConfig), config)
       ) ) : purple(RUNTIME_LITERAL.default, config)) + space(config)}:${
@@ -444,8 +355,8 @@ export function getSwitchStatementCode(ast, config) {
           body: c.consequent,
         }, tabSpace(tabSpaceConfig))
       }`
-    }).join(`\n${prefixSpace(tabSpaceConfig)}`)
-  }\n${prefixSpace(config)}}`
+    }).join(`\n${prefixSpace(tabSpaceConfig)}`), config)
+  }`
 }
 
 export function getPreDeclarationCode(ast, config) {
@@ -456,18 +367,25 @@ export function getPreDeclarationCode(ast, config) {
 
 export function getTryStatementCode(ast, config) {
   const getCode = (k, block) => {
-    return `${purple(k, config) + space(config)}{\n${getAstCode(block, tabSpace(config)) }\n${prefixSpace(config)}}`
+    return `${purple(k, config) + space(config)}${wrapBlockWithBigBrace(block, config)}`
   }
   const { block, handler, finalizer} = ast;
  
   return `${getCode(RUNTIME_LITERAL.try, block)}${
-    wrapSpace(purple(RUNTIME_LITERAL.catch, config) + `(${
+    wrapSpace(purple(RUNTIME_LITERAL.catch, config) 
+    + 
+    (handler.param ? `(${
       wrapSpace(getAstCode(handler.param, config), config)
-    })`,config)
-  }{\n${getAstCode(handler.body, tabSpace(config)) }\n${ prefixSpace(config)}}${
+    })` : '')
+    ,config)
+  }${wrapBlockWithBigBrace(handler.body,config)}${
     finalizer ? space(config) + getCode(RUNTIME_LITERAL.finally,{
       type: 'BlockStatement',
       body: finalizer.body,
       }) : ''
   }`
+}
+
+export function getSequenceExpressionCode(ast, config) {
+  return getElememtCode(ast.expressions, config)
 }

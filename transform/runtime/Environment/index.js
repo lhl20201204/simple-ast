@@ -10,6 +10,7 @@ const skipField = new Set([
   RUNTIME_LITERAL.undefined,
   RUNTIME_LITERAL.true,
   RUNTIME_LITERAL.false,
+  RUNTIME_LITERAL.NaN,
 ]);
 
 export default class Environment {
@@ -75,7 +76,8 @@ export default class Environment {
   }
 
   addConst(key, value) {
-    if (this.keyMap.has(key)) {
+    // NaN 是全局自定义变量；不可重新声明，且不可改变值。
+    if (this.keyMap.has(key) || [RUNTIME_LITERAL.NaN].includes(key)) {
       throw new Error(`${key} 已被定义`);
     }
     this.checkPlaceHolded(key)
@@ -85,6 +87,7 @@ export default class Environment {
   }
 
   addVar(key, value) {
+    // NaN 是全局自定义变量
     if (this.keyMap.has(key) && !['var', 'function'].includes(this.keyMap.get(key))) {
       throw new Error(`${key} 已被定义`);
     }
@@ -94,7 +97,9 @@ export default class Environment {
   }
 
   addLet(key, value, resign) {
-    if (!resign && this.keyMap.has(key)) {
+    if ((!resign && this.keyMap.has(key)) 
+    || [RUNTIME_LITERAL.NaN].includes(key)
+    ) {
       console.error(this.keyMap);
       throw new Error(`${key} 已经定义`);
     }
@@ -131,6 +136,7 @@ export default class Environment {
     }
     let env = this.getEnv(key);
     if (!env) {
+      console.error(this)
       throw new Error(`${key} 为undefined`)
     }
     return env.map.get(key) || env.constMap.get(key)

@@ -1,5 +1,5 @@
 import RuntimeValue from "../Environment/RuntimeValue";
-import { getFalseV, getNullValue, getTrueV, getUndefinedValue } from "../Environment/RuntimeValueInstance";
+import { createNumber, createString, getFalseV, getNullValue, getTrueV, getUndefinedValue } from "../Environment/RuntimeValueInstance";
 import { JS_TO_RUNTIME_VALUE_TYPE, RUNTIME_VALUE_TYPE } from "../constant";
 
 export default function parseLiteral(ast) {
@@ -21,5 +21,15 @@ export default function parseLiteral(ast) {
   const v = (valueType === 'number'
   || (+raw === +value)
   ) ? Number(value) : value;
-  return new RuntimeValue(JS_TO_RUNTIME_VALUE_TYPE( v), v)
+  const newType =JS_TO_RUNTIME_VALUE_TYPE( v)
+
+  if (newType === RUNTIME_VALUE_TYPE.string) {
+    return createString(v)
+  }
+
+  if (newType === RUNTIME_VALUE_TYPE.number) {
+    return createNumber(v)
+  }
+
+  return new RuntimeValue(newType, v)
 }

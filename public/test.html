@@ -31,44 +31,220 @@
     // 开始添加类
 
     function test () {
-    function test () {
-       console.log(e, r, p, q,t, o);
-       let a = 2;
+    const a = NaN  =  'dfadfd';
+    const t = 999.234325;
+    const c = Number(t);
+    const t1 = t.toFixed(3);
+    const t2 = 'hello world';
+    const t3 = new Number (t);
+    const t4 = new String (t2);
+    const t5 = String(t2);
+    var NaN = 2;
+    const b = {  } + [];
+    console.log(
+        [a, b, c === t],
+        [
+            t3,
+            t3.valueOf(),
+            c instanceof Number,
+            t3 instanceof Number,
+            c !== new Number (t),
+            new Number (1) === new Number (1)
+        ],
+        [
+            t4,
+            t4.valueOf(),
+            t2 instanceof String,
+            t4 instanceof String,
+            t4.length,
+            t2 !== t4,
+            t4 !== new String (t2),
+            t5 === t2,
+            t5 !== t4
+        ],
+        [
+            t2.slice(2, 5),
+            t2.at(),
+            t1,
+            NaN
+        ],
+        [
+            typeof NaN,
+            0.5 + 0.1 == 0.6,
+            0.1 + 0.2 == 0.3,
+            [] + []
+        ],
+        [
+            [] + {  },
+            {  } + [],
+            {  } + [],
+            true + true + true === 3,
+            true - true
+        ],
+        [
+            true - true,
+            true === 1,
+            ( ! + [] + [] + ! [] ).length,
+            ''.__proto__,
+            'hello'.at(2),
+            t1,
+            typeof t1,
+            9 + '1',
+            91 - '1'
+        ],
+        [
+            [] == 0,
+            [1] == '1',
+            null == undefined,
+            NaN == NaN
+        ]
+    )
+    return console.log(1), 2
+    function * gen (x = {  }) {
+        yield * {
+             async  [sadf] () {
+
+            } /* function end */,
+            g() {
+
+            } /* function end */,
+             *  [Symbol.iterator] (x) {
+                yield * [1, 2]
+            } /* function end */
+         }
+        yield * ["a", "b"]
+        let i = 0;
+        while (i++ < 2) {
+            yield i
+        } /* while end */
+    } /* function end */
+    const y = gen();
+    console.log(
+        y.next(),
+        y.next(),
+        y.next(),
+        y.next(),
+        y.next(),
+        y.next(),
+        y.next()
+    )
+    function * gen2 (i = 0) {
+        while (true) {
+            yield i++
+            yield gen2(i)
+            yield * gen2(i)
+        } /* while end */
+    } /* function end */
+    const x = gen2();
+    console.log(
+        x.next(),
+        x.next(),
+        x.next(),
+        x.next(),
+        x.next(),
+        x.next()
+    )
+} /* function end */
+test()
+    function test43() {
+      function* gen() {
+        yield* ({
+          *[Symbol.iterator]() {
+            yield* [1, 2]
+          }
+        })
+        yield* ["a", "b"];
+        let i = 0;
+        while (i++ < 2) {
+          yield i
+        }
+      }
+      const y = gen();
+      console.log(
+        y.next(),
+        y.next(),
+        y.next(),
+        y.next(),
+        y.next(),
+        y.next(),
+        y.next(),
+      );
+
+      function* gen2(i = 0) {
+        while (true) {
+          yield i++;
+          yield gen2(i);
+          yield* gen2(i);
+        }
+      }
+      const x = gen2()
+      console.log(
+        x.next(), x.next(),
+        x.next(), x.next(),
+        x.next(), x.next()
+      );
+    } /* function end */
+
+    function test42() {
+      let timer;
+      setTimeout(() => {
+        console.log(22)
+        clearTimeout(timer);
+      }, 1000)
+      console.log(11)
+      timer = setTimeout(() => {
+        console.log(33)
+      }, 4000)
+      const x = {
+        run() {
+          console.log(this)
+          setTimeout(function (x) {
+            console.log(44, this)
+          }, 4000)
+        }
+      }
+      x.run()
+    }
+
+    function test41() {
+      function test() {
+        console.log(e, r, p, q, t, o);
+        let a = 2;
         try {
-            console.log(1)
-            console.log(b)
-            console.log(3)
+          console.log(1)
+          console.log(b)
+          console.log(3)
           var r
-        } catch( e ) {
+        } catch (e) {
           // catch 的作用域还挺怪的
           const origin = e;
           console.log('---', e) // 这里用的是catch里的e 还是origin
           e.xx = 1;
           // 先执行右边再左边
           var e = e.xx + 9999; // 这里提升到上面去了，相当于 e 还是catch定义的。
-          try{
+          try {
             hhh
             var q
-          } catch(e2) {
+          } catch (e2) {
             console.log('接收到错误---2', e2)
             return 8
             var p
-          }finally{
+          } finally {
             console.log('接收到错误---1', e)
             e = 20000 // catch 里的e
-             return 6
+            return 6
             var o
           }
-      
+
         } finally {
-            console.log('finally', e, 2)
-            // return 7
+          console.log('finally', e, 2)
+          // return 7
           var t
         }
+      } /* function end */
+      console.log('函数返回', test())
     } /* function end */
-    console.log('函数返回', test())
-} /* function end */
-test()
+
 
     function test40() {
       console.log(t)

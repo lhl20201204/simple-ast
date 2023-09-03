@@ -18,26 +18,28 @@ export default function parseTryStatement(ast, env){
       })
       const { param } = ast.handler;
       const { message } = e;
-      parseAst({
-        "type": "VariableDeclaration",
-        "declarations": [
-          {
-            "type": "VariableDeclarator",
-            "id": param,
-            "init": {
-              "type": "NewExpression",
-              "callee": {
-                "type": "Identifier",
-                "name": "Error"
-              },
-              "arguments": [
-                createLiteralAst(message)
-              ]
+      if (param) {
+        parseAst({
+          "type": "VariableDeclaration",
+          "declarations": [
+            {
+              "type": "VariableDeclarator",
+              "id": param,
+              "init": {
+                "type": "NewExpression",
+                "callee": {
+                  "type": "Identifier",
+                  "name": "Error"
+                },
+                "arguments": [
+                  createLiteralAst(message)
+                ]
+              }
             }
-          }
-        ],
-        "kind": "let"
-      }, childEnv)
+          ],
+          "kind": "let"
+        }, childEnv)
+      }
       parseAst(ast.handler.body, childEnv)
     } finally{
       if (ast.finalizer){

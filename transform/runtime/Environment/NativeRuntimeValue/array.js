@@ -1,4 +1,4 @@
-import { createObject, getGenerateFn } from "../RuntimeValueInstance";
+import { createObject, getGenerateFn, getUndefinedValue } from "../RuntimeValueInstance";
 
 let arrayProtoTypeV;
 export function getArrayProtoTypeV() {
@@ -9,6 +9,10 @@ export function getArrayProtoTypeV() {
         _.forEach(argsRv, rv => {
           _this.setWithDescriptor(_this.value.length, rv)
         })
+      }),
+      pop: generateFn('Array$pop', (argsRv, { _this })=> {
+        _this.setWithDescriptor(_this.value.length, getUndefinedValue())
+        return this.value.pop();
       })
     })
   }

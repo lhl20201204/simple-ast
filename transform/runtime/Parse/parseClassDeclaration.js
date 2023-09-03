@@ -475,7 +475,8 @@ export default function parseClassDeclaration(ast, env) {
   ),
     handleProperty(classRv, weakMap, classDefinedEnv, classRv)
   )
-  originConstructorRef.current = prototypeRv.get(RUNTIME_LITERAL.constructor);
+  originConstructorRef.current = prototypeRv.getOwnPropertyDescriptor(RUNTIME_LITERAL.constructor) ?
+   prototypeRv.get(RUNTIME_LITERAL.constructor) : getUndefinedValue();
   prototypeRv.set(RUNTIME_LITERAL.constructor, classRv, createSimplePropertyDescriptor({
     value: classRv,
     [PROPERTY_DESCRIPTOR_DICTS.enumerable]: getFalseV()

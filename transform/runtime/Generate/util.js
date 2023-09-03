@@ -1,3 +1,4 @@
+import { getAstCode } from "."
 import { DEBUGGER_DICTS } from "../constant"
 
 function wtc(x, c, config) {
@@ -8,6 +9,9 @@ function wtc(x, c, config) {
 }
 
 export function space(config, count = 1) {
+  if (!config) {
+    throw new Error('config 必传')
+  }
   return _.map(new Array(count), () => (config[DEBUGGER_DICTS.isHTMLMode] ? '&nbsp;' : ' ')).join('')
 }
 
@@ -55,10 +59,6 @@ export function putParentOperator(config, opLevel) {
   return { ...config, parentOperators: [opLevel, ...config.parentOperators ?? []]}
 }
 
-export function letFunctionInObjectRight(config) {
-  return { ...config, isFunctionInObjectRight: true };
-}
-
 export function templateCount(config, i, len) {
   return { ...config, 
       isSingleTemplate: len === 1,
@@ -73,15 +73,15 @@ export function wrapSpace(str, config) {
 }
 
 export function letFunctionInClassMethodDefinition(config) {
-  return {...config, isFunctionInClassMethodDefinition: true }
+  return {...config, [DEBUGGER_DICTS.isFunctionInClassMethodDefinition]: true }
 }
 
 export function isInCallExpressionCalleer(config) {
-  return {...config, isInCallExpressionCalleer: true }
+  return {...config, [DEBUGGER_DICTS.isInCallExpressionCalleer]: true }
 }
 
 export function isFunctionEndNotRemark(config) {
-  return {...config, isFunctionEndNotRemark: true }
+  return {...config, [DEBUGGER_DICTS.isFunctionEndNotRemark]: true }
 }
 
 export function isElementInArray(config) {
@@ -96,4 +96,30 @@ export function letConfigBeNotHtml(config) {
     ...config,
     [DEBUGGER_DICTS.isHTMLMode]: false,
   }
+}
+
+export function replaceFunctionName(name, config) {
+  return {
+    ...config,
+    [DEBUGGER_DICTS.replaceFunctionName]: name
+  }
+}
+
+export function hideFunctionField(config) {
+  return {
+    ...config,
+    [DEBUGGER_DICTS.hideFunctionField]: true,
+  }
+}
+
+export function wrapMiddleBracket(contentStr, config) {
+  return config[DEBUGGER_DICTS.isInCallExpressionCalleer] ? `(${contentStr})` : contentStr
+}
+
+export function wrapBigBrace(contentStr, config) {
+  return `{\n` + prefixSpace(tabSpace(config)) + contentStr + `\n${prefixSpace(config)}}`
+}
+
+export function wrapBlockWithBigBrace(body, config) {
+  return `{\n${getAstCode(body, tabSpace(config))}\n${prefixSpace(config)}}`
 }

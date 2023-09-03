@@ -4,7 +4,7 @@ import RuntimeValue from "../Environment/RuntimeValue";
 import getEqualValue from "../Environment/getEqualValue";
 import parseRuntimeValue from "../Environment/parseRuntimeValue";
 import { JS_TO_RUNTIME_VALUE_TYPE } from "../constant";
-import { getNullValue } from "../Environment/RuntimeValueInstance";
+import { getFalseV, getNullValue, getTrueV } from "../Environment/RuntimeValueInstance";
 
 function parseAdd(rv1, rv2) {
   let value = parseRuntimeValue(rv1) + parseRuntimeValue(rv2);
@@ -36,17 +36,19 @@ function parseStrictEqual(rv1, rv2) {
   // if (value) {
   //   console.error(rv1, rv2);
   // }
-  return new RuntimeValue(JS_TO_RUNTIME_VALUE_TYPE( value), value)
+  return value ? getTrueV() : getFalseV()
 }
 
 function parseStrictNotEqual(rv1, rv2) {
-  let value = getEqualValue(rv1) !== getEqualValue(rv2);
-  return new RuntimeValue(JS_TO_RUNTIME_VALUE_TYPE( value), value)
+  return parseStrictEqual(rv1, rv2) === getTrueV() ? getFalseV() : getTrueV()
 }
 
 function parseEqual(rv1, rv2) {
-  let value = getEqualValue(rv1) == getEqualValue(rv2);
-  return new RuntimeValue(JS_TO_RUNTIME_VALUE_TYPE( value), value)
+  return parseRuntimeValue(rv1) == parseRuntimeValue(rv2) ? getTrueV() : getFalseV()
+}
+
+function parseNotEqual(rv1, rv2) {
+  return parseEqual(rv1, rv2) === getTrueV() ? getFalseV() : getTrueV()
 }
 
 function parseGreat(rv1, rv2) {
@@ -81,6 +83,7 @@ export default function parseBinaryExpression(ast, env) {
     case '===': return parseStrictEqual(leftValue, rightValue);
     case '!==': return parseStrictNotEqual(leftValue, rightValue);
     case '==': return parseEqual(leftValue, rightValue);
+    case '!=': return parseNotEqual(leftValue, rightValue);
     case '>': return parseGreat(leftValue, rightValue);
     case '<': return parseLess(leftValue, rightValue);
     case '>=': return parseGreatEq(leftValue, rightValue);
