@@ -112,7 +112,7 @@ export function hideFunctionField(config) {
   }
 }
 
-export function wrapMiddleBracket(contentStr, config) {
+export function wrapSmallBracket(contentStr, config) {
   return config[DEBUGGER_DICTS.isInCallExpressionCalleer] ? `(${contentStr})` : contentStr
 }
 

@@ -1,16 +1,19 @@
+import parseAst from "..";
 import { isInstanceOf } from "../../commonApi";
 import generateCode from "../Generate";
 import { DEBUGGER_DICTS, PROPERTY_DESCRIPTOR_DICTS, RUNTIME_LITERAL, RUNTIME_VALUE_DICTS, RUNTIME_VALUE_TYPE } from "../constant";
+import createGenerateConfig from "./Generator";
+import getGeneratorRv from "./NativeRuntimeValue/generator";
 import { getNumberPrototypeV } from "./NativeRuntimeValue/number";
 import { getStringProtoTypeV } from "./NativeRuntimeValue/string";
 import PropertyDescriptor from "./PropertyDescriptor";
-import { createNumber, getFalseV, getNullValue, getTrueV, getUndefinedValue } from "./RuntimeValueInstance";
+import { createConfigRuntimeValue, createNumber, getFalseV, getNullValue, getTrueV, getUndefinedValue } from "./RuntimeValueInstance";
 import parseRuntimeValue from "./parseRuntimeValue";
-import { createRuntimeValueAst, createSimplePropertyDescriptor, isFunctionRuntimeValue, isUndefinedRuntimeValue, parseFunctionCallRuntimeValue } from "./utils";
+import { createArrowFunctionCallExpressionAst, createRuntimeValueAst, createSimplePropertyDescriptor, createUseRuntimeValueAst, isFunctionRuntimeValue, isUndefinedRuntimeValue, parseFunctionCallRuntimeValue } from "./utils";
 
 const {
   symbolOriginClassAst,
-  proto,_prototype, symbolAst, symbolEnv, symbolName, symbolMergeNewCtor} = RUNTIME_VALUE_DICTS;
+  proto, _prototype, symbolAst, symbolEnv, symbolName, symbolMergeNewCtor } = RUNTIME_VALUE_DICTS;
 
 
 
@@ -177,8 +180,8 @@ export class RuntimeRefValue extends RuntimeValue {
   }
 
   isAttrUnWritable(attr) {
-    return this.hasOwnProperty(attr) && 
-    this.propertyDescriptors.get(attr)?.isPropertyDescriptorUnWritable()
+    return this.hasOwnProperty(attr) &&
+      this.propertyDescriptors.get(attr)?.isPropertyDescriptorUnWritable()
     // [PROPERTY_DESCRIPTOR_DICTS.writable] === getTrueV()
   }
 
@@ -342,7 +345,7 @@ export class RuntimeRefValue extends RuntimeValue {
     // 如果有set，get， 则修改base， 否则修改自身。
     if (attr !== RUNTIME_VALUE_DICTS.proto) {
       if (
-         oldDescriptor 
+        oldDescriptor
         && oldDescriptor.isHaveSetterOrGetter()) {
         const base = this.getBaseHasProperty(attr)
         base.propertyDescriptors.set(attr, descriptor)
@@ -350,7 +353,7 @@ export class RuntimeRefValue extends RuntimeValue {
         this.propertyDescriptors.set(attr, descriptor);
       }
     }
-   
+
     if (oldDescriptor && this.isAttrUnWritable(attr)) {
       return getFalseV();
     }
@@ -362,14 +365,14 @@ export class RuntimeRefValue extends RuntimeValue {
       // console.error('进来', attr, rv);
       const fnRv = descriptor.getAttr(RUNTIME_LITERAL.set);
       if (isFunctionRuntimeValue(fnRv)) {
-       
+
         const newRv = parseFunctionCallRuntimeValue(
           fnRv.getDefinedEnv(),
           createRuntimeValueAst(fnRv, `${attr}_setter`),
           createRuntimeValueAst(this, 'this'),
           createRuntimeValueAst(rv),
         );
-         // debug用，可加可不加
+        // debug用，可加可不加
         if (attr !== RUNTIME_VALUE_DICTS.proto) {
           this.value[attr] = newRv;
         }
@@ -467,11 +470,82 @@ export class RuntimeRefValue extends RuntimeValue {
       }
       this.$privateMergeCtorFunctionType = origin;
     }
-    return this.$privateMergeCtorFunctionType ;
+    return this.$privateMergeCtorFunctionType;
   }
 
   setMergeCtor(rv) {
     // this.value[symbolAst] = createRuntimeValueAst(rv)
     return this.value[symbolMergeNewCtor] = rv;
   }
+}
+
+export class RuntimeGeneratorFunctionValue extends RuntimeRefValue {
+
+  constructor(...args) {
+    super(...args)
+    const originArgs = _.cloneDeep(args);
+    const originAst = this.value[symbolAst];
+    const defineEnv = this.getDefinedEnv();
+
+    this.value[symbolAst] = {
+      ..._.cloneDeep(originAst),
+      generator: false,
+      body: {
+        ..._.cloneDeep(originAst.body),
+        body: [
+          {
+            type: "ReturnStatement",
+            argument: createArrowFunctionCallExpressionAst([
+              createUseRuntimeValueAst(0, { type: 'ThisExpression' }),
+              createUseRuntimeValueAst(1, { type: 'Identifier', name: 'arguments' }),
+              {
+                "type": "ReturnStatement",
+                "argument": {
+                  "type": "NewExpression",
+                  "callee": createRuntimeValueAst(getGeneratorRv(), 'Generator'),
+                  "arguments": [
+                    createRuntimeValueAst((env) => {
+                      const ret = createConfigRuntimeValue(createGenerateConfig({
+                        ast: _.cloneDeep(originAst),
+                        fnRv: new RuntimeRefValue(..._.cloneDeep(originArgs)),
+                        defineEnv,
+                        contextEnv: env,
+                        contextThis: env.getRuntimeValueByStackIndex(0),
+                        contextArguments: env.getRuntimeValueByStackIndex(1),
+                      }))
+                      return ret;
+                    }, 'config/* = _ref */')
+                  ]
+                }
+              }
+            ])
+          }
+        ]
+      }
+    }
+  }
+
+}
+
+export class RuntimeGeneratorInstanceValue extends RuntimeRefValue {
+  constructor(...args) {
+    super(...args)
+  }
+
+  setNextValue(rv) {
+    this.restConfig[RUNTIME_VALUE_DICTS.generatorNextValue] = rv;
+  }
+
+  getLastestAst() {
+    return this.restConfig[RUNTIME_VALUE_DICTS.generatorLatestAst]
+  }
+
+  runGeneratorFunction() {
+    const GeneratorConfig = this.restConfig[RUNTIME_VALUE_DICTS.generatorConfig];
+    GeneratorConfig.runGeneratorFunction();
+  }
+}
+
+export class RuntimeConfigValue extends RuntimeRefValue {
+
 }

@@ -1,15 +1,13 @@
 
 
 
-
-export const isProgram = `
-function a(){
+/*function a(){
   for(const { x = g=3, y={hh: 'hello',}, ...rest } of [{ y: 5, z: 8}, {x: 2, y: 3},{}, {x: 5, h: 'jk'}, {x: 7}]){
     console.log(x, y,rest, window.g)
   }
 }
 a();
-/*var g = console.log
+var g = console.log
 let a = -8
 const f = ['hello_'];
 const b = { [f + 'world']: a, f, fn(){
@@ -35,6 +33,15 @@ f.a = 3;
 b.fn(f);
 fn(2)
 */
+export const isProgram = `
+function a(x) {
+ console.log(x)
+ var x = 2
+ console.log(x)
+ var x = undefined
+ console.log(x)
+}
+a(3)
 `
 
 export const isVariableDeclaration = `

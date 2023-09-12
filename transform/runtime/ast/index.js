@@ -52,11 +52,18 @@ export default class AST {
     return str === this.sourceCode.slice(0, size).join('');
   }
 
-  expect(str) {
+  expectChar(str) {
     if (!this.nextCharIs(str)) {
-      throw new Error(`预期是${str}`)
+      throw new Error(`预期是${str}的字符串`)
     }
     return this.eat(str)
+  }
+
+  expectToken(type) {
+    if (!this.nextTokenIs(type)) {
+      throw new Error(`预期是${type}的token`)
+    }
+    return this.eatToken()
   }
 
   eat(str) {
@@ -107,7 +114,7 @@ export default class AST {
     while (!this.nextCharIs(c) || lastIs('\\')) {
       ret.push(this.eat())
     }
-    ret.push(this.expect(c))
+    ret.push(this.expectChar(c))
     return _.flatten(ret);
   }
 
@@ -190,7 +197,7 @@ export default class AST {
   }
 
   getLiteralAst() {
-    const token = this.eatToken()
+    const token = this.expectToken([TOKEN_TYPE.STRING, TOKEN_TYPE.NUMBER])
     const ret = new ASTItem({
       type: 'Literal',
       value: token.value,
@@ -202,7 +209,7 @@ export default class AST {
   }
 
   getIdentifierAst() {
-    const token = this.eatToken()
+    const token = this.expectToken([TOKEN_TYPE.WORD])
     return new ASTItem({
       type: 'Identifier',
       name: token.value,

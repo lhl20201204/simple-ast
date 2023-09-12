@@ -26,7 +26,7 @@ export function setMemberExpression(left, right, env, config) {
   // if (!['object', 'array'].includes(objectRV.type)) {
   //   return getUndefinedValue()
   // }
-  // console.log(k, config)
+  // console.error(k, config)
   const value = parseAst(right, env);
   // if (k === 'a') {
   //   console.error(objectRV, k, value, '---.');

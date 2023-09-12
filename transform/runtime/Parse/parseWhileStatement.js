@@ -6,11 +6,12 @@ import { ENV_DICTS } from "../constant";
 export default function parseWhileStatement(ast, env) {
   const { test, body } = ast;
 
-  const childEnv = new Environment('while body', env, {
-    [ENV_DICTS.isWhileEnv]: true,
-  })
 
   while(parseRuntimeValue(parseAst(test, env))) {
+    const childEnv = new Environment('while_body', env, {
+      [ENV_DICTS.isWhileEnv]: true,
+      [ENV_DICTS.noNeedLookUpVar]: true,
+    })
     // console.log('while')
     parseAst(body, childEnv);
     if (childEnv.hadBreak()) {

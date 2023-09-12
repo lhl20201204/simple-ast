@@ -30,8 +30,9 @@ const priorityArr = [
     '&=', '^=', '|=',
   ],
   ['exp?exp:exp'],// 从右到左
-  [RUNTIME_LITERAL.or],
-  [RUNTIME_LITERAL.and],
+  ['||'],
+  ['??'],
+  ['&&'],
   ['|'],
   ['^'],
   ['&'],
@@ -89,6 +90,7 @@ export function getTwoOperatorCode(ast, config) {
   // 处理符号优先级，判断是否加括号 (a+b)*(c+d)
   const { left, right, operator } = ast;
   if (!signList.has(operator)) {
+    console.error(signList)
     throw new Error('未处理的符号' + operator);
   }
   const level = prioritySet.get(operator)
@@ -137,12 +139,12 @@ export function getMemberExpressionCode(ast, config) {
 
 export function getCallExpressionCode(ast, config) {
   const { callee, arguments: args, optional } = ast;
-  return `${getAstCode(callee, tabSpace(isInCallExpressionCalleer(config)))}${optional ? RUNTIME_LITERAL.optional : ''}(${getElememtCode(args, config)
+  return `${getAstCode(callee, isInCallExpressionCalleer(config))}${optional ? RUNTIME_LITERAL.optional : ''}(${getElememtCode(args, config)
     })`
 }
 
 export function getReturnStatementCode(ast, config) {
-  return `${purple(RUNTIME_LITERAL.return, config)} ${getAstCode(ast.argument, config)}`;
+  return `${purple(RUNTIME_LITERAL.return, config)} ${ast.argument ? getAstCode(ast.argument, config) : ''}`;
 }
 
 export function getAssignmentExpressionCode(ast, config) {
@@ -361,7 +363,9 @@ export function getSwitchStatementCode(ast, config) {
 
 export function getPreDeclarationCode(ast, config) {
   return `${remark(`// 变量声明预提升`, config)}\n${
-    prefixSpace(config) + '//' + space(config) + getDeclarationCode(ast, config)
+    prefixSpace(config) + '//' + space(config) + getDeclarationCode(ast, config) + (
+      ast.kind === 'var' ? wrapSpace(wrapSpace('// =', config) + RUNTIME_LITERAL.undefined, config) : ''
+    )
   }`
 }
 
@@ -372,13 +376,15 @@ export function getTryStatementCode(ast, config) {
   const { block, handler, finalizer} = ast;
  
   return `${getCode(RUNTIME_LITERAL.try, block)}${
-    wrapSpace(purple(RUNTIME_LITERAL.catch, config) 
+    handler ?
+    (wrapSpace(purple(RUNTIME_LITERAL.catch, config) 
     + 
     (handler.param ? `(${
       wrapSpace(getAstCode(handler.param, config), config)
     })` : '')
     ,config)
-  }${wrapBlockWithBigBrace(handler.body,config)}${
+    + wrapBlockWithBigBrace(handler.body,config)): ''
+  }${
     finalizer ? space(config) + getCode(RUNTIME_LITERAL.finally,{
       type: 'BlockStatement',
       body: finalizer.body,
@@ -386,6 +392,22 @@ export function getTryStatementCode(ast, config) {
   }`
 }
 
+export function getDoWhileStatementCode(ast, config) {
+  const { test, body } = ast;
+  const p = `${purple(RUNTIME_LITERAL.do, config) 
+    + wrapSpace(wrapBlockWithBigBrace(body, config), config)}${purple(RUNTIME_LITERAL.while, config)}${space(config)}(${getAstCode(test, config)})`
+  return p + `${remark(` /* ${RUNTIME_LITERAL.while} end */`, config)}`
+}
+
 export function getSequenceExpressionCode(ast, config) {
   return getElememtCode(ast.expressions, config)
+}
+
+export function getUseRuntimeValueCode(ast, config) {
+  const str = getAstCode(ast.argument, config);
+  return remark(`// useRuntimeValue(`, config) +_.join(_.split(str, '\n'), '\n //') + ')';
+}
+
+export function getGetRuntimeValueCode(ast, config) {
+  return remark(`${ast.ast ?? '_ref' + ast.index} // getRuntimeValue(${ast.index})`, config)
 }

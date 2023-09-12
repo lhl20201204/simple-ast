@@ -48,6 +48,7 @@ export const RUNTIME_LITERAL = {
   finally: 'finally',
   arguments: 'arguments',
   NaN: 'NaN',
+  do: 'do',
 }
 
 export const ENV_DICTS = {
@@ -58,6 +59,7 @@ export const ENV_DICTS = {
   returnFlag: 'returnFlag',
   returnValue: 'returnValue',
   isWhileEnv: 'isWhileEnv',
+  isDoWhileEnv: 'isDoWhileEnv',
   isSwitchEnv: 'isSwitchEnv',
   isFunctionEnv: 'isFunctionEnv',
   isForOfEnv: 'isForOfEnv',
@@ -67,13 +69,27 @@ export const ENV_DICTS = {
   isCatchEnv: 'isCatchEnv',
   isFinallyEnv: 'isFinallyEnv',
   noNeedLookUpVar: 'noNeedLookUpVar',
+  isGeneratorFnRuntimeValueType: 'isGeneratorFnRuntimeValueType',
+  yieldValue: 'yieldValue',
+  isOpenRuntimeValueStack: 'isOpenRuntimeValueStack',
 }
 
 export const AST_DICTS = {
   isSwitchPreDeclaration: 'isSwitchPreDeclaration',
   BlockStatement: 'BlockStatement',
   PreDeclaration: 'PreDeclaration',
-  VariableDeclaration: 'VariableDeclaration'
+  UseRuntimeValue: 'UseRuntimeValue',
+  GetRuntimeValue: 'GetRuntimeValue',
+  RuntimeValue: 'RuntimeValue',
+  VariableDeclaration: 'VariableDeclaration',
+  _config: Symbol('$__ast_config__'),
+  isGeneratorEnv: 'isGeneratorEnv',
+  hadYieldStatement: 'hadYieldStatement',
+  astCacheValue: 'astCacheValue',
+}
+
+export const GENERATOR_DICTS = {
+  yieldInnerField: Symbol('$__yieldInnerField__'),
 }
 
 export const RUNTIME_VALUE_DICTS = {
@@ -87,6 +103,13 @@ export const RUNTIME_VALUE_DICTS = {
   symbolMergeNewCtor : Symbol('$__symbolMergeNewCtor__'),
   symbolOriginClassAst: Symbol('$__symbolOriginClassAst__'),
   symbolPrimitiveValue: Symbol('[[PrimitiveValue]]'),
+  generatorConfig: Symbol('[[generatorConfig]]'),
+  generatorEnv: Symbol('[[generatorEnv]]'),
+  generatorAst: Symbol('[[generatorAst]]'),
+  generatorThis: Symbol('[[generatorThis]]'),
+  generatorArguments:  Symbol('[[generatorArguments]]'),
+  generatorLatestAst: Symbol('[[generatorLatestAst]]'),
+  generatorNextValue: Symbol('[[generatorNextValue]]'),
 }
 
 export const PROPERTY_DESCRIPTOR_DICTS = {

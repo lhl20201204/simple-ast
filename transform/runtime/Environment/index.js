@@ -1,8 +1,8 @@
-import { EnvJSON } from "../../commonApi";
+import { EnvJSON, isInstanceOf } from "../../commonApi";
 import { ENV_DICTS, RUNTIME_LITERAL } from "../constant";
 import RuntimeValue from "./RuntimeValue";
 import { createObject } from "./RuntimeValueInstance";
-import { getWindowObject } from "./getWindow";
+import { getWindowObjectRv } from "./getWindow";
 import parseRuntimeValue from "./parseRuntimeValue";
 
 const skipField = new Set([
@@ -27,6 +27,7 @@ export default class Environment {
       this.parent.addChildren(this);
     }
     this.children = [];
+    this.unvisibleRuntimeValueStack = [];
     this.map = new Map()
     this.keyMap = new Map();
     this.constMap = new Map();
@@ -48,10 +49,7 @@ export default class Environment {
 
   addToWindow(key, value) {
     if (this === Environment.window) {
-      // if (key === 'Reflect') {
-      //   // console.log('挂载到window', key, value);
-      // }
-      getWindowObject().setWithDescriptor(key, value)
+      getWindowObjectRv().setWithDescriptor(key, value)
     }
   }
 
@@ -76,19 +74,22 @@ export default class Environment {
   }
 
   addConst(key, value) {
-    // NaN 是全局自定义变量；不可重新声明，且不可改变值。
-    if (this.keyMap.has(key) || [RUNTIME_LITERAL.NaN].includes(key)) {
+    if (this.keyMap.has(key)) {
       throw new Error(`${key} 已被定义`);
     }
     this.checkPlaceHolded(key)
-    this.constMap.set(key, value);
+    this.map.set(key, value);
     this.addToWindow(key, value)
     this.keyMap.set(key, 'const');
   }
 
   addVar(key, value) {
-    // NaN 是全局自定义变量
-    if (this.keyMap.has(key) && !['var', 'function'].includes(this.keyMap.get(key))) {
+    if (this.keyMap.get(key) === 'params') {
+      return;
+    }
+    if (this.keyMap.has(key) 
+    && !['var'].includes(this.keyMap.get(key))
+    ) {
       throw new Error(`${key} 已被定义`);
     }
     this.map.set(key, value);
@@ -96,10 +97,17 @@ export default class Environment {
     this.keyMap.set(key, 'var');
   }
 
+  addParams(key, value) {
+    if (this.keyMap.has(key)) {
+      throw new Error(`${key} 已被定义`);
+    }
+    this.map.set(key, value);
+    this.addToWindow(key, value)
+    this.keyMap.set(key, 'params');
+  }
+
   addLet(key, value, resign) {
-    if ((!resign && this.keyMap.has(key)) 
-    || [RUNTIME_LITERAL.NaN].includes(key)
-    ) {
+    if ((!resign && this.keyMap.has(key))) {
       console.error(this.keyMap);
       throw new Error(`${key} 已经定义`);
     }
@@ -110,51 +118,66 @@ export default class Environment {
   }
 
   addFunction(key, value) {
-    this.checkPlaceHolded(key)
+    // this.checkPlaceHolded(key)
+    const env = this.getDefineEnvByKey(key) ??  Environment.window;
+    const originType = env.keyMap.get(key);
+    // 可能为undefined; 比如预提升
+    if (originType === 'var') {
+      env.map.set(key, value);
+      env.addToWindow(key, value);
+      env.keyMap.set(key, 'var')
+      return;
+    }
+
     this.map.set(key, value);
-    this.addToWindow(key, value)
-    this.keyMap.set(key, 'function')
+    this.addToWindow(key, value);
+    this.keyMap.set(key, env === this ? (originType ?? 'function') : 'function')
   }
 
   addClass(key, value) {
     this.checkPlaceHolded(key)
+    if (this.keyMap.has(key)) {
+      console.error(this.keyMap);
+      throw new Error(`${key} 已经定义`);
+    }
     this.map.set(key, value);
     this.addToWindow(key, value)
     this.keyMap.set(key, 'class')
   }
 
-  getEnv(key) {
-    if (this.keyMap.has(key)) {
+  getDefineEnvByKey(key) {
+    if (this.keyMap.has(key) || this.hasAttrPlaceholded(key)) {
       return this;
     }
-    return this.parent && this.parent.getEnv(key)
+    return this.parent && this.parent.getDefineEnvByKey(key)
   }
 
   get(key) {
-    if (this.hasAttrPlaceholded(key)) {
-      throw new Error(`Cannot access '${key}' before initialization`)
-    }
-    let env = this.getEnv(key);
+    let env = this.getDefineEnvByKey(key);
     if (!env) {
-      console.error(this)
       throw new Error(`${key} 为undefined`)
     }
-    return env.map.get(key) || env.constMap.get(key)
+
+    if (env.hasAttrPlaceholded(key)) {
+      throw new Error(`Cannot access '${key}' before initialization`)
+    }
+    return env.map.get(key) 
   }
 
   set(key, value) {
-    if (this.hasAttrPlaceholded(key)) {
+    const env = this.getDefineEnvByKey(key);
+    if (env && env.hasAttrPlaceholded(key)) {
       throw new Error(`Cannot access '${key}' before initialization`)
     }
-    const env = this.getEnv(key);
+
     if (!env) {
       return Environment.window.addVar(key, value)
     }
-    if (env.constMap.has(key)) {
+    if (env.keyMap.get(key) === 'const') {
       throw new Error(`const ${key} 不能被重新定义`);
     }
     env.map.set(key, value)
-    this.addToWindow(key, value)
+    env.addToWindow(key, value)
   }
 
   placeholder(key, kind, isSwitchPreDeclaration) {
@@ -211,11 +234,24 @@ export default class Environment {
   }
 
   isWhileEnv() {
-    return this._config[ENV_DICTS.isWhileEnv] || (this.parent && this.parent.isWhileEnv());
+    return this._config[ENV_DICTS.isWhileEnv]
+     || this._config[ENV_DICTS.isDoWhileEnv]
+     || (this.parent && this.parent.isWhileEnv());
   }
 
   isSwitchEnv() {
     return this._config[ENV_DICTS.isSwitchEnv] || (this.parent && this.parent.isSwitchEnv());
+  }
+
+  isTryCatchFinallyEnv() {
+    return this._config[ENV_DICTS.isTryEnv] || this._config[ENV_DICTS.isFinallyEnv] ||this._config[ENV_DICTS.isCatchEnv];
+  }
+
+  isInTryCatchFinallyEnv() {
+    if(this.isTryCatchFinallyEnv()) {
+      return true;
+    }
+    return !!this.parent && this.parent.isInTryCatchFinallyEnv()
   }
 
   hadBreak() {
@@ -226,10 +262,56 @@ export default class Environment {
     return this._config[ENV_DICTS.continueFlag];
   }
 
+  isGeneratorFnRuntimeValueTypeEnv() {
+    return this._config[ENV_DICTS.isGeneratorFnRuntimeValueType]
+  }
+
+  canUseRuntimeValueStack() {
+    return !!this._config[ENV_DICTS.isOpenRuntimeValueStack];
+  }
+
+  setRuntimeValueByStackIndex(index, rv) {
+    if (this.unvisibleRuntimeValueStack[index]) {
+      throw new Error('重复执行');
+    }
+    this.unvisibleRuntimeValueStack[index] = rv;
+  }
+
+  findCanUseRuntimeValueStackEnv() {
+    if (this.canUseRuntimeValueStack()) {
+      return this;
+    }
+    return !!this.parent && this.parent.findCanUseRuntimeValueStackEnv()
+  }
+
+  getRuntimeValueByStackIndex(index) {
+    const env = this.findCanUseRuntimeValueStackEnv();
+    if (!env) {
+      throw new Error('没有开启runtimeValueStack模式')
+    }
+    return env.unvisibleRuntimeValueStack[index]
+  }
+
+  isInGeneratorEnv() {
+    return this.isGeneratorFnRuntimeValueTypeEnv() ||
+     (!!this.parent && this.parent.isGeneratorFnRuntimeValueTypeEnv())
+  }
+
+  setYieldValue(rv) {
+    if (!isInstanceOf(rv, RuntimeValue)) {
+      throw new Error(RUNTIME_LITERAL.yield + '返回值错误');
+    }
+    this._config[ENV_DICTS.yieldValue] = rv;
+  }
+
+  getYieldValue() {
+    return this._config[ENV_DICTS.yieldValue];
+  }
 
   getNearBreakContinueable() {
     if (this._config[ENV_DICTS.isForEnv]
       || this._config[ENV_DICTS.isWhileEnv]
+      || this._config[ENV_DICTS.isDoWhileEnv]
       || this._config[ENV_DICTS.isSwitchEnv]) {
       return this;
     }
@@ -242,7 +324,7 @@ export default class Environment {
 
   setBreakFlag(flag) {
     if (this.isNoBreackableEnv()) {
-      throw new Error('不在for 循环 或者while或者switch循环中无法 break')
+      throw new Error('不在for/forof/forin/while/dowhile/switch循环中无法 break')
     }
     this._config[ENV_DICTS.breakFlag] = flag;
     if (this !== this.getNearBreakContinueable()) {
@@ -285,7 +367,7 @@ export default class Environment {
       if (skipField.has(key)) {
         return;
       }
-      const rv = this.constMap.get(key) || this.map.get(key)
+      const rv =  this.map.get(key)
       obj[key] = parseRuntimeValue(rv);
     })
     if (!noGetChildren && _.size(this.children)) {
@@ -300,7 +382,7 @@ export default class Environment {
       if (skipField.has(key)) {
         return;
       }
-      const rv = this.constMap.get(key) || this.map.get(key)
+      const rv = this.map.get(key)
       obj[key] = rv;
     })
     if (!noGetChildren && _.size(this.children)) {
@@ -315,7 +397,7 @@ export default class Environment {
   getValue() {
     const obj = {};
     _.forEach([...this.keyMap], ([k]) => {
-      obj[k] = this.map.get(k) || this.constMap.get(k)
+      obj[k] = this.map.get(k)
     })
     const windowRv = createObject(obj);
     // console.error(windowRv)

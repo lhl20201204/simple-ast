@@ -1,6 +1,6 @@
 import _ from "lodash";
 import { getClassBodyCode, getClassDeclarationCode, getClassExpressionCode, getMethodDefinitionCode, getNewExpressionCode, getPropertyDefinitionCode, getSuperCode } from "./classCode";
-import { getAssignmentExpressionCode, getAssignmentPatternCode, getAwaitExpressionCode, getBinaryExpressionCode, getBlockStatementCode, getBreakStatementCode, getCallExpressionCode, getCallFunctionExpressionCode, getChainExpressionCode, getConditionalExpressionCode, getContinueStatementCode, getDebuggerStatementCode, getExpressionStatementCode, getForInStatementCode, getForOfStatementCode, getForStatementCode, getIdentifierCode, getIfStatementCode, getLiteralCode, getLogicalExpressionCode, getMemberExpressionCode, getPreDeclarationCode, getProgramCode, getRestElementCode, getReturnStatementCode, getRuntimeValueCode, getSequenceExpressionCode, getSpreadElementCode, getStaticBlockCode, getSwitchStatementCode, getTemplateElementCode, getTemplateLiteralCode, getThisExpressionCode, getThrowStatementCode, getTryStatementCode, getUnaryExpressionCode, getUpdateExpressionCode, getVariableDeclarationCode, getWhileStatementCode, getYieldExpressionCode } from "./commonCode";
+import { getAssignmentExpressionCode, getAssignmentPatternCode, getAwaitExpressionCode, getBinaryExpressionCode, getBlockStatementCode, getBreakStatementCode, getCallExpressionCode, getCallFunctionExpressionCode, getChainExpressionCode, getConditionalExpressionCode, getContinueStatementCode, getDebuggerStatementCode, getDoWhileStatementCode, getExpressionStatementCode, getForInStatementCode, getForOfStatementCode, getForStatementCode, getGetRuntimeValueCode, getIdentifierCode, getIfStatementCode, getLiteralCode, getLogicalExpressionCode, getMemberExpressionCode, getPreDeclarationCode, getProgramCode, getRestElementCode, getReturnStatementCode, getRuntimeValueCode, getSequenceExpressionCode, getSpreadElementCode, getStaticBlockCode, getSwitchStatementCode, getTemplateElementCode, getTemplateLiteralCode, getThisExpressionCode, getThrowStatementCode, getTryStatementCode, getUnaryExpressionCode, getUpdateExpressionCode, getUseRuntimeValueCode, getVariableDeclarationCode, getWhileStatementCode, getYieldExpressionCode } from "./commonCode";
 import { AST_DICTS, DEBUGGER_DICTS } from "../constant";
 import { getArrowFunctionExpressionCode, getFunctionDeclarationCode, getFunctionExpressionCode } from "./functionCode";
 import { getObjectExpressionCode, getObjectPatternCode } from "./objectCode";
@@ -33,6 +33,7 @@ export function getAstCode(ast, config) {
     case 'ClassBody': return getClassBodyCode(ast, config);
     case 'ClassExpression': return getClassExpressionCode(ast, config)
     case 'DebuggerStatement': return getDebuggerStatementCode(ast, config);
+    case 'DoWhileStatement': return getDoWhileStatementCode(ast, config);
     case 'EmptyStatement': return ';';
     case 'ExpressionStatement': return getExpressionStatementCode(ast, config);
     case 'FunctionExpression': return getFunctionExpressionCode(ast, config);
@@ -53,7 +54,6 @@ export function getAstCode(ast, config) {
     case 'PropertyDefinition': return getPropertyDefinitionCode(ast, config);
     case 'ReturnStatement': return getReturnStatementCode(ast, config);
     case 'RestElement': return getRestElementCode(ast, config);
-    case 'RuntimeValue': return getRuntimeValueCode(ast, config);
     case 'Super': return getSuperCode(ast, config);
     case 'StaticBlock': return getStaticBlockCode(ast, config);
     case 'SequenceExpression': return getSequenceExpressionCode(ast, config);
@@ -69,6 +69,9 @@ export function getAstCode(ast, config) {
     case 'VariableDeclaration': return getVariableDeclarationCode(ast, config);
     case 'WhileStatement': return getWhileStatementCode(ast, config);
     case 'YieldExpression': return getYieldExpressionCode(ast, config);
+    case AST_DICTS.RuntimeValue: return getRuntimeValueCode(ast, config);
+    case AST_DICTS.UseRuntimeValue: return getUseRuntimeValueCode(ast, config);
+    case AST_DICTS.GetRuntimeValue: return getGetRuntimeValueCode(ast, config);
     case AST_DICTS.PreDeclaration: return getPreDeclarationCode(ast, config);
   }
   console.warn('ast to code fail', ast);

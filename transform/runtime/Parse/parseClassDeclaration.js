@@ -340,7 +340,7 @@ export function createMergeCtorRv(idText,  prototypeRv, classDefinedEnv, bodyAst
             ),
             property: {
               type: "Identifier",
-              name: "call"
+              name: "apply"
             },
             computed: false,
             optional: true
@@ -350,11 +350,8 @@ export function createMergeCtorRv(idText,  prototypeRv, classDefinedEnv, bodyAst
               type: 'ThisExpression'
             },
             {
-              type: "SpreadElement",
-              argument: {
-                type: "Identifier",
-                name: "args"
-              }
+              type: "Identifier",
+              name: 'arguments',
             }
           ],
           optional: true

@@ -1,7 +1,7 @@
 import Environment from ".";
 
 let windowEnv;
-export function getWindowObject() {
+export function getWindowObjectRv() {
   if (!windowEnv) {
     windowEnv = getWindowEnv().getValue()
   }

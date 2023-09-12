@@ -30,135 +30,766 @@
 
     // 开始添加类
 
-    function test () {
-    const a = NaN  =  'dfadfd';
-    const t = 999.234325;
-    const c = Number(t);
-    const t1 = t.toFixed(3);
-    const t2 = 'hello world';
-    const t3 = new Number (t);
-    const t4 = new String (t2);
-    const t5 = String(t2);
-    var NaN = 2;
-    const b = {  } + [];
-    console.log(
-        [a, b, c === t],
-        [
-            t3,
-            t3.valueOf(),
-            c instanceof Number,
-            t3 instanceof Number,
-            c !== new Number (t),
-            new Number (1) === new Number (1)
-        ],
-        [
-            t4,
-            t4.valueOf(),
-            t2 instanceof String,
-            t4 instanceof String,
-            t4.length,
-            t2 !== t4,
-            t4 !== new String (t2),
-            t5 === t2,
-            t5 !== t4
-        ],
-        [
-            t2.slice(2, 5),
-            t2.at(),
-            t1,
-            NaN
-        ],
-        [
-            typeof NaN,
-            0.5 + 0.1 == 0.6,
-            0.1 + 0.2 == 0.3,
-            [] + []
-        ],
-        [
-            [] + {  },
-            {  } + [],
-            {  } + [],
-            true + true + true === 3,
-            true - true
-        ],
-        [
-            true - true,
-            true === 1,
-            ( ! + [] + [] + ! [] ).length,
-            ''.__proto__,
-            'hello'.at(2),
-            t1,
-            typeof t1,
-            9 + '1',
-            91 - '1'
-        ],
-        [
-            [] == 0,
-            [1] == '1',
-            null == undefined,
-            NaN == NaN
-        ]
-    )
-    return console.log(1), 2
-    function * gen (x = {  }) {
-        yield * {
-             async  [sadf] () {
 
-            } /* function end */,
-            g() {
+    function test49() {
+      class A {
+        f = 4;
+        set x(f) {
+          this.f = 2 * f
+        }
+        get x() {
+          return this.f * 2
+        }
+      }
 
-            } /* function end */,
-             *  [Symbol.iterator] (x) {
-                yield * [1, 2]
-            } /* function end */
-         }
-        yield * ["a", "b"]
-        let i = 0;
-        while (i++ < 2) {
-            yield i
+      const a = new A()
+      a.x = 2;
+      const b = new A()
+      console.log(a.f, a.x, b.f, b.x);
+
+
+      console.log({ Symbol })
+      var h = 'test'
+      function* gen(x = {}) {
+        console.log(g, h, ttt, this)
+        h = 3;
+        yield* {
+          *[Symbol.iterator](x) {
+            yield* [1, 2]
+          } /* function end */
+        }
+        console.log('run', this, ttt)
+        yield* [3, 4]
+        let i = 4;
+        let xxx = null;
+        while (i++ < 6) {
+          console.log(xxx === ttt, ttt)
+          xxx = ttt;
+          console.log(xxx === ttt, h)
+          yield i
+          var h = 4;
+          function ttt() {
+
+          } /* function end */
         } /* while end */
-    } /* function end */
-    const y = gen();
-    console.log(
-        y.next(),
-        y.next(),
-        y.next(),
-        y.next(),
-        y.next(),
-        y.next(),
-        y.next()
-    )
-    function * gen2 (i = 0) {
-        while (true) {
-            yield i++
-            yield gen2(i)
-            yield * gen2(i)
+        const f = Math.random();
+        console.log(f, f > 0.5)
+        const a = f > 0.5 ? yield yield 7 : yield 7;
+        console.log('a', a)
+        var g;
+      } /* function end */
+
+      function* gen3() {
+
+      }
+
+      const y = gen();
+      const g = gen3();
+      console.log(y, gen, y.__proto__.constructor, g.next === y.next)
+      y.next()
+      // [...y];
+
+      return
+      console.log(
+        y[Symbol.iterator]() === y
+      )
+      for (const x of y) {
+        console.log(x)
+      }  /* for of end */
+      console.log(y.next(), 'y.next')
+      function* gen2(i = 0) {
+        while (i < 2) {
+          const a = yield i++;
+          yield gen2(i)
         } /* while end */
-    } /* function end */
-    const x = gen2();
-    console.log(
+        yield* [i++, ++i]
+      } /* function end */
+      const x = gen2();
+      console.log(
         x.next(),
         x.next(),
         x.next(),
         x.next(),
         x.next(),
         x.next()
-    )
-} /* function end */
-test()
-    function test43() {
-      function* gen() {
-        yield* ({
-          *[Symbol.iterator]() {
-            yield* [1, 2]
+      )
+    } /* function end */
+
+
+    function test50() {
+      const arr = []
+     
+      function t1() {
+        const t = []
+        t.push(x)
+        // console.log('start', x) // f outer
+        var x = 2;
+        if (true) {
+          let x = 3;
+          if (true) {
+            t.push(x)
+            // console.log('if inner', x) // f inner
+            function x(inner) {
+              'inner'
+            }
           }
-        })
-        yield* ["a", "b"];
+          t.push(x)
+          // console.log('if outer', x) // 3
+        }
+        function x(outer) {
+
+        }
+        t.push(x)
+        arr.push(t)
+        // console.log('end', x) // 2
+      }
+      t1()
+      function t2(x) {
+        const t = []
+        t.push(x)
+        // console.log('start', x) // f outer
+        var x = 2;
+        if (true) {
+          let x = 3;
+          if (true) {
+            t.push(x)
+            // console.log('if inner', x) // f inner
+            function x(inner) {
+              'inner'
+            }
+          }
+          t.push(x)
+          // console.log('if outer', x) // 3
+        }
+        function x(outer) {
+
+        }
+        t.push(x)
+        // console.log('end', x) // 2
+        arr.push(t)
+      }
+      t2()
+
+      function t3() {
+        const t = []
+        t.push(x)
+        // console.log('start', x) // f outer
+        var x = 2;
+        if (true) {
+          x = 3;
+          if (true) {
+            t.push(x)
+            // console.log('if inner', x) // f inner
+            function x(inner) {
+              'inner'
+            }
+          }
+          t.push(x)
+          // console.log('if outer', x) // f inner
+        }
+        function x(outer) {
+
+        }
+        t.push(x)
+        // console.log('end', x) // inner
+        arr.push(t)
+      }
+      t3()
+
+      function t4(x) { 
+        const t = []
+        t.push(x)
+        // console.log('start', x) // f outer
+        var x = 2;
+        if (true) {
+          x = 3;
+          if (true) {
+            t.push(x)
+            // console.log('if inner', x) // f inner
+            function x(inner) {
+              'inner'
+            }
+          }
+          t.push(x)
+          // console.log('if outer', x) // 3
+        }
+        function x(outer) {
+
+        }
+        t.push(x)
+        arr.push(t)
+        // console.log('end', x) // 3
+      }
+      t4()
+      function t5(x) { 
+        const t = []
+        t.push(x)
+        // console.log('start', x) // f outer
+        var x = 2;
+        if (true) {
+          if (true) {
+            t.push(x)
+            // console.log('if inner', x) // f inner
+            function x(inner) {
+              'inner'
+            }
+          }
+          let x = 5
+          t.push(x)
+          // console.log('if outer', x) // 5
+        }
+        function x(outer) {
+
+        }
+        t.push(x)
+        arr.push(t)
+        // console.log('end', x) // 2
+      }
+      t5()
+      function t6() { 
+        const t = []
+        // t.push(x)
+        // console.log('start', x) // f outer
+        try {
+          x
+        } catch(e) {
+          t.push(e.message)
+        }
+
+        if (true) {
+          if (true) {
+            t.push(x)
+            // console.log('if inner', x) // f inner
+            function x(inner) {
+              'inner'
+            }
+          }
+          let x = 5
+          t.push(x)
+          // console.log('if outer', x) // 5
+        }
+
+        try {
+          x
+        } catch(e) {
+          t.push(e.message)
+        }
+        // t.push(x)
+        arr.push(t)
+        // console.log('end', x) // 2
+      }
+      t6()
+      function t7() {
+       console.log(x)
+       for(let y of [1, 2, 3]) {
+         console.log(x)
+        if (true) {
+          function x () {
+            
+          }
+        }
+        console.log(x)
+       }
+      }
+      t7()
+
+      function t8() {
+       try{
+         x
+       }catch(e) {
+        console.error(e)
+       }
+       for(let x of [1, 2, 3]) {
+        if (true) {
+          function x () {
+            
+          }
+        }
+        console.log(x)
+       }
+      }
+      t8()
+
+      console.log(arr)
+    }
+    test()
+
+    function test() {
+
+      const arr = []
+
+      function t1() {
+        const t = []
+        t.push(x)
+        // console.log('a inner->', x) // undefined
+        if (true) {
+          t.push(x)
+          // console.log('a middle->', x) // f inner
+          function x(inner) {
+            'inner'
+          }
+          // try {
+          //   var x = 3;
+          // } catch(e) {
+          // }
+        }
+        // console.log('a outer->', x) // f inner
+        t.push(x)
+        arr.push(t)
+      }
+      t1(2)
+      // console.log('----')
+      function t2(x) {
+        const t = []
+        t.push(x)
+        // console.log('a inner->', x) // 2
+        if (true) {
+          t.push(x)
+          // console.log('a middle->', x) // f inner
+          // function x(inner) {
+          //   'inner'
+          // }
+          var x = 'inner';
+          // function x(){}
+        } else {
+          // function x(outer) {
+
+          // }
+          var x = 5
+
+        }
+        t.push(x)
+        arr.push(t)
+        // console.log('a outer->', x) // 2
+      }
+      t2(2)
+      // var t2 = 1;
+      // console.log(t2)
+      // console.log('----')
+      function t3(x) {
+        const t = []
+        t.push(x)
+        // console.log('a inner->', x) // f outer
+        function x(outer) {
+          'outer'
+        }
+        if (true) {
+          t.push(x)
+          // console.log('a middle->', x) // f inner
+          function x(inner) {
+            'inner'
+          }
+        }
+        t.push(x)
+        arr.push(t)
+        // console.log('a outer->', x) // f outer
+      }
+      t3(2)
+
+      function t4() {
+        const t = []
+        t.push(x)
+        // console.log('a inner->', x) // undefined
+        var x = 'outer'
+        if (true) {
+          t.push(x)
+          // console.log('a middle->', x) // f inner
+          function x(inner) {
+            'inner'
+          }
+        }
+        t.push(x)
+        arr.push(t)
+        // console.log('a outer->', x) // f inner
+      }
+      t4(2)
+      // console.log('----')
+      function t5() {
+        const t = []
+        t.push(x)
+        // console.log('a inner->', x) // f outer
+        function x(outer) {
+          'outer'
+        }
+        if (true) {
+          t.push(x)
+          // console.log('a middle->', x) // f inner
+          function x(inner) {
+            'inner'
+          }
+        }
+        t.push(x)
+        arr.push(t)
+        // console.log('a outer->', x) // f inner
+      }
+      t5(2)
+      // console.log('----')
+
+      function t6(x) {
+        const t = []
+        t.push(x)
+        // console.log('a inner->', x) // 2
+        var x = 'outer'
+        if (true) {
+          t.push(x)
+          // console.log('a middle->', x) // f inner
+          function x(inner) {
+            'inner'
+          }
+        }
+        t.push(x)
+        arr.push(t)
+        // console.log('a outer->', x) // outer
+      }
+      t6(2)
+      // console.log('----')
+
+      // console.log('----')
+      function t7(x) {
+        const t = []
+        t.push(x)
+        // console.log('a inner->', x) // 2
+        var x = 'outer'
+        if (true) {
+          t.push(x)
+          // console.log('a middle->', x) // outer
+          var x = function x(inner) {
+            'inner'
+          }
+        }
+        t.push(x)
+        arr.push(t)
+        // console.log('a outer->', x) // f inner
+      }
+      t7(2)
+      // console.log('----')
+      function t8() {
+        const t = []
+        t.push(x)
+        // console.log('a inner->', x) // undefined
+        var x = 'outer'
+        if (true) {
+          t.push(x)
+          // console.log('a middle->', x) // outer
+          var x = function x(inner) {
+            'inner'
+          }
+        }
+        t.push(x)
+        arr.push(t)
+        // console.log('a outer->', x) // f inner
+      }
+      t8(2)
+      // console.log('----')
+      console.log(arr)
+    }
+    
+    function test46() {
+      const origin = { test: true }
+      // var let const function class
+
+      function a(x) {
+        // 有x和没x
+        console.log('a inner->', x)
+        function x() {
+          'outer'
+        }
+
+        if (true) {
+          // class x{
+
+          // }
+          console.log('if->start:', x);
+          x.f = (x.g = { g: true })
+          console.log('进来', x, x.f === x.g);
+          function x() {
+            'inner'
+          }
+
+          console.log('if->end', x);
+          // x = 6666;
+        } /* if end */
+        // x = 666
+        console.log('a outer->', x)
+      } /* function end */
+      a(origin)
+      console.log('origin', origin, origin.f === origin.g)
+      let gi = 0;
+      function tttt2(
+        x = g = 'g' + gi++
+      ) {
+        try {
+          console.log('g', g)
+        } catch (e) {
+          console.log(e)
+        }
+        let g = 2;
+        console.log(x)
+      } /* function end */
+      for (const x of [
+        4,
+        undefined,
+        undefined,
+        6,
+        undefined
+      ]) {
+        tttt2(x)
+        console.log('window.g', window.g)
+      }  /* for of end */
+      function tttt(x) {
+        var x = 10;
+        return (y) => {
+          return x = x + y
+        } /* arrow function end */
+      } /* function end */
+      console.log(tttt)
+      const x6 = tttt(5);
+      console.log(x6)
+      console.log(x6(6))
+      console.log(x6(8))
+      const x5 = tttt.call({ test: true }, 4)(5);
+      console.log(x5)
+      let i = 1;
+      console.log(ooo, tttt)
+      do {
+        console.log(
+          'start',
+          i,
+          ooo,
+          tttt
+        )
+        if (i === 1) {
+          try {
+            console.log('ooo', ooo)
+          } catch (e) {
+            console.log(e)
+          } finally {
+
+          }
+          let ooo = 3;
+          tttt = 7
+          console.log(ooo, tttt)
+        } else if (i == 2) {
+          console.log('i=2的时候', ooo, tttt)
+          var ooo = 6;
+          function tttt() {
+            console.log()
+          } /* function end */
+          continue
+        } else if (i === 3) {
+          var tttt = 'tttt';
+        } else if (i === 4) {
+          function tttt() {
+            '这是第二个'
+          } /* function end */
+        } else {
+
+        }  /* else if end */
+        if (i === 10) {
+          function tttt() {
+
+          } /* function end */
+        } /* if end */
+        console.log(
+          'end',
+          i,
+          ooo,
+          tttt
+        )
+      } while (i++ < 4) /* while end */
+      function ooo() {
+
+      } /* function end */
+      ;
+      class NaN {
+
+      } /*class declaration end */
+      try {
+        ggg = 2
+      } catch (e) {
+        console.log(e)
+      }
+      console.log(ooo, tttt, NaN)
+      class ggg {
+
+      } /*class declaration end */
+      const test = () => {
+        try {
+          b
+        } catch (e) {
+          console.log(e)
+          try {
+            console.log('1')
+          } finally {
+            console.log('2')
+          }
+          console.log('end')
+          return 4
+        }
+      } /* arrow function end */;
+      console.log(test())
+      console.log('---')
+      var h = 'test';
+      function test3() {
+        return function () {
+          console.log('ggg')
+        } /* function end */
+        return (() => {
+          console.log('fff')
+        })()
+      } /* function end */
+      function* gen(x = {}) {
+        console.log(
+          this,
+          g,
+          h,
+          ttt
+        )
+        h = 3
+        yield* {
+          *[Symbol.iterator](x) {
+            yield* [1, 2]
+          } /* function end */
+        }
+        console.log('run', ttt, this)
+        yield* [3, 4]
+        let i = 4;
+        let xxx = null;
+        while (i++ < 6) {
+          console.log(xxx === ttt, ttt)
+          xxx = ttt
+          console.log(xxx === ttt, h)
+          yield i
+          var h = 4;
+          function ttt() {
+
+          } /* function end */
+        } /* while end */
+        yield 1
+        const f = Math.random();
+        console.log(f, f > 0.5)
+        const a = f > 0.5 ? yield yield 7 : yield 7;
+        console.log('a', a)
+        var g;
+      } /* function end */
+      const y = gen.call({ hhh: true }, 'fff');
+      console.log(y.next())
+      console.log(y.next())
+      return
+      console.log(
+        y[Symbol.iterator]() === y
+      )
+      for (const x of y) {
+        console.log(x)
+      }  /* for of end */
+      console.log(y.next(), 'y.next')
+      function* gen2(i = 0) {
+        while (i < 2) {
+          const a = yield i++;
+          yield gen2(i)
+        } /* while end */
+        yield* [i++, ++i]
+      } /* function end */
+      const x = gen2();
+      console.log(
+        x.next(),
+        x.next(),
+        x.next(),
+        x.next(),
+        x.next(),
+        x.next()
+      )
+    } /* function end */
+
+
+    function test43() {
+      const a = NaN = 'dfadfd';
+      const t = 999.234325;
+      const c = Number(t);
+      const t1 = t.toFixed(3);
+      const t2 = 'hello world';
+      const t3 = new Number(t);
+      const t4 = new String(t2);
+      const t5 = String(t2);
+      var NaN = 2;
+      const b = {} + [];
+      console.log(
+        [a, b, c === t],
+        [
+          t3,
+          t3.valueOf(),
+          c instanceof Number,
+          t3 instanceof Number,
+          c !== new Number(t),
+          new Number(1) === new Number(1)
+        ],
+        [
+          t4,
+          t4.valueOf(),
+          t2 instanceof String,
+          t4 instanceof String,
+          t4.length,
+          t2 !== t4,
+          t4 !== new String(t2),
+          t5 === t2,
+          t5 !== t4
+        ],
+        [
+          t2.slice(2, 5),
+          t2.at(),
+          t1,
+          NaN
+        ],
+        [
+          typeof NaN,
+          0.5 + 0.1 == 0.6,
+          0.1 + 0.2 == 0.3,
+          [] + []
+        ],
+        [
+          [] + {},
+          {} + [],
+          {} + [],
+          true + true + true === 3,
+          true - true
+        ],
+        [
+          true - true,
+          true === 1,
+          (! +[] + [] + ![]).length,
+          ''.__proto__,
+          'hello'.at(2),
+          t1,
+          typeof t1,
+          9 + '1',
+          91 - '1'
+        ],
+        [
+          [] == 0,
+          [1] == '1',
+          null == undefined,
+          NaN == NaN
+        ]
+      )
+      return console.log(1), 2
+      function* gen(x = {}) {
+        yield* {
+          async  [sadf]() {
+
+          } /* function end */,
+          g() {
+
+          } /* function end */,
+          *[Symbol.iterator](x) {
+            yield* [1, 2]
+          } /* function end */
+        }
+        yield* ["a", "b"]
         let i = 0;
         while (i++ < 2) {
           yield i
-        }
-      }
+        } /* while end */
+      } /* function end */
       const y = gen();
       console.log(
         y.next(),
@@ -167,22 +798,24 @@ test()
         y.next(),
         y.next(),
         y.next(),
-        y.next(),
-      );
-
+        y.next()
+      )
       function* gen2(i = 0) {
         while (true) {
-          yield i++;
-          yield gen2(i);
-          yield* gen2(i);
-        }
-      }
-      const x = gen2()
+          yield i++
+          yield gen2(i)
+          yield* gen2(i)
+        } /* while end */
+      } /* function end */
+      const x = gen2();
       console.log(
-        x.next(), x.next(),
-        x.next(), x.next(),
-        x.next(), x.next()
-      );
+        x.next(),
+        x.next(),
+        x.next(),
+        x.next(),
+        x.next(),
+        x.next()
+      )
     } /* function end */
 
     function test42() {
@@ -238,7 +871,7 @@ test()
 
         } finally {
           console.log('finally', e, 2)
-          // return 7
+          return 7
           var t
         }
       } /* function end */

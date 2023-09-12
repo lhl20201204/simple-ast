@@ -9,15 +9,17 @@ import { _FunctionBindAst } from "./Native/Function";
 import parseRuntimeValue from "./parseRuntimeValue";
 import PropertyDescriptor from "./PropertyDescriptor";
 import { _ErrorAst } from "./Native/Error";
-import { createArray, createNumber, createObject, createString, describeNativeFunction, getFalseV, getFunctionClassRv, getFunctionPrototypeRv, getGenerateFn, getNullValue, getObjectPrototypeRv, getReflectDefinedPropertyV, getSymbolV, getTrueV, getUndefinedValue, runFunctionRuntimeValueInGlobalThis } from "./RuntimeValueInstance";
-import { getWindowEnv, getWindowObject } from "./getWindow";
-import { createLiteralAst, createPropertyDesctiptor, createRuntimeValueAst, createSimplePropertyDescriptor, isFunctionRuntimeValue } from "./utils";
+import { createArray, createNumber, createString, getFalseV, getFunctionClassRv, getGenerateFn, getNullValue, getObjectPrototypeRv, getReflectDefinedPropertyV, getTrueV, getUndefinedValue, runFunctionRuntimeValueInGlobalThis } from "./RuntimeValueInstance";
+import { getWindowEnv, getWindowObjectRv } from "./getWindow";
+import { createSimplePropertyDescriptor, isFunctionRuntimeValue } from "./utils";
 import { getConsoleV } from "./NativeRuntimeValue/console";
 import { getNumberFunctionV } from "./NativeRuntimeValue/number";
 import { getStringFunctionV } from "./NativeRuntimeValue/string";
+import { getMathRv } from "./NativeRuntimeValue/Math";
+import { getSymbolV } from "./NativeRuntimeValue/symbol";
 
 export function initEnviroment() {
-  const windowRv = getWindowObject()
+  const windowRv = getWindowObjectRv()
   const globalEnv = getWindowEnv()
   const ObjectPrototypeV = getObjectPrototypeRv()
   const FunctionClassV = getFunctionClassRv()
@@ -85,6 +87,7 @@ export function initEnviroment() {
   globalEnv.addFunction('Symbol', getSymbolV());
   globalEnv.addFunction('Number', getNumberFunctionV());
   globalEnv.addFunction('String', getStringFunctionV());
+  globalEnv.addFunction('Math', getMathRv())
   globalEnv.addConst(RUNTIME_LITERAL.this, windowRv);
 
   // console.error( '开始')

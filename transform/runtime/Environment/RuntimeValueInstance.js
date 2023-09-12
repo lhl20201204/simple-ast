@@ -1,17 +1,18 @@
 import Environment from ".";
 import parseAst from "..";
+import { isInstanceOf } from "../../commonApi";
 import { DEBUGGER_DICTS, ENV_DICTS, JS_TO_RUNTIME_VALUE_TYPE, PROPERTY_DESCRIPTOR_DICTS, RUNTIME_LITERAL, RUNTIME_VALUE_DICTS, RUNTIME_VALUE_TYPE } from "../constant";
+import GeneratorConfig from "./Generator/GeneratorConfig";
 import { getArrayProtoTypeV } from "./NativeRuntimeValue/array";
+import { getGeneratorPrototypeRv } from "./NativeRuntimeValue/generator";
 import { getStringProtoTypeV } from "./NativeRuntimeValue/string";
 import PropertyDescriptor from "./PropertyDescriptor";
-import RuntimeValue, { RuntimeRefValue } from "./RuntimeValue";
+import RuntimeValue, { RuntimeConfigValue, RuntimeGeneratorFunctionValue, RuntimeGeneratorInstanceValue, RuntimeRefValue } from "./RuntimeValue";
 import parseRuntimeValue from "./parseRuntimeValue";
 import { createLiteralAst, createPropertyDesctiptor, createRuntimeValueAst, createSimplePropertyDescriptor, isFunctionRuntimeValue } from "./utils";
 
 
 let reflectDefinePropertyV;
-
-let symbolV;
 
 let trueV;
 
@@ -175,7 +176,23 @@ export function getFunctionClassRv() {
 
 export function createObject(value) {
   return new RuntimeRefValue(RUNTIME_VALUE_TYPE.object, value, {
-    [RUNTIME_VALUE_DICTS.proto]: getObjectPrototypeRv(Environment.window),
+    [RUNTIME_VALUE_DICTS.proto]: getObjectPrototypeRv(),
+  })
+}
+
+export function createConfigRuntimeValue(value) {
+  return new RuntimeConfigValue(RUNTIME_VALUE_TYPE.object, value, {
+    [RUNTIME_VALUE_DICTS.proto]: getObjectPrototypeRv(),
+  })
+}
+
+export function createGeneratorInstance(value, config) {
+  if (!isInstanceOf(config, GeneratorConfig)) {
+    throw new Error('config 漏传')
+  }
+  return new RuntimeGeneratorInstanceValue(RUNTIME_VALUE_TYPE.object, value, {
+    [RUNTIME_VALUE_DICTS.proto]: getGeneratorPrototypeRv(),
+    [RUNTIME_VALUE_DICTS.generatorConfig]: config,
   })
 }
 
@@ -224,44 +241,36 @@ export function runFunctionRuntimeValueInGlobalThis(fnRv, windowRv) {
 }
 
 export function createFunction(value) {
-  const ret = new RuntimeRefValue(RUNTIME_VALUE_TYPE.function, value, {
+  const isGenerator = _.get(value[RUNTIME_VALUE_DICTS.symbolAst], 'generator');
+ 
+  const ret = new (isGenerator ? RuntimeGeneratorFunctionValue : RuntimeRefValue)(RUNTIME_VALUE_TYPE.function, value, {
     [RUNTIME_VALUE_DICTS.proto]: getFunctionPrototypeRv(),
   })
   ret.setProtoType(createObject({
     constructor: ret,
   }))
-  return ret;
-}
-
-export function createSymbol(str) {
-  const ret = new RuntimeValue(RUNTIME_VALUE_TYPE.symbol, Symbol(str), {
-    [RUNTIME_VALUE_DICTS.proto]: getSymbolV().getProtoType()
-  })
-  return ret;
-}
-
-export function getSymbolV() {
-  if (!symbolV) {
-    const generateFn = getGenerateFn()
-    symbolV = generateFn('Symbol', ([strRv]) => {
-      return createSymbol(parseRuntimeValue(strRv))
-    })
-    const symbolPrototypeRv = createObject({
-      toString: generateFn('Symbol$toString', (argsList, { _this }) => {
-        const symbolJSValue = parseRuntimeValue(_this);
-        return createString(symbolJSValue.toString())
-      })
-    });
-    symbolV.setProtoType(symbolPrototypeRv)
-    symbolPrototypeRv.set('constructor', symbolV, createSimplePropertyDescriptor({
-      value: symbolV,
-      [PROPERTY_DESCRIPTOR_DICTS.writable]: getFalseV()
-    }))
+  if (isGenerator) {
+    // const generateFn = getGenerateFn()
+    // const contextRv = createObject({
+    //   value: getUndefinedValue(),
+    //   done: getFalseV(),
+    //   sent: getUndefinedValue(),
+    // })
+    // const objRv = createObject({
+    //   next: generateFn(ret.getDefinedName() + '$generator$next', (
+    //     [argsRv], { _this }
+    //   ) => {
+    //     try {
+          
+    //     } catch(e) {
+          
+    //     }
+    //   })
+    // })
+    
   }
-  return symbolV;
+  return ret;
 }
-
-
 
 export function getReflectDefinedPropertyV() {
   if (!reflectDefinePropertyV) {

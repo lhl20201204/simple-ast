@@ -4,82 +4,116 @@ import { getWindowEnv } from "../Environment/getWindow";
 import { AST_DICTS, RUNTIME_LITERAL } from "../constant";
 import { initEnviroment } from "../Environment/initEnviroment";
 import generateCode from "../Generate";
+import { createLookUpUndefinedAst } from "../Environment/NativeRuntimeValue/undefined";
+import { getPreDeclarationKey } from "./parsePreDeclaration";
+
+
+export function getTotalDefineKeyList(astList) {
+  if (!astList.length) {
+    return []
+  }
+  const astStack = [...astList];
+  const ast = astStack.pop()
+  if (ast.type === 'BlockStatement') {
+    return [ ...getBlockDefinedLetConstClassKeyList(ast), ...getTotalDefineKeyList(astStack)]
+  }
+
+  if (['ForOfStatement', 'ForInStatement', 'ForStatement'].includes(ast.type)) {
+    return [ ...getBlockDefinedLetConstClassKeyList({
+      type: 'BlockStatement',
+      body: [
+        ast.type === 'ForStatement' ? ast.init :  ast.left,
+      ]
+    }), ...getTotalDefineKeyList(astStack)]
+  }
+
+  return getTotalDefineKeyList(astStack);
+}
+
+
 export function getStatement(statements, env) {
   const fnS = []
   const varS = [];
   const letConstS = []
   const total = []
   const isNoNeedLookUpVarEnv = env.isNoNeedLookUpVarEnv()
- 
-  const lookupVar = (c) => {
+
+  const lookUpVarFunctionBeUndefined = (c, config) => {
     if (isNoNeedLookUpVarEnv) {
       return;
     }
     if (c.type === 'VariableDeclaration' && c.kind === 'var') {
       varS.push({
         ...c,
+        type: AST_DICTS.PreDeclaration,
         declarations: _.map(c.declarations, item => {
           return {
             ...item,
-            init: {
-              type: 'Identifier',
-              name: `${RUNTIME_LITERAL.undefined}`
-            }
+            init: null
           }
         }),
         kind: 'var',
       })
     } else if (c.type === 'FunctionDeclaration') {
+      if (c.id.type !== 'Identifier') {
+        throw new Error('未处理的预提升')
+      }
+      const name = c.id.name;
+      if (getTotalDefineKeyList(config.stack).includes(name)) {
+        // console.log(getTotalDefineKeyList(config.stack))
+        return;
+      }
       varS.push({
-        type: 'VariableDeclaration',
-        declarations:[{
+        type: AST_DICTS.PreDeclaration,
+        declarations: [{
           type: 'VariableDeclarator',
           id: c.id, // todo,
-          init: {
-            type: 'Identifier',
-            name: `${RUNTIME_LITERAL.undefined}`
-          }
+          init: null
         }],
         kind: 'var',
       })
     }
   }
   // 遍历for循环和if语句, switch里的block，找到var使其提升
-  const findVarInForIf = (ast) => {
+  const lookUpVarFunctionInBlock = (ast, config) => {
+    const mergeConfig = { ...config, stack: [...config.stack, ast] }
     if (ast.type === 'BlockStatement') {
-      _.forEach(ast.body, findVarInForIf)
-    }else if (ast.type === 'ForStatement') {
-      lookupVar(ast.init)
-      findVarInForIf(ast.body);
-    } else if (['ForOfStatement', 'ForInStatement'].includes(ast.type) ) {
-      lookupVar(ast.left);
-      findVarInForIf(ast.body);
+      _.forEach(ast.body, t => lookUpVarFunctionInBlock(t, mergeConfig))
+    } else if (ast.type === 'ForStatement') {
+      lookUpVarFunctionBeUndefined(ast.init, mergeConfig)
+      lookUpVarFunctionInBlock(ast.body, mergeConfig);
+    } else if (['ForOfStatement', 'ForInStatement'].includes(ast.type)) {
+      lookUpVarFunctionBeUndefined(ast.left, mergeConfig);
+      lookUpVarFunctionInBlock(ast.body, mergeConfig);
+    } else if (['WhileStatement', 'DoWhileStatement'].includes(ast.type)) {
+      lookUpVarFunctionInBlock(ast.body, mergeConfig);
     } else if (ast.type === 'IfStatement') {
-      findVarInForIf(ast.consequent)
-      if (ast.alternate ) {
-        findVarInForIf(ast.alternate)
+      lookUpVarFunctionInBlock(ast.consequent, mergeConfig)
+      if (ast.alternate) {
+        lookUpVarFunctionInBlock(ast.alternate, mergeConfig)
       }
     } else if (ast.type === 'SwitchStatement') {
-      for(const c of ast.cases) {
-        findVarInForIf({
+      for (const c of ast.cases) {
+        lookUpVarFunctionInBlock({
           type: 'BlockStatement',
           body: c.consequent,
-        })
+        }, mergeConfig)
       }
     } else if (ast.type === 'TryStatement') {
-      findVarInForIf(ast.block);
-      findVarInForIf(ast.handler.body);
+      lookUpVarFunctionInBlock(ast.block, mergeConfig);
+      if (ast.handler) {
+        lookUpVarFunctionInBlock(ast.handler.body, mergeConfig);
+      }
       if (ast.finalizer) {
-        findVarInForIf(ast.finalizer);
+        lookUpVarFunctionInBlock(ast.finalizer, mergeConfig);
       }
     }
-    lookupVar(ast)
+    lookUpVarFunctionBeUndefined(ast, mergeConfig)
   }
-  
+
   function prePlaceHolderLetOrConst(c) {
     if ([RUNTIME_LITERAL.let, RUNTIME_LITERAL.const].includes(c.kind)) {
       letConstS.push({
-        ...c,
         type: AST_DICTS.PreDeclaration,
         declarations: _.map(c.declarations, item => {
           return {
@@ -92,14 +126,22 @@ export function getStatement(statements, env) {
     }
   }
 
-  const runStatement = (statements, excludeCheckVar) =>  {
+  const runStatement = (statements) => {
+    const blockAst = {
+      type: 'BlockStatement',
+      body: statements,
+    };
+    const config = {
+      stack: [blockAst],
+    };
     _.forEach(statements, c => {
       if (c.type === 'FunctionDeclaration') {
+        lookUpVarFunctionBeUndefined(c, config)
         fnS.push(c)
       } else if (c.type === 'ClassDeclaration') {
         letConstS.push({
           type: AST_DICTS.PreDeclaration,
-          declarations:[{
+          declarations: [{
             type: 'VariableDeclarator',
             id: c.id, // todo,
             init: null
@@ -108,14 +150,14 @@ export function getStatement(statements, env) {
         })
         total.push(c)
       } else {
-        if (c.type === 'VariableDeclaration' ) {
-          if (c.kind === 'var' && !excludeCheckVar) {
-            lookupVar(c)
+        if (c.type === 'VariableDeclaration') {
+          if (c.kind === 'var') {
+            lookUpVarFunctionBeUndefined(c, config)
           } else if (['let', 'const'].includes(c.kind)) {
             prePlaceHolderLetOrConst(c)
           }
         } else {
-          findVarInForIf(c)
+          lookUpVarFunctionInBlock(c, config)
         }
         // 应该将 var a = xx 去掉var；
         total.push(c)
@@ -123,12 +165,49 @@ export function getStatement(statements, env) {
     })
   }
   runStatement(statements);
-  total.unshift(...fnS, ...varS, ...letConstS)
-  // console.log(generateCode({
+  total.unshift(...varS, ...fnS, ...letConstS)
+
+  // console.log(env.envId)
+  // console.warn(generateCode({
   //   type: 'BlockStatement',
   //   body: total,
   // }))
   return total;
+}
+
+export function getBlockDefinedLetConstClassKeyList(blockAst) {
+  if (blockAst.type !== 'BlockStatement') {
+    throw new Error('ast 不是BlockStatement')
+  }
+  const keyList = []
+
+   _.forEach(blockAst.body, c => {
+    if (c.type === 'ClassDeclaration') {
+      keyList.push(...getPreDeclarationKey({
+        type: AST_DICTS.PreDeclaration,
+        declarations: [{
+          type: 'VariableDeclarator',
+          id: c.id, // todo,
+          init: null
+        }],
+        kind: 'class',
+       })
+      )
+    } else if (c.type === 'VariableDeclaration' && ['let', 'const'].includes(c.kind)) {
+      keyList.push(...getPreDeclarationKey({
+        type: AST_DICTS.PreDeclaration,
+        declarations: _.map(c.declarations, item => {
+          return {
+            ...item,
+            init: null,
+          }
+        }),
+        kind: c.kind,
+       })
+      )
+    }
+   })
+  return keyList;
 }
 
 export default function parseProgram(ast) {

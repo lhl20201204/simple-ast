@@ -1,7 +1,7 @@
 import { getAstCode } from ".";
 import { DEBUGGER_DICTS, RUNTIME_LITERAL } from "../constant";
 import { getElememtCode } from "./arrayCode";
-import { prefixSpace, purple, remark, space, tabSpace, wrapBlockWithBigBrace, wrapMiddleBracket, wrapSpace } from "./util";
+import { prefixSpace, purple, remark, space, tabSpace, wrapBlockWithBigBrace, wrapSmallBracket, wrapSpace } from "./util";
 
 export function getRemark( content, config) {
   if (!config) {
@@ -48,15 +48,15 @@ export function getFunctionExpressionCode(ast, config) {
   }${
     getRemark(RUNTIME_LITERAL.function, config)
   }`
-  return wrapMiddleBracket(ret, config)
+  return wrapSmallBracket(ret, config)
 }
 
 export function getArrowFunctionExpressionCode(ast, config) {
   const { async, params, body } = ast;
-  const ret = `${async ? purple(RUNTIME_LITERAL.async, config) + space(config) : ''}(${getElememtCode(params, config)})${space(config)}${purple('=>', config)}${space(config)}${
+  const ret = `${async ? purple(RUNTIME_LITERAL.async, config) + space(config) : ''}(${getElememtCode(params, config)})${purple(wrapSpace('=>', config), config)}${
     wrapBlockWithBigBrace(body, config)
   }${
     remark(
     config[DEBUGGER_DICTS.isInCallExpressionCalleer] || config[DEBUGGER_DICTS.isFunctionEndNotRemark] ? "" : ` /* arrow ${RUNTIME_LITERAL.function} end */`, config)}`
-  return wrapMiddleBracket(ret, config)
+  return wrapSmallBracket(ret, config)
 }

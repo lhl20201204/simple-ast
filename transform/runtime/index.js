@@ -13,12 +13,14 @@ import parseClassDeclaration from "./Parse/parseClassDeclaration";
 import parseConditionalExpression from "./Parse/parseConditionalExpression";
 import parseContinueStatement from "./Parse/parseContinueStatement";
 import parseDebuggerStatement from "./Parse/parseDebuggerStatement";
+import parseDoWhileStatement from "./Parse/parseDoWhileStatement";
 import parseExpressionStatement from "./Parse/parseExpressionStatement";
 import parseForInStatement from "./Parse/parseForInStatement";
 import parseForOfStatement from "./Parse/parseForOfStatement";
 import parseForStatement from "./Parse/parseForStatement";
 import parseFunctionDeclaration from "./Parse/parseFunctionDeclaration";
 import parseFunctionExpression from "./Parse/parseFunctionExpression";
+import parseGetRuntimeValueExpression from "./Parse/parseGetRuntimeValueExpression";
 import parseIdentifier from "./Parse/parseIdentifier";
 import parseIfStatement from "./Parse/parseIfStatement";
 import parseLiteral from "./Parse/parseLiteral";
@@ -41,12 +43,15 @@ import parseThrowStatement from "./Parse/parseThrowStatement";
 import parseTryStatement from "./Parse/parseTryStatement";
 import parseUnaryExpression from "./Parse/parseUnaryExpression";
 import parseUpdateExpression from "./Parse/parseUpdateExpression";
+import parseUseRuntimeValueExpression from "./Parse/parseUseRuntimeValueExpression";
 import parseVariableDeclaration from "./Parse/parseVariableDeclaration";
 import parseWhileStatement from "./Parse/parseWhileStatement";
+import parseYieldExpression from "./Parse/parseYieldExpression";
 import { AST_DICTS, DEBUGGER_DICTS } from "./constant";
 
 let id = 0;
-export default function parseAst(ast, env) {
+
+export function innerParseAst(ast, env) {
   if(!env){
     throw new Error('env 必传')
   }
@@ -69,6 +74,7 @@ export default function parseAst(ast, env) {
     case 'ContinueStatement': return parseContinueStatement(ast, env); 
     case 'ClassDeclaration': return parseClassDeclaration(ast, env);
     case 'DebuggerStatement': return parseDebuggerStatement(ast, env);
+    case 'DoWhileStatement': return parseDoWhileStatement(ast, env);
     case 'ExpressionStatement': return parseExpressionStatement(ast, env);
     case 'EmptyStatement': return getNullValue();
     case 'ForStatement': return parseForStatement(ast, env);
@@ -85,7 +91,6 @@ export default function parseAst(ast, env) {
     case 'ObjectExpression': return parseObjectExpression(ast, env);
     case 'Program': return parseProgram(ast); 
     case 'ReturnStatement': return parseReturnStatement(ast,env);
-    case 'RuntimeValue': return parseRuntimeValueExpression(ast, env);
     case 'Super': return parseSuper(ast, env);
     case 'SequenceExpression': return parseSequenceExpression(ast, env);
     case 'SpreadElement': return parseSpreadElement(ast,env);
@@ -99,8 +104,29 @@ export default function parseAst(ast, env) {
     case 'UpdateExpression': return parseUpdateExpression(ast, env);
     case 'VariableDeclaration': return parseVariableDeclaration(ast, env);
     case 'WhileStatement': return parseWhileStatement(ast, env);
+    case 'YieldExpression': return parseYieldExpression(ast, env);
+    case AST_DICTS.RuntimeValue: return parseRuntimeValueExpression(ast, env);
+    case AST_DICTS.UseRuntimeValue: return parseUseRuntimeValueExpression(ast, env);
+    case AST_DICTS.GetRuntimeValue: return parseGetRuntimeValueExpression(ast, env);
     case AST_DICTS.PreDeclaration: return parsePreDeclaration(ast, env);
   }
   console.warn('未匹配的parseAst', ast);
   return getNullValue()
+}
+
+export default function parseAst(ast, env) {
+  const isGeneratorEnv = env.isInGeneratorEnv();
+  if (isGeneratorEnv) {
+    ast[AST_DICTS._config] = {
+      [AST_DICTS.hadYieldStatement]: true,
+    }
+  }
+  const retRv = innerParseAst(ast, env);
+  if (isGeneratorEnv) {
+    ast[AST_DICTS._config] = {
+      [AST_DICTS.hadYieldStatement]: false,
+      [AST_DICTS.astCacheValue]: retRv,
+    }
+  }
+  return retRv;
 }

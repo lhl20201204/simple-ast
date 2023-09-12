@@ -27,7 +27,7 @@ export default function parseMemberExpression(ast, env) {
       return getUndefinedValue()
     }
     console.error(ast, key)
-    throw new Error(`不能获取 undefind 的 ${key}`)
+    throw new Error(`不能获取 undefind 的 ${key.toString()}`)
   }
   // console.error('return',  object.get(key))
   // console.log(ast, env, generateCode(ast, { [DEBUGGER_DICTS.isTextMode]: true}), object, key);

@@ -412,56 +412,85 @@ function _regeneratorRuntime() {
     e;
 }
 function test() {
-    var _marked =
-    /*#__PURE__*/
-    _regeneratorRuntime().mark(gen);
     function gen() {
-        var i;
-        return _regeneratorRuntime().wrap(function gen$(_context2) {
-            while (1) switch (_context2.prev = _context2.next) {
-            case 0:
-                return _context2.delegateYield(_defineProperty({},
-                Symbol.iterator,
-                /*#__PURE__*/
-                _regeneratorRuntime().mark(function _callee() {
-                    return _regeneratorRuntime().wrap(function _callee$(_context) {
-                        while (1) switch (_context.prev = _context.next) {
-                        case 0:
-                            return _context.delegateYield([1, 2], "t0", 1);
-                        case 1:
-                        case "end":
-                            return _context.stop();
-                        }
-                    },
-                    _callee);
-                })), "t0", 1);
-            case 1:
-                return _context2.delegateYield(["a", "b"], "t1", 2);
-            case 2:
-                i = 0;
-            case 3:
-                if (! (i++<2)) {
-                    _context2.next = 8;
+        var x = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+        return
+        /*#__PURE__*/
+        _regeneratorRuntime().mark(function _callee2() {
+            var i, h, f, a, g;
+            return _regeneratorRuntime().wrap(function _callee2$(_context2) {
+                while (1) switch (_context2.prev = _context2.next) {
+                case 0:
+                    console.log(g, h);
+                    return _context2.delegateYield(_defineProperty({},
+                    Symbol.iterator,
+                    /*#__PURE__*/
+                    _regeneratorRuntime().mark(function _callee(x) {
+                        return _regeneratorRuntime().wrap(function _callee$(_context) {
+                            while (1) switch (_context.prev = _context.next) {
+                            case 0:
+                                return _context.delegateYield([1, 2], "t0", 1);
+                            case 1:
+                            case "end":
+                                return _context.stop();
+                            }
+                        },
+                        _callee);
+                    })), "t0", 2);
+                case 2:
+                    return _context2.delegateYield(["a", "b"], "t1", 3);
+                case 3:
+                    i = 3;
+                case 4:
+                    if (! (i++<5)) {
+                        _context2.next = 9;
+                        break;
+                    }
+                    _context2.next = 7;
+                    return i;
+                case 7:
+                    _context2.next = 4;
                     break;
+                case 9:
+                    /* while end */
+                    f = Math.random();
+                    console.log(f, f > 0.5);
+                    if (! (f > 0.5)) {
+                        _context2.next = 17;
+                        break;
+                    }
+                    _context2.next = 14;
+                    return 6;
+                case 14:
+                    _context2.t2 = _context2.sent;
+                    _context2.next = 20;
+                    break;
+                case 17:
+                    _context2.next = 19;
+                    return 7;
+                case 19:
+                    _context2.t2 = _context2.sent;
+                case 20:
+                    a = _context2.t2;
+                    console.log(a);
+                case 22:
+                case "end":
+                    return _context2.stop();
                 }
-                _context2.next = 6;
-                return i;
-            case 6:
-                _context2.next = 3;
-                break;
-            case 8:
-            case "end":
-                return _context2.stop();
-            }
-        },
-        _marked);
+            },
+            _callee2);
+        })();
     }
+    /* function end */
     var y = gen();
-    console.log(y.next(), y.next(), y.next(), y.next(), y.next(), y.next(), y.next());
+    console.log(y.next(), y.next(), y.next(), y.next(), y.next(), y.next());
+    y.next(y.next());
     function gen2() {
         var i = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 0;
-        return _regeneratorRuntime().mark(function _callee2() {
-            return _regeneratorRuntime().wrap(function _callee2$(_context3) {
+        return
+        /*#__PURE__*/
+        _regeneratorRuntime().mark(function _callee3() {
+            return _regeneratorRuntime().wrap(function _callee3$(_context3) {
                 while (1) switch (_context3.prev = _context3.next) {
                 case 0:
                     if (!true) {
@@ -483,9 +512,10 @@ function test() {
                     return _context3.stop();
                 }
             },
-            _callee2);
+            _callee3);
         })();
     }
+    /* function end */
     var x = gen2();
     console.log(x.next(), x.next(), x.next(), x.next(), x.next(), x.next());
 }

@@ -1,8 +1,9 @@
 import parseAst from ".."
-import { RuntimeValueAst, isInstanceOf } from "../../commonApi"
-import { OUTPUT_TYPE, PROPERTY_DESCRIPTOR_DICTS, RUNTIME_LITERAL, RUNTIME_VALUE_TO_OUTPUT_TYPE, RUNTIME_VALUE_TYPE } from "../constant"
+import { GetRuntimeValueAst, RuntimeValueAst, UseRuntimeValueAst, isInstanceOf } from "../../commonApi"
+import { AST_DICTS, OUTPUT_TYPE, PROPERTY_DESCRIPTOR_DICTS, RUNTIME_LITERAL, RUNTIME_VALUE_TO_OUTPUT_TYPE, RUNTIME_VALUE_TYPE } from "../constant"
+import GeneratorConfig from "./Generator/GeneratorConfig"
 import PropertyDescriptor from "./PropertyDescriptor"
-import RuntimeValue from "./RuntimeValue"
+import RuntimeValue, { RuntimeConfigValue } from "./RuntimeValue"
 import { getFalseV, getReflectDefinedPropertyV, getTrueV, getUndefinedValue } from "./RuntimeValueInstance"
 import parseRuntimeValue from "./parseRuntimeValue"
 
@@ -68,12 +69,27 @@ export function createRuntimeValueAst(value, name, ast) {
     throw new Error('创建失败')
   }
   const ret = new RuntimeValueAst({
-    type: 'RuntimeValue',
+    type: AST_DICTS.RuntimeValue,
     value,
     name,
     ast,
   });
   return ret;
+}
+
+export function createUseRuntimeValueAst(index, argument) {
+  return new UseRuntimeValueAst({
+    type: AST_DICTS.UseRuntimeValue,
+    index,
+    argument,
+  })
+}
+
+export function createGetRuntimeValueAst(index) {
+  return new GetRuntimeValueAst({
+    type: AST_DICTS.GetRuntimeValue,
+    index,
+  })
 }
 
 export function createLiteralAst(str){
@@ -95,6 +111,26 @@ export function createStringLiteralAst(str){
     type: 'Literal',
     value: `${str}`,
     raw: `'${str}'`,
+  }
+}
+
+export function createArrowFunctionCallExpressionAst(body) {
+  return {
+    "type": "CallExpression",
+    "callee": {
+      "type": "ArrowFunctionExpression",
+      "id": null,
+      "expression": false,
+      "generator": false,
+      "async": false,
+      "params": [],
+      "body": {
+        "type": "BlockStatement",
+        body,
+      }
+    },
+    "arguments": [],
+    "optional": false
   }
 }
 
@@ -267,6 +303,7 @@ export function createPropertyDesctiptor(objRv, attr, propertyDescriptorConfig, 
   } else {
     if (!oldPropertyDescriptor.isPropertyDescriptorConfigurable()) {
       console.error(`Reflect.defineProperty不能重新定义${attr}属性`)
+      return;
     }
     // oldPropertyDescriptor.setCurrentState(kind);
     if (kind === PROPERTY_DESCRIPTOR_DICTS.init) {
@@ -316,6 +353,17 @@ export function createSimplePropertyDescriptor(config) {
     [PROPERTY_DESCRIPTOR_DICTS.writable]: config[PROPERTY_DESCRIPTOR_DICTS.writable] ?? trueV,
     [PROPERTY_DESCRIPTOR_DICTS.enumerable]: config[PROPERTY_DESCRIPTOR_DICTS.enumerable] ?? trueV,
     [PROPERTY_DESCRIPTOR_DICTS.configurable]: config[PROPERTY_DESCRIPTOR_DICTS.configurable] ?? trueV,
+    value: config.value ?? getUndefinedValue(),
+    kind: PROPERTY_DESCRIPTOR_DICTS.init,
+  })
+}
+
+export function createUnwritablePropertyDescriptor(config) {
+  const falseV = getFalseV();
+  return new PropertyDescriptor({
+    [PROPERTY_DESCRIPTOR_DICTS.writable]: config[PROPERTY_DESCRIPTOR_DICTS.writable] ?? falseV,
+    [PROPERTY_DESCRIPTOR_DICTS.enumerable]: config[PROPERTY_DESCRIPTOR_DICTS.enumerable] ?? falseV,
+    [PROPERTY_DESCRIPTOR_DICTS.configurable]: config[PROPERTY_DESCRIPTOR_DICTS.configurable] ?? falseV,
     value: config.value ?? getUndefinedValue(),
     kind: PROPERTY_DESCRIPTOR_DICTS.init,
   })
@@ -384,4 +432,17 @@ export function getObjectAttrOfPropertyDescriptor(objRv, attr, valueRv, { kind, 
   //   console.error('----', oldDescriptor)
   // }
   return oldDescriptor;
+}
+
+
+export const getGenerateInstanceConfig = (rvList) => {
+  if (isInstanceOf(rvList[0], RuntimeConfigValue)) {
+    if (!isInstanceOf(_.get(rvList, '0.value'), GeneratorConfig)) {
+      throw new Error('配置不属于 GeneratorConfig')
+    }
+    return _.get(rvList, '0.value');
+  }
+
+  // TODO 处理 a yield a * 2 这种
+
 }
