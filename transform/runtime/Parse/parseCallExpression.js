@@ -3,6 +3,7 @@ import { isInstanceOf } from "../../commonApi";
 import Environment from "../Environment";
 import RuntimeValue, { RuntimeRefValue } from "../Environment/RuntimeValue";
 import { createObject, getUndefinedValue } from "../Environment/RuntimeValueInstance";
+import createEnviroment from "../Environment/createEnviroment";
 import { getWindowObjectRv } from "../Environment/getWindow";
 import parseRuntimeValue from "../Environment/parseRuntimeValue";
 import { isFunctionRuntimeValue } from "../Environment/utils";
@@ -16,18 +17,14 @@ const functionType = ['FunctionExpression', 'FunctionDeclaration', 'ArrowFunctio
 
 function getCallParams(args, callee, env) {
   let argsRVValue = [];
-  if (callee.type === 'CallFunctionExpression') {
-    argsRVValue.push(...callee._argsRVValue)
-  } else {
-    args.forEach(q => {
-      const v = parseAst(q, env);
-      if (['SpreadElement'].includes(q.type)) {
-        argsRVValue.push(...v.value)
-      } else {
-        argsRVValue.push(v)
-      }
-    })
-  }
+  args.forEach(q => {
+    const v = parseAst(q, env);
+    if (['SpreadElement'].includes(q.type)) {
+      argsRVValue.push(...v.value)
+    } else {
+      argsRVValue.push(v)
+    }
+  })
   return argsRVValue
 }
 
@@ -45,20 +42,21 @@ export default function parseCallExpression(ast, env) {
   )
 
   let _this = getUndefinedValue()
-  let fnAst = undefined;
+  // let fnAst = undefined;
   let name = getUndefinedValue()
   let nativeFnRetRv;
   let nativeTempArgsRvValue
+  let fnRv = getUndefinedValue()
   if (callee.type === 'Identifier') {
-    const fnRv= env.get(callee.name);
+    fnRv = env.get(callee.name);
     if (!isFunctionRuntimeValue(fnRv)) {
       throw new Error(`${generateCode(callee)}不是可执行函数`)
     }
-    fnAst = fnRv.value;
+    // fnAst = fnRv.value; 
     _this = fnRv?.getDefinedEnv?.()?.isInUseStrict() ? getUndefinedValue() : getWindowObjectRv()
     name = callee.name
 
-    const { nativeFnCb } = _.get(fnAst, RUNTIME_VALUE_DICTS.symbolAst, {})
+    const { nativeFnCb } = fnRv.getRunAst()
     if (nativeFnCb) {
 
       nativeTempArgsRvValue = getCallParams(args, callee, env);
@@ -69,22 +67,22 @@ export default function parseCallExpression(ast, env) {
       }
     }
   } else if (callee.type === 'FunctionExpression') {
-    fnAst = parseAst(callee, env).value;
+    fnRv = parseAst(callee, env);
     _this = getUndefinedValue()
     name = '自执行函数'
   } else if (callee.type === 'ArrowFunctionExpression') {
-    fnAst = parseAst(callee, env).value;
+    fnRv = parseAst(callee, env);
     _this = env.get(RUNTIME_LITERAL.this)
     name = '自执行箭头函数'
   } else if (callee.type === AST_DICTS.RuntimeValue) {
-    const rv = parseAst(callee, env);
-    if (!isFunctionRuntimeValue(rv)) {
+    fnRv = parseAst(callee, env);
+    if (!isFunctionRuntimeValue(fnRv)) {
       throw new Error(`${generateCode(callee)}不是可执行函数`)
     }
-    fnAst = rv.value;
+    // fnAst = rv.value;
     _this = env.get(RUNTIME_LITERAL.this)
-    name = rv.getDefinedName();
-    const { nativeFnCb } = _.get(fnAst, RUNTIME_VALUE_DICTS.symbolAst, {})
+    name = fnRv.getDefinedName();
+    const { nativeFnCb } = fnRv.getRunAst()
     if (nativeFnCb) {
 
       nativeTempArgsRvValue = getCallParams(args, callee, env);
@@ -100,7 +98,7 @@ export default function parseCallExpression(ast, env) {
     // console.log('执行super时候的环境', env, env.getEnvPath())
     const rv = env.get(RUNTIME_LITERAL.super);
     // console.log(rv)
-    fnAst = rv.getMergeCtor().value;
+    fnRv = rv.getMergeCtor();
     _this = env.get(RUNTIME_LITERAL.this);
     name = rv.getDefinedName();
     // console.log('super进来调用时的env', fnAst, _this, name, env.getEnvPath());
@@ -111,13 +109,13 @@ export default function parseCallExpression(ast, env) {
     //
 
     name = getMemberPropertyKey(callee, env);
-    
-    const calleeRv = parseAst(callee, env)
-    if (!isFunctionRuntimeValue(calleeRv)) {
+
+    fnRv = parseAst(callee, env)
+    if (!isFunctionRuntimeValue(fnRv)) {
       throw new Error(`${generateCode(callee)}不是可执行函数`)
     }
-    fnAst = calleeRv.value;
-    const { nativeFnCb } = _.get(fnAst, RUNTIME_VALUE_DICTS.symbolAst, {})
+    // fnAst = calleeRv.value;
+    const { nativeFnCb } = fnRv.getRunAst()
     if (nativeFnCb) {
 
       nativeTempArgsRvValue = getCallParams(args, callee, env);
@@ -127,27 +125,28 @@ export default function parseCallExpression(ast, env) {
         throw new Error('内置函数必须返回runtimeValue')
       }
     }
-  } else if(callee.type === 'CallExpression') {
-    const fnRv= parseAst(callee, env);
+  } else if (callee.type === 'CallExpression') {
+    fnRv = parseAst(callee, env);
     if (!isFunctionRuntimeValue(fnRv)) {
       throw new Error(`${generateCode(callee.callee)}函数返回不是函数`)
     }
-    fnAst = fnRv.value;
+    // fnAst = fnRv;
     _this = fnRv.getDefinedEnv().isInUseStrict() ? getUndefinedValue() : getWindowObjectRv()
     name = generateCode(callee.callee)
   }
 
-  if (!fnAst) {
+  if (!fnRv) {
     if (optional) {
       return getUndefinedValue()
     }
-    console.log(callee, fnAst, name, env)
+    console.log(callee, name, env)
     throw new Error(`${name} 不是可执行函数`)
   }
 
-  const { [RUNTIME_VALUE_DICTS.symbolAst]: { params, body, generator, [ENV_DICTS.$hideInHTML]: hideInHTML , type }, [RUNTIME_VALUE_DICTS.symbolEnv]: fnBeDefinedEnv } = fnAst;
+  const { params, body, [ENV_DICTS.$hideInHTML]: hideInHTML, type } = fnRv.getRunAst()
+  const fnBeDefinedEnv = fnRv.getDefinedEnv()
 
-  const isGenerator = !!generator;
+  // const isGenerator = !!isOriginGenerator;
   const isArrowFunctionType = type === 'ArrowFunctionExpression';
   if (isArrowFunctionType) {
     _this = fnBeDefinedEnv.get(RUNTIME_LITERAL.this);
@@ -158,10 +157,9 @@ export default function parseCallExpression(ast, env) {
   }
   const tempParams = [...params];
   // console.log(params, body, args);
-  const childEnv = new Environment('params_of_function_' + (name || '匿名函数') + '_execute_body', fnBeDefinedEnv, {
+  const childEnv = createEnviroment('params_of_function_' + (name || '匿名函数') + '_execute_body', fnBeDefinedEnv, {
     [ENV_DICTS.$hideInHTML]: hideInHTML,
     [ENV_DICTS.isFunctionEnv]: true,
-    [ENV_DICTS.isGeneratorFnRuntimeValueType]: isGenerator,
     [ENV_DICTS.isOpenRuntimeValueStack]: isArrowFunctionType && callee.type === 'ArrowFunctionExpression',
   });
 
@@ -179,16 +177,12 @@ export default function parseCallExpression(ast, env) {
     if (argsRVValue[i]) {
       v = argsRVValue[i];
     }
-    setPattern(v, c, childEnv, { kind: 'params'})
+    setPattern(v, c, childEnv, { kind: 'params' })
   })
   if (restParamsAst) {
     setPattern(new RuntimeRefValue(RUNTIME_VALUE_TYPE.arguments, restArgsRVValue), restParamsAst.argument, childEnv, { kind: 'params' });
   }
-  // const fnEnv = new Environment('function_' + (name || '匿名函数') + '_execute_body', childEnv, { 
-  //   [ENV_DICTS.isFunctionEnv]: true,
-  //   [ENV_DICTS.isGeneratorFnRuntimeValueType]: isGenerator,
-  //   [ENV_DICTS.isOpenRuntimeValueStack]: isArrowFunctionType && callee.type === 'ArrowFunctionExpression',
-  //  });
+
   childEnv.addConst(RUNTIME_LITERAL.this, _this);
   if (!isArrowFunctionType) {
     childEnv.addConst(RUNTIME_LITERAL.arguments, new RuntimeRefValue(RUNTIME_VALUE_TYPE.arguments, argsRVValue));

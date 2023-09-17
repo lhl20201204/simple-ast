@@ -3,6 +3,7 @@ import { isInstanceOf } from "../../commonApi";
 import generateCode from "../Generate";
 import { DEBUGGER_DICTS, PROPERTY_DESCRIPTOR_DICTS, RUNTIME_LITERAL, RUNTIME_VALUE_DICTS, RUNTIME_VALUE_TYPE } from "../constant";
 import createGenerateConfig from "./Generator";
+import GeneratorConfig from "./Generator/GeneratorConfig";
 import getGeneratorRv from "./NativeRuntimeValue/generator";
 import { getNumberPrototypeV } from "./NativeRuntimeValue/number";
 import { getStringProtoTypeV } from "./NativeRuntimeValue/string";
@@ -13,7 +14,7 @@ import { createArrowFunctionCallExpressionAst, createRuntimeValueAst, createSimp
 
 const {
   symbolOriginClassAst,
-  proto, _prototype, symbolAst, symbolEnv, symbolName, symbolMergeNewCtor } = RUNTIME_VALUE_DICTS;
+  proto, _prototype, symbolAst, symbolEnv, symbolName, symbolMergeNewCtor, symbolOriginGeneratorAst } = RUNTIME_VALUE_DICTS;
 
 
 
@@ -117,10 +118,10 @@ export class RuntimeRefValue extends RuntimeValue {
     if ([RUNTIME_VALUE_TYPE.function,
     RUNTIME_VALUE_TYPE.arrow_func,
     RUNTIME_VALUE_TYPE.class].includes(this.type)) {
-      if (!Reflect.has(this.value, symbolAst)
-        || !Reflect.has(this.value, symbolEnv)
+      if (!Reflect.has(this.restConfig, symbolAst)
+        || !Reflect.has(this.restConfig, symbolEnv)
         || (
-          !Reflect.has(this.value, symbolName) &&
+          !Reflect.has(this.restConfig, symbolName) &&
           this.type !== RUNTIME_VALUE_TYPE.arrow_func)
       ) {
         throw new Error(this.type + '运行时初始化缺少必须属性');
@@ -172,7 +173,7 @@ export class RuntimeRefValue extends RuntimeValue {
   }
 
   setOriginClassAst(ast) {
-    this.value[symbolOriginClassAst] = ast;
+    this.restConfig[symbolOriginClassAst] = ast;
   }
 
   hasOwnProperty(attr) {
@@ -434,21 +435,37 @@ export class RuntimeRefValue extends RuntimeValue {
     return this.restConfig[proto] ?? getUndefinedValue();
   }
 
+  getRunAst() {
+    return this.restConfig[symbolAst] 
+  }
+
+  setRunAst(ast) {
+    this.restConfig[symbolAst] = ast;
+  }
 
   getDefinedAst() {
-    return this.value[symbolOriginClassAst] ?? this.value[symbolAst]
+    return this.restConfig[symbolOriginGeneratorAst] 
+    ?? this.restConfig[symbolOriginClassAst] 
+    ?? this.restConfig[symbolAst] 
   }
 
   getDefinedEnv() {
-    return this.value[symbolEnv]
+    return this.restConfig[symbolEnv]
+  }
+
+  setDefinedEnv(x) {
+    this.restConfig[symbolEnv] = x;
+    // this.value[symbolEnv] = x;
   }
 
   getDefinedName() {
-    return this.value[symbolName]
+    return this.restConfig[symbolName]
   }
 
   getMergeCtor() {
-    return this.value[symbolMergeNewCtor] ?? getUndefinedValue();
+    return  this.restConfig[symbolMergeNewCtor] 
+         ?? this.value[symbolMergeNewCtor] 
+         ?? getUndefinedValue();
   }
 
   $privateMergeCtorFunctionType = null;
@@ -459,7 +476,7 @@ export class RuntimeRefValue extends RuntimeValue {
       if (origin !== getUndefinedValue()) {
         origin = _.cloneDeep(origin)
         origin.setType(RUNTIME_VALUE_TYPE.function);
-        origin.value[symbolOriginClassAst] = undefined;
+        origin.restConfig[symbolOriginClassAst] = undefined;
         _.forEach(origin.keys(), attr => {
           if (attr === RUNTIME_LITERAL.$prototype) {
             return
@@ -475,7 +492,9 @@ export class RuntimeRefValue extends RuntimeValue {
 
   setMergeCtor(rv) {
     // this.value[symbolAst] = createRuntimeValueAst(rv)
-    return this.value[symbolMergeNewCtor] = rv;
+     this.value[symbolMergeNewCtor] = rv;
+     this.restConfig[symbolMergeNewCtor] = rv;
+     return rv;
   }
 }
 
@@ -484,12 +503,14 @@ export class RuntimeGeneratorFunctionValue extends RuntimeRefValue {
   constructor(...args) {
     super(...args)
     const originArgs = _.cloneDeep(args);
-    const originAst = this.value[symbolAst];
+    const originAst = this.getDefinedAst()
+    this.restConfig[symbolOriginGeneratorAst] = originAst;
+    
     const defineEnv = this.getDefinedEnv();
 
-    this.value[symbolAst] = {
+    // console.error(defineEnv);
+    this.setRunAst({
       ..._.cloneDeep(originAst),
-      generator: false,
       body: {
         ..._.cloneDeep(originAst.body),
         body: [
@@ -514,7 +535,7 @@ export class RuntimeGeneratorFunctionValue extends RuntimeRefValue {
                         contextArguments: env.getRuntimeValueByStackIndex(1),
                       }))
                       return ret;
-                    }, 'config/* = _ref */')
+                    }, originAst )
                   ]
                 }
               }
@@ -522,7 +543,7 @@ export class RuntimeGeneratorFunctionValue extends RuntimeRefValue {
           }
         ]
       }
-    }
+    })
   }
 
 }
@@ -532,18 +553,14 @@ export class RuntimeGeneratorInstanceValue extends RuntimeRefValue {
     super(...args)
   }
 
-  setNextValue(rv) {
-    this.restConfig[RUNTIME_VALUE_DICTS.generatorNextValue] = rv;
+  getGenerateConfig() {
+    const ret = this.restConfig[RUNTIME_VALUE_DICTS.generatorConfig];
+    if (!isInstanceOf(ret, GeneratorConfig)) {
+      throw new Error('运行时错误')
+    }
+    return ret;
   }
 
-  getLastestAst() {
-    return this.restConfig[RUNTIME_VALUE_DICTS.generatorLatestAst]
-  }
-
-  runGeneratorFunction() {
-    const GeneratorConfig = this.restConfig[RUNTIME_VALUE_DICTS.generatorConfig];
-    GeneratorConfig.runGeneratorFunction();
-  }
 }
 
 export class RuntimeConfigValue extends RuntimeRefValue {

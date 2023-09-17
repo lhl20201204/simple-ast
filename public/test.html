@@ -30,8 +30,85 @@
 
     // 开始添加类
 
+    // rrrr
+    // rrrr
 
-    function test49() {
+    function test() {
+      function* gen() {
+        let i = 1;
+        const e = new Error('主动抛出错误')
+        while (i++ < 2) {
+          yield 1;
+          try {
+            yield 2
+            try {
+              throw e;
+              yield
+            } catch (e) { // 这里怎么处理重复e的问题？
+              yield 3
+              throw e;
+            } finally {
+              yield 4;
+              throw e;
+            }
+            yield
+          } catch (e) {
+            throw e;
+            return 
+          } finally { 
+            yield 5
+          }
+        }
+      }
+      const g = gen()
+      console.log([
+        g.next(),
+        g.next(),
+        g.next(),
+        g.next(),
+        g.next(),
+        // g.next(),
+      ])
+      g.next()
+    }
+    test()
+    function test48() {
+      const x = 9805;
+      let i = 1;
+      function* gen(y) {
+        let j = 8;
+        j += (yield 2) + (yield 4);
+        const b = 1 + 2 + (yield 666 + (yield (y + i++ * 10)))
+        console.log(y, arguments, b, i, j)
+        console.log(x)
+        yield x
+        yield 2
+        yield 3
+        console.log('j', j);
+      }
+      const g = gen(5)
+
+      const g2 = gen(6)
+      console.log(g.next(7))
+      // console.log(g.return(new Error('jjjjj')))
+      // return 之后清空执行队列。
+      console.log(g2.next())
+      console.log('----1--')
+      console.log(g.next(6))
+      console.log('---2---')
+      console.log(g.next(17))
+      console.log('---3---')
+      console.log(g.next(3))
+      console.log(g.next(4))
+      console.log(g.next(5))
+      console.log(g.next(6))
+      console.log(g.next(7))
+      console.log('end')
+
+    }
+
+
+    function test47() {
       class A {
         f = 4;
         set x(f) {
@@ -116,9 +193,9 @@
     } /* function end */
 
 
-    function test50() {
+    function test46() {
       const arr = []
-     
+
       function t1() {
         const t = []
         t.push(x)
@@ -196,7 +273,7 @@
       }
       t3()
 
-      function t4(x) { 
+      function t4(x) {
         const t = []
         t.push(x)
         // console.log('start', x) // f outer
@@ -221,7 +298,7 @@
         // console.log('end', x) // 3
       }
       t4()
-      function t5(x) { 
+      function t5(x) {
         const t = []
         t.push(x)
         // console.log('start', x) // f outer
@@ -246,13 +323,13 @@
         // console.log('end', x) // 2
       }
       t5()
-      function t6() { 
+      function t6() {
         const t = []
         // t.push(x)
         // console.log('start', x) // f outer
         try {
           x
-        } catch(e) {
+        } catch (e) {
           t.push(e.message)
         }
 
@@ -271,7 +348,7 @@
 
         try {
           x
-        } catch(e) {
+        } catch (e) {
           t.push(e.message)
         }
         // t.push(x)
@@ -280,41 +357,40 @@
       }
       t6()
       function t7() {
-       console.log(x)
-       for(let y of [1, 2, 3]) {
-         console.log(x)
-        if (true) {
-          function x () {
-            
-          }
-        }
         console.log(x)
-       }
+        for (let y of [1, 2, 3]) {
+          console.log(x)
+          if (true) {
+            function x() {
+
+            }
+          }
+          console.log(x)
+        }
       }
       t7()
 
       function t8() {
-       try{
-         x
-       }catch(e) {
-        console.error(e)
-       }
-       for(let x of [1, 2, 3]) {
-        if (true) {
-          function x () {
-            
-          }
+        try {
+          x
+        } catch (e) {
+          console.error(e)
         }
-        console.log(x)
-       }
+        for (let x of [1, 2, 3]) {
+          if (true) {
+            function x() {
+
+            }
+          }
+          console.log(x)
+        }
       }
       t8()
 
       console.log(arr)
     }
-    test()
 
-    function test() {
+    function test45() {
 
       const arr = []
 
@@ -483,8 +559,8 @@
       // console.log('----')
       console.log(arr)
     }
-    
-    function test46() {
+
+    function test44() {
       const origin = { test: true }
       // var let const function class
 

@@ -3,6 +3,14 @@ export function isInstanceOf(left, right) {
   return left instanceof right;
 }
 
+export function getJsTypeOf(s) {
+  return typeof s;
+}
+
+export function isJsSymbolType(s) {
+  return typeof s === 'symbol';
+}
+
 let runtimeValueAstId = 0;
 
 class Merge{

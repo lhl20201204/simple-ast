@@ -29,13 +29,15 @@ export function getGeneratorPrototypeRv() {
   if (!generatorPrototypeRv) {
     const generateFn = getGenerateFn()
     generatorPrototypeRv = createObject({
-      next: generateFn('Generator$next', ([argsRv], { _this }) => {
+      next: generateFn('Generator$next', ([nextRv], { _this }) => {
         if (!isInstanceOf(_this, RuntimeGeneratorInstanceValue)) {
           throw new Error('不是generator实例')
         }
+        const generateConfig = _this.getGenerateConfig()
+        generateConfig.setNextValue(nextRv ?? getUndefinedValue());
         let value = getUndefinedValue()
         try{
-            _this.runGeneratorFunction();
+           value = generateConfig.runGeneratorFunction();
         }catch(e) {
           if (isYieldError(e)) {
             value = getYieldValue(e)
@@ -43,8 +45,16 @@ export function getGeneratorPrototypeRv() {
             throw e;
           }
         }
+        
         return createObject({
           value,
+          done: generateConfig.done,
+        })
+      }),
+      return: generateFn('Generator$return',([argsRv], {_this}) => {
+        // todo
+        return createObject({
+          value: argsRv[0],
           done: getFalseV(),
         })
       })

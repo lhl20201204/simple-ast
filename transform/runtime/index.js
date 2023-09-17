@@ -1,3 +1,5 @@
+import { isInstanceOf } from "../commonApi";
+import AstConfig, { ensureAstHadConfig } from "./Environment/Generator/AstConfig";
 import { getNullValue } from "./Environment/RuntimeValueInstance";
 import generateCode from "./Generate";
 import parseArrayExpression from "./Parse/parseArrayExpression";
@@ -117,16 +119,19 @@ export function innerParseAst(ast, env) {
 export default function parseAst(ast, env) {
   const isGeneratorEnv = env.isInGeneratorEnv();
   if (isGeneratorEnv) {
-    ast[AST_DICTS._config] = {
-      [AST_DICTS.hadYieldStatement]: true,
+    // console.error(ast);
+    ensureAstHadConfig(ast);
+    const astConfig= ast[AST_DICTS._config];
+    if (!astConfig.getNeedReRun()) {
+      return astConfig.getCacheRuntimeValue()
     }
+    astConfig.setNeedReRun(true);
   }
   const retRv = innerParseAst(ast, env);
   if (isGeneratorEnv) {
-    ast[AST_DICTS._config] = {
-      [AST_DICTS.hadYieldStatement]: false,
-      [AST_DICTS.astCacheValue]: retRv,
-    }
+    const astConfig = ast[AST_DICTS._config];
+    astConfig.setNeedReRun(false);
+    astConfig.setCacheRuntimeValue(retRv);
   }
   return retRv;
 }

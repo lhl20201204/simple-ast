@@ -1,5 +1,6 @@
 import parseAst from "..";
 import { createRuntimeValueAst } from "../Environment/utils";
+import { AST_DICTS } from "../constant";
 import setExpression from "./setExpression";
 
 export default function parseAssignmentExpression(ast, env) {
@@ -26,7 +27,8 @@ export default function parseAssignmentExpression(ast, env) {
           operator: operator.slice(0, -1),
           right,
         }
-      }
+      },
+      ..._.pick(ast, AST_DICTS._config),
     }, env)
   }
 }

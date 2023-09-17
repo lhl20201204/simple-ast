@@ -161,7 +161,6 @@ const runtimeValueKeysToJsObject = (cloneObj, rv, config) => {
       // }
       Reflect.defineProperty(cloneObj, key, newDescriptor)
     } else {
-
       if (Reflect.has(objDesc, 'value')) {
         cloneObj[key] = objDesc.value;
       } else {
@@ -251,7 +250,6 @@ export default function parseRuntimeValue(rv, config = {}) {
     weakMap.set(rv, cloneObj)
 
     runtimeValueKeysToJsObject(cloneObj, rv, config);
-    
     if (isInstanceOf(rv, RuntimeRefValue)) {
       if (
         rv.type === RUNTIME_VALUE_TYPE.class

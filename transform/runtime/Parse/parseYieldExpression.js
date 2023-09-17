@@ -2,14 +2,26 @@ import parseAst from "..";
 import { isInstanceOf } from "../../commonApi";
 import RuntimeValue from "../Environment/RuntimeValue";
 import { getUndefinedValue } from "../Environment/RuntimeValueInstance";
-import { GENERATOR_DICTS, RUNTIME_LITERAL } from "../constant";
+import { AST_DICTS, GENERATOR_DICTS, RUNTIME_LITERAL } from "../constant";
 
 export function isYieldError(e) {
-  return isInstanceOf(e[GENERATOR_DICTS.yieldInnerField], RuntimeValue)
+  return isInstanceOf(e[GENERATOR_DICTS.yieldInnerRuntimeValue], RuntimeValue)
 }
 
 export function getYieldValue(e) {
-  return e[GENERATOR_DICTS.yieldInnerField];
+  return e[GENERATOR_DICTS.yieldInnerRuntimeValue];
+}
+
+export function setYieldValue(e, rv) {
+  e[GENERATOR_DICTS.yieldInnerRuntimeValue] =  rv;
+}
+
+export function getYieldEnv(e) {
+  return e[GENERATOR_DICTS.yieldInnerEnv];
+}
+
+export function setYieldEnv(e, env) {
+  e[GENERATOR_DICTS.yieldInnerEnv] = env;
 }
 
 export default function parseYieldExpression(ast, env) {
@@ -21,12 +33,19 @@ export default function parseYieldExpression(ast, env) {
 
   } else {
     const yieldRv = ast.argument ? parseAst(ast.argument, env) : getUndefinedValue();
-    env.setYieldValue(yieldRv);
+    const astConfig = _.get(ast, AST_DICTS._config);
+    if (astConfig.getNeedReceiveNextValue()) {
+      // console.log('yield 接受值', env.getNextValue());
+      return env.getNextValue();
+    }
+    // env.setYieldValue(yieldRv);
     // yield 关键字底层用Error抛出处理；
     const e = new Error('yield 中断停止');
     // 设置唯一标志符
-    e[GENERATOR_DICTS.yieldInnerField] = yieldRv;
+    setYieldValue(e, yieldRv);
+    setYieldEnv(e, env);
     // console.error('yield值', yieldRv, e.getYieldRuntimeValue());
+    astConfig.setNeedReceiveNextValue(true);
     throw e;
   }
 }

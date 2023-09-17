@@ -1,6 +1,7 @@
 import parseAst from "..";
 import Environment from "../Environment";
 import { getUndefinedValue } from "../Environment/RuntimeValueInstance";
+import createEnviroment from "../Environment/createEnviroment";
 import parseRuntimeValue from "../Environment/parseRuntimeValue";
 import { ENV_DICTS } from "../constant";
 
@@ -13,12 +14,12 @@ export default function parseForStatement(ast, env) {
   const isInLetConst = init.type === 'VariableDeclaration' && ['const', 'let'].includes(init.kind);
   let initEnv = env;
   if (isInLetConst) {
-    initEnv = new Environment('for let/const statement',env)
+    initEnv = createEnviroment('for let/const statement',env)
   } 
   
   parseAst(init, initEnv)
   while(parseRuntimeValue(parseAst(test, initEnv))) {
-    bodyEnv = new Environment('for let/const statement body', initEnv, {
+    bodyEnv = createEnviroment('for let/const statement body', initEnv, {
       [ENV_DICTS.isForEnv]: true,
       [ENV_DICTS.noNeedLookUpVar]: true
     })

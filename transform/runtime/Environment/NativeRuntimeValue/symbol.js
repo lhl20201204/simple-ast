@@ -1,3 +1,4 @@
+import { isInstanceOf } from "../../../commonApi";
 import { PROPERTY_DESCRIPTOR_DICTS, RUNTIME_VALUE_DICTS, RUNTIME_VALUE_TYPE } from "../../constant";
 import RuntimeValue from "../RuntimeValue";
 import { createObject, createString, getFalseV, getGenerateFn } from "../RuntimeValueInstance";
@@ -11,7 +12,7 @@ let symbol$iteratorRv;
 
 export function getSymbolIteratorRv() {
   if (!symbol$iteratorRv) {
-    symbol$iteratorRv = createSymbol('@@symbol.iterator');
+    symbol$iteratorRv = createSymbol(Symbol.iterator);
   }
   return symbol$iteratorRv;
 }
@@ -41,8 +42,8 @@ export function getSymbolV() {
   return symbolV;
 }
 
-export function createSymbol(str) {
-  const ret = new RuntimeValue(RUNTIME_VALUE_TYPE.symbol, Symbol(str), {
+export function createSymbol(strOrSymbol) {
+  const ret = new RuntimeValue(RUNTIME_VALUE_TYPE.symbol, typeof strOrSymbol === 'symbol' ? strOrSymbol : Symbol(strOrSymbol), {
     [RUNTIME_VALUE_DICTS.proto]: getSymbolV().getProtoType()
   })
   return ret;

@@ -14,10 +14,10 @@ export default function parseArrowFunctionExpression(ast, env) {
   }
   
   const value = new RuntimeRefValue(RUNTIME_VALUE_TYPE.arrow_func, {
+  }, {
+    [RUNTIME_VALUE_DICTS.proto]: getFunctionPrototypeRv(),
     [RUNTIME_VALUE_DICTS.symbolAst]: ast,
     [RUNTIME_VALUE_DICTS.symbolEnv]: env
-  }, {
-    [RUNTIME_VALUE_DICTS.proto]: getFunctionPrototypeRv()
   });
 
   if (key) {

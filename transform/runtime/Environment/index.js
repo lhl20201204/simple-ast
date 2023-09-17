@@ -181,6 +181,9 @@ export default class Environment {
   }
 
   placeholder(key, kind, isSwitchPreDeclaration) {
+    if (this.isInGeneratorEnv() && this.getRunningGenerateConfig().hadMounted()) {
+      return;
+    }
     if (isSwitchPreDeclaration) {
       if (this.switchPlaceHolderMap.has(key)) {
         throw new Error(`${key} 不能重新定义`)
@@ -262,10 +265,6 @@ export default class Environment {
     return this._config[ENV_DICTS.continueFlag];
   }
 
-  isGeneratorFnRuntimeValueTypeEnv() {
-    return this._config[ENV_DICTS.isGeneratorFnRuntimeValueType]
-  }
-
   canUseRuntimeValueStack() {
     return !!this._config[ENV_DICTS.isOpenRuntimeValueStack];
   }
@@ -292,9 +291,36 @@ export default class Environment {
     return env.unvisibleRuntimeValueStack[index]
   }
 
+  currentIsGeneratorFunctionEnv() {
+    return this._config[ENV_DICTS.isGeneratorFunction]
+  }
+
   isInGeneratorEnv() {
-    return this.isGeneratorFnRuntimeValueTypeEnv() ||
-     (!!this.parent && this.parent.isGeneratorFnRuntimeValueTypeEnv())
+    return this.currentIsGeneratorFunctionEnv() ||
+     (!!this.parent && this.parent.isInGeneratorEnv())
+  }
+
+  setCurrentIsGeneratorFunctionEnv(bool){
+    this._config[ENV_DICTS.isGeneratorFunction] = bool;
+  }
+
+  getRunningGenerateConfig() {
+    let generatorEnv = this;
+    while(generatorEnv && !this.currentIsGeneratorFunctionEnv()) {
+      generatorEnv = generatorEnv.parent;
+    }
+    if (!generatorEnv || !generatorEnv.currentIsGeneratorFunctionEnv()) {
+      throw new Error('获取yield 值错误')
+    }
+    const generateConfig = generatorEnv._config[ENV_DICTS.runningGenerateConfig];
+    if (!generateConfig?.isGeneratorConfig?.()) {
+      throw new Error('获取generateConfig失败')
+    }
+    return generateConfig
+  }
+
+  getNextValue() {
+    return this.getRunningGenerateConfig().getNextValue()
   }
 
   setYieldValue(rv) {

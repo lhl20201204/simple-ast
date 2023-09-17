@@ -12,6 +12,7 @@ import { isInstanceOf } from "../../commonApi";
 import { getObjectAttrOfPropertyDescriptor } from "./parseObjectExpression";
 import { createObject, createObjectExtends, getFalseV, getFunctionClassRv, getFunctionPrototypeRv, getUndefinedValue } from "../Environment/RuntimeValueInstance";
 import { _classConstructorSuperAst } from "../Environment/Native/ClassSuper";
+import createEnviroment from "../Environment/createEnviroment";
 
 function IdentifierToLiteral(ast) {
   if (ast.type !== 'Identifier') {
@@ -364,12 +365,12 @@ export function createMergeCtorRv(idText,  prototypeRv, classDefinedEnv, bodyAst
 export default function parseClassDeclaration(ast, env) {
   const { id, body: bodyAst, superClass } = ast;
   const idText = id ? getAstCode(id, { text: true }) : '匿名类';
-  const classDefinedEnv = new Environment('class_' + (idText) + '_defined_env',
+  const classDefinedEnv = createEnviroment('class_' + (idText) + '_defined_env',
     env,  {
       [ENV_DICTS.isUseStrict]: true,
       [ENV_DICTS.$hideInHTML]: env.getHideInHtml()
     })
-  const classPrototypeDefinedEnv = new Environment('class_' + (idText) + '_of_prototype_defined_env',
+  const classPrototypeDefinedEnv = createEnviroment('class_' + (idText) + '_of_prototype_defined_env',
     env, {
       [ENV_DICTS.isUseStrict]: true,
       [ENV_DICTS.$hideInHTML]: env.getHideInHtml()
@@ -426,9 +427,9 @@ export default function parseClassDeclaration(ast, env) {
       [RUNTIME_VALUE_DICTS.proto]: superClassRv,
     }))
     classPrototypeDefinedEnv.addConst(RUNTIME_LITERAL.super, new RuntimeRefValue(RUNTIME_VALUE_TYPE.super, {
-      [RUNTIME_VALUE_DICTS.symbolMergeNewCtor]: superClassRv.getMergeCtor(),
     }, {
       [RUNTIME_VALUE_DICTS.proto]: superClassRv.getProtoType(),
+      [RUNTIME_VALUE_DICTS.symbolMergeNewCtor]: superClassRv.getMergeCtor(),
     }))
   } else {
     classDefinedEnv.addConst(RUNTIME_LITERAL.super, new RuntimeRefValue(RUNTIME_VALUE_TYPE.super, {

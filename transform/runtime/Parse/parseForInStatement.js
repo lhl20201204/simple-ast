@@ -2,6 +2,7 @@ import parseAst from "..";
 import Environment from "../Environment";
 import RuntimeValue from "../Environment/RuntimeValue";
 import { createString } from "../Environment/RuntimeValueInstance";
+import createEnviroment from "../Environment/createEnviroment";
 import { ENV_DICTS, RUNTIME_VALUE_TYPE } from "../constant";
 import setExpression from "./setExpression";
 import setPattern from "./setPattern";
@@ -16,11 +17,11 @@ export default function parseForInStatement(ast, env) {
   if (left.type === 'VariableDeclaration' && ['const', 'let'].includes(left.kind)) {
       let index = 0;
       for(const value in arrV.value) {
-        const paramsEnv = new Environment(
+        const paramsEnv = createEnviroment(
           'for in let/const statement',
           env,
         );
-        const childEnv = new Environment('for in let/const statement body' + index++, paramsEnv, {
+        const childEnv = createEnviroment('for in let/const statement body' + index++, paramsEnv, {
           isForInEnv: true,
           [ENV_DICTS.isForEnv]: true,
           [ENV_DICTS.noNeedLookUpVar]: true
@@ -38,7 +39,7 @@ export default function parseForInStatement(ast, env) {
   } else {
     let i = 0;
     for(const attr in arrV.value) {
-      const childEnv = new Environment('for in var/noVariableDeclaration statement body' + i, env, {
+      const childEnv = createEnviroment('for in var/noVariableDeclaration statement body' + i, env, {
         isForInEnv: true,
         [ENV_DICTS.isForEnv]: true,
         [ENV_DICTS.noNeedLookUpVar]: true

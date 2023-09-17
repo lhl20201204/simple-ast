@@ -21,7 +21,6 @@ export function getFunctionDeclarationCode(ast, config) {
 export function getFunctionExpressionCode(ast, config) {
   const { async, generator, params, body } = ast;
   const asyncStr =  async ? purple(RUNTIME_LITERAL.async, config) + space(config) : '';
-
   const functionStr = config[DEBUGGER_DICTS.hideFunctionField] 
   || config[DEBUGGER_DICTS.isFunctionInClassMethodDefinition]
   || config[DEBUGGER_DICTS.replaceFunctionName]

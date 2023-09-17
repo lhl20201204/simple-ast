@@ -8,6 +8,7 @@ import { getGeneratorPrototypeRv } from "./NativeRuntimeValue/generator";
 import { getStringProtoTypeV } from "./NativeRuntimeValue/string";
 import PropertyDescriptor from "./PropertyDescriptor";
 import RuntimeValue, { RuntimeConfigValue, RuntimeGeneratorFunctionValue, RuntimeGeneratorInstanceValue, RuntimeRefValue } from "./RuntimeValue";
+import createEnviroment from "./createEnviroment";
 import parseRuntimeValue from "./parseRuntimeValue";
 import { createLiteralAst, createPropertyDesctiptor, createRuntimeValueAst, createSimplePropertyDescriptor, isFunctionRuntimeValue } from "./utils";
 
@@ -30,6 +31,8 @@ export function ensureInitRoot() {
   })
 
   const FunctionPrototypeV = new RuntimeRefValue(RUNTIME_VALUE_TYPE.class, {
+  }, {
+    [RUNTIME_VALUE_DICTS.proto]: ObjectPrototypeV,
     [RUNTIME_VALUE_DICTS.symbolAst]: {
       type: "FunctionExpression",
       id: {
@@ -47,8 +50,6 @@ export function ensureInitRoot() {
     },
     [RUNTIME_VALUE_DICTS.symbolEnv]: Environment.window,
     [RUNTIME_VALUE_DICTS.symbolName]: 'Function$Prototype',
-  }, {
-    [RUNTIME_VALUE_DICTS.proto]: ObjectPrototypeV,
   });
   const generateFn = describeNativeFunction(Environment.window, FunctionPrototypeV, ObjectPrototypeV)
   const FunctionClassV = generateFn('Function', ([argsRv]) => {
@@ -66,7 +67,7 @@ export function ensureInitRoot() {
       throw new Error('call 函数不能调用在非函数上')
     }
     // console.error(env)
-    const middleEnv = new Environment(env.name + '_call', env, {
+    const middleEnv = createEnviroment(env.name + '_call', env, {
       [ENV_DICTS.$hideInHTML]: true,
     })
     middleEnv.addConst(RUNTIME_LITERAL.this, newThisRv);
@@ -91,7 +92,7 @@ export function ensureInitRoot() {
     if (![RUNTIME_VALUE_TYPE.arguments, RUNTIME_VALUE_TYPE.array].includes(argsRv.type)) {
       throw new Error('apply 函数第二个参数必须是类数组')
     }
-    const middleEnv = new Environment(env.name + '_apply', env, {
+    const middleEnv = createEnviroment(env.name + '_apply', env, {
       [ENV_DICTS.$hideInHTML]: true,
     })
     middleEnv.addConst(RUNTIME_LITERAL.this, newThisRv);
@@ -240,12 +241,11 @@ export function runFunctionRuntimeValueInGlobalThis(fnRv, windowRv) {
     }, fnRv.getDefinedEnv())
 }
 
-export function createFunction(value) {
-  const isGenerator = _.get(value[RUNTIME_VALUE_DICTS.symbolAst], 'generator');
- 
-  const ret = new (isGenerator ? RuntimeGeneratorFunctionValue : RuntimeRefValue)(RUNTIME_VALUE_TYPE.function, value, {
-    [RUNTIME_VALUE_DICTS.proto]: getFunctionPrototypeRv(),
-  })
+export function createFunction(config) {
+  const isGenerator = _.get(config[RUNTIME_VALUE_DICTS.symbolAst], 'generator');
+   
+  _.set(config, RUNTIME_VALUE_DICTS.proto, getFunctionPrototypeRv())
+  const ret = new (isGenerator ? RuntimeGeneratorFunctionValue : RuntimeRefValue)(RUNTIME_VALUE_TYPE.function, {}, config)
   ret.setProtoType(createObject({
     constructor: ret,
   }))
@@ -332,6 +332,8 @@ export function getUndefinedValue() {
 
 export const describeNativeFunction = (env, proto, ObjectPrototypeV) => (name, nativeFnCb, rest) => {
   const ret = new RuntimeRefValue(RUNTIME_VALUE_TYPE.function, {
+  }, {
+    [RUNTIME_VALUE_DICTS.proto]: proto,
     [RUNTIME_VALUE_DICTS.symbolAst]: {
       type: 'FunctionExpression',
       id: { type: 'Identifier', name },
@@ -359,8 +361,6 @@ export const describeNativeFunction = (env, proto, ObjectPrototypeV) => (name, n
     },
     [RUNTIME_VALUE_DICTS.symbolEnv]: env,
     [RUNTIME_VALUE_DICTS.symbolName]: name,
-  }, {
-    [RUNTIME_VALUE_DICTS.proto]: proto
   })
   ret.setProtoType(new RuntimeRefValue(RUNTIME_VALUE_TYPE.object, {
     constructor: ret,

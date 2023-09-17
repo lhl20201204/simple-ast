@@ -1,13 +1,14 @@
 import parseAst from "..";
 import Environment from "../Environment";
 import { getNullValue } from "../Environment/RuntimeValueInstance";
+import createEnviroment from "../Environment/createEnviroment";
 import parseRuntimeValue from "../Environment/parseRuntimeValue";
 import { ENV_DICTS } from "../constant";
 
 export default function parseDoWhileStatement(ast, env) {
   const { test, body } = ast;
 
-  const childEnv = new Environment('do_while_body', env, {
+  const childEnv = createEnviroment('do_while_body', env, {
     [ENV_DICTS.isDoWhileEnv]: true,
     [ENV_DICTS.noNeedLookUpVar]: true,
   })
@@ -21,7 +22,7 @@ export default function parseDoWhileStatement(ast, env) {
   }
 
   while(parseRuntimeValue(parseAst(test, env))) {
-    const childEnv = new Environment('do_while_body', env, {
+    const childEnv = createEnviroment('do_while_body', env, {
       [ENV_DICTS.isDoWhileEnv]: true,
       [ENV_DICTS.noNeedLookUpVar]: true,
     })

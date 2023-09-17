@@ -7,22 +7,6 @@ import RuntimeValue, { RuntimeConfigValue } from "./RuntimeValue"
 import { getFalseV, getReflectDefinedPropertyV, getTrueV, getUndefinedValue } from "./RuntimeValueInstance"
 import parseRuntimeValue from "./parseRuntimeValue"
 
-export function typeOfRuntimeValue(rv, ...args) {
-  if (!isInstanceOf(rv, RuntimeValue)) {
-    throw new Error('typeof 必须接一个RuntimeValue')
-  }
-  // console.log('----typeOfRuntimeValue----', rv)
-  return parseRuntimeValue(parseAst({
-    "type": "ExpressionStatement",
-    "expression": {
-      "type": "UnaryExpression",
-      "operator": "typeof",
-      "prefix": true,
-      "argument": createRuntimeValueAst(rv, ...args)
-    }
-  }, {}))
-}
-
 export function getRuntimeValueType(rv) {
   if ([
     RUNTIME_VALUE_TYPE.function,
@@ -61,6 +45,10 @@ export function isFunctionRuntimeValue(rv, ...args) {
 
 export function isObjectRuntimeValue(rv, ...args) {
   return getRuntimeValueType(rv, ...args) === OUTPUT_TYPE.object
+}
+
+export function isNumberRuntimeValue(rv, ...args) {
+  return getRuntimeValueType(rv, ...args) === OUTPUT_TYPE.number
 }
 
 export function createRuntimeValueAst(value, name, ast) {

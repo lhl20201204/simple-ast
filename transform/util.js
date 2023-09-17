@@ -1,4 +1,4 @@
-import { EnvJSON, SPAN_TAG_HTML, isInstanceOf } from "./commonApi";
+import { EnvJSON, SPAN_TAG_HTML, isInstanceOf, isJsSymbolType } from "./commonApi";
 import Environment from "./runtime/Environment";
 import PropertyDescriptor from "./runtime/Environment/PropertyDescriptor";
 import RuntimeValue, { RuntimeRefValue } from "./runtime/Environment/RuntimeValue";
@@ -276,8 +276,11 @@ export default function writeJSON(obj, prefix, config, weakMap = new WeakMap()) 
   // if (obj instanceof Environment) {
   //   console.error('$hideInHTML')
   // }
-  for (let attr in obj) {
+  for (let attr of Reflect.ownKeys(obj)) {
     const t = obj[attr];
+    if (isJsSymbolType(attr)) {
+      attr = attr.toString()
+    }
 
     if (isInstanceOf(t, Object)) {
       let next = t;

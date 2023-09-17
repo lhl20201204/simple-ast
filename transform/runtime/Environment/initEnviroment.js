@@ -17,6 +17,9 @@ import { getNumberFunctionV } from "./NativeRuntimeValue/number";
 import { getStringFunctionV } from "./NativeRuntimeValue/string";
 import { getMathRv } from "./NativeRuntimeValue/Math";
 import { getSymbolV } from "./NativeRuntimeValue/symbol";
+import { getArrayRv } from "./NativeRuntimeValue/array";
+import { _ArraySymbolIteratorAst } from "./Native/Array";
+import { isJsSymbolType, isSymbolType } from "../../commonApi";
 
 export function initEnviroment() {
   const windowRv = getWindowObjectRv()
@@ -83,8 +86,9 @@ export function initEnviroment() {
   globalEnv.addFunction('clearInterval', generateFn('clearInterval', ([tR]) => {
      clearInterval(parseRuntimeValue(tR) ?? 0)
   }))
-
   globalEnv.addFunction('Symbol', getSymbolV());
+  globalEnv.addFunction('Array', getArrayRv());
+  parseAst(_ArraySymbolIteratorAst, globalEnv);
   globalEnv.addFunction('Number', getNumberFunctionV());
   globalEnv.addFunction('String', getStringFunctionV());
   globalEnv.addFunction('Math', getMathRv())
@@ -117,10 +121,21 @@ export function initEnviroment() {
   windowRv.get('Object').setWithDescriptor('keys', generateFn('Object$keys', ([objRv]) => {
     // console.error(objRv.keys(), _.filter(objRv.keys(), x => objRv.isAttrEnumerable(x)))
     // console.error(objRv.keys())
-    return createArray(_.map(_.filter(objRv.keys(), x => objRv.isAttrEnumerable(x)), createString))
+    return createArray(_.map(_.filter(objRv.keys(), x => objRv.isAttrEnumerable(x) && !isJsSymbolType(x)), createString))
   }))
 
   // 后续直接挂runtimeValue里，先暂时这样
+
+  windowRv.get('Reflect').setWithDescriptor('ownKeys', generateFn('Reflect$ownKeys', (
+    [
+      objRv,
+      attrRv,
+    ],
+  ) => {
+    return createArray(_.map(objRv.keys(), t => {
+      return createString(isJsSymbolType(t) ? t.toString(): t)
+    }))
+  }))
   
   windowRv.get('Reflect').setWithDescriptor('getOwnPropertyDescriptor', generateFn('Reflect$getOwnPropertyDescriptor', (
     [

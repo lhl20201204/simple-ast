@@ -44,7 +44,7 @@ export function getStatement(statements, env) {
     }
     if (c.type === 'VariableDeclaration' && c.kind === 'var') {
       varS.push({
-        ...c,
+        ..._.omit(c, AST_DICTS._config),
         type: AST_DICTS.PreDeclaration,
         declarations: _.map(c.declarations, item => {
           return {
@@ -172,6 +172,7 @@ export function getStatement(statements, env) {
   //   type: 'BlockStatement',
   //   body: total,
   // }))
+  // console.error(_.cloneDeep(total))
   return total;
 }
 

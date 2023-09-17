@@ -69,9 +69,11 @@ export const ENV_DICTS = {
   isCatchEnv: 'isCatchEnv',
   isFinallyEnv: 'isFinallyEnv',
   noNeedLookUpVar: 'noNeedLookUpVar',
-  isGeneratorFnRuntimeValueType: 'isGeneratorFnRuntimeValueType',
+  isGeneratorFunction: 'isGeneratorFunction',
   yieldValue: 'yieldValue',
   isOpenRuntimeValueStack: 'isOpenRuntimeValueStack',
+  isYieldBlockEnv: 'isYieldBlockEnv',
+  runningGenerateConfig: 'runningGenerateConfig',
 }
 
 export const AST_DICTS = {
@@ -82,14 +84,20 @@ export const AST_DICTS = {
   GetRuntimeValue: 'GetRuntimeValue',
   RuntimeValue: 'RuntimeValue',
   VariableDeclaration: 'VariableDeclaration',
-  _config: Symbol('$__ast_config__'),
+  _config: ('symbol($__ast_config__)'),
+  beforeHook: ('symbol($__ast_before_hook_)'),
+  afterHook: ('symbol($__ast_after_hook_)'),
   isGeneratorEnv: 'isGeneratorEnv',
   hadYieldStatement: 'hadYieldStatement',
   astCacheValue: 'astCacheValue',
+  needReRun: 'needReRun',
+  needReceiveNextValue: 'needReceiveNextValue',
 }
 
 export const GENERATOR_DICTS = {
-  yieldInnerField: Symbol('$__yieldInnerField__'),
+  yieldInnerRuntimeValue: Symbol('$__yieldInnerRuntimeValue__'),
+  yieldInnerEnv:  Symbol('$__yieldInnerEnv__'),
+  isGeneratorConfig: Symbol('$__isGeneratorConfig__'),
 }
 
 export const RUNTIME_VALUE_DICTS = {
@@ -102,6 +110,7 @@ export const RUNTIME_VALUE_DICTS = {
   symbolName: Symbol('$__symbolName__'),
   symbolMergeNewCtor : Symbol('$__symbolMergeNewCtor__'),
   symbolOriginClassAst: Symbol('$__symbolOriginClassAst__'),
+  symbolOriginGeneratorAst: Symbol('$__symbolOriginGeneratorAst__'),
   symbolPrimitiveValue: Symbol('[[PrimitiveValue]]'),
   generatorConfig: Symbol('[[generatorConfig]]'),
   generatorEnv: Symbol('[[generatorEnv]]'),

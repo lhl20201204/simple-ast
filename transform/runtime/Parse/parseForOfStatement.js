@@ -1,5 +1,6 @@
 import parseAst from "..";
 import Environment from "../Environment";
+import createEnviroment from "../Environment/createEnviroment";
 import { ENV_DICTS, RUNTIME_VALUE_TYPE } from "../constant";
 import setPattern from "./setPattern";
 
@@ -15,11 +16,11 @@ export default function parseForOfStatement(ast, env) {
   if (left.type === 'VariableDeclaration' && ['const', 'let'].includes(left.kind)) {
       let index = 0;
       for(const value of arrV.value) {
-        const paramsEnv = new Environment(
+        const paramsEnv = createEnviroment(
           'for of let/const statement',
           env,
         );
-        const childEnv = new Environment('for of let/const statement body' + index++, paramsEnv, {
+        const childEnv = createEnviroment('for of let/const statement body' + index++, paramsEnv, {
           isForOfEnv: true,
           [ENV_DICTS.isForEnv]: true,
           [ENV_DICTS.noNeedLookUpVar]: true
@@ -37,7 +38,7 @@ export default function parseForOfStatement(ast, env) {
   } else {
     let i = 0;
     for(const value of arrV.value) {
-      const childEnv = new Environment('for of var/noVariableDeclaration statement body' + i, env, {
+      const childEnv = createEnviroment('for of var/noVariableDeclaration statement body' + i, env, {
         isForOfEnv: true,
         [ENV_DICTS.isForEnv]: true,
         [ENV_DICTS.noNeedLookUpVar]: true

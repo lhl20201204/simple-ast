@@ -1,12 +1,14 @@
 import parseAst from "..";
 import Environment from "../Environment";
+import AstConfig, { ensureAstHadConfig } from "../Environment/Generator/AstConfig";
+import createEnviroment from "../Environment/createEnviroment";
 import { createLiteralAst } from "../Environment/utils";
-import { ENV_DICTS } from "../constant";
+import { AST_DICTS, ENV_DICTS } from "../constant";
 import { isYieldError } from "./parseYieldExpression";
 
 export default function parseTryStatement(ast, env) {
   const runFinally = () => {
-    const childEnv = new Environment('finally_of_env', env, {
+    const childEnv = createEnviroment('finally_of_env', env, {
       [ENV_DICTS.isFinallyEnv]: true,
       [ENV_DICTS.noNeedLookUpVar]: true
     })
@@ -21,7 +23,7 @@ export default function parseTryStatement(ast, env) {
   
 
   try {
-    const childEnv = new Environment('try_of_env', env, {
+    const childEnv = createEnviroment('try_of_env', env, {
       [ENV_DICTS.isTryEnv]: true,
       [ENV_DICTS.noNeedLookUpVar]: true
     })
@@ -40,13 +42,14 @@ export default function parseTryStatement(ast, env) {
       throw e;
     }
 
-    const childEnv = new Environment('catch_of_env', env, {
+    const childEnv = createEnviroment('catch_of_env', env, {
       [ENV_DICTS.isCatchEnv]: true,
       [ENV_DICTS.noNeedLookUpVar]: true
     })
     const { param } = ast.handler;
     const { message } = e;
     if (param) {
+      ensureAstHadConfig(param);
       parseAst({
         "type": "VariableDeclaration",
         "declarations": [
@@ -65,7 +68,8 @@ export default function parseTryStatement(ast, env) {
             }
           }
         ],
-        "kind": "let"
+        "kind": "let",
+        [AST_DICTS._config]: param[AST_DICTS._config],
       }, childEnv)
     }
     parseAst(ast.handler.body, childEnv)

@@ -1,5 +1,6 @@
 import parseAst from "..";
 import Environment from "../Environment";
+import createEnviroment from "../Environment/createEnviroment";
 import parseRuntimeValue from "../Environment/parseRuntimeValue";
 import { ENV_DICTS } from "../constant";
 
@@ -8,7 +9,7 @@ export default function parseWhileStatement(ast, env) {
 
 
   while(parseRuntimeValue(parseAst(test, env))) {
-    const childEnv = new Environment('while_body', env, {
+    const childEnv = createEnviroment('while_body', env, {
       [ENV_DICTS.isWhileEnv]: true,
       [ENV_DICTS.noNeedLookUpVar]: true,
     })

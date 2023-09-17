@@ -282,9 +282,13 @@ export function getWhileStatementCode(ast, config) {
 
 
 export function getYieldExpressionCode(ast, config) {
-  return `${purple(RUNTIME_LITERAL.yield, config)}${ast.delegate ? wrapSpace(
+  // console.error(prioritySet.get('yield exp'))
+  const opCurrentLevel = prioritySet.get('yield exp');
+  const shouldAddParenthesis = _.size(config.parentOperators) && opCurrentLevel < config.parentOperators[0];
+  const str = `${purple(RUNTIME_LITERAL.yield, config)}${ast.delegate ? wrapSpace(
     '*'
-    ,config)  : space(config)}${getAstCode(ast.argument, config)}`
+    ,config)  : space(config)}${getAstCode(ast.argument, putParentOperator(config, opCurrentLevel))}`;
+  return shouldAddParenthesis ? `(${str})` : str;
 }
 
 export function getAwaitExpressionCode(ast, config) {
@@ -302,9 +306,9 @@ export function getChainExpressionCode(ast, config) {
   return getAstCode(ast.expression, config)
 }
 
-export function getCallFunctionExpressionCode(ast, config) {
-  return getAstCode(ast._fnAst[RUNTIME_VALUE_DICTS.symbolAst], config)
-}
+// export function getCallFunctionExpressionCode(ast, config) {
+//   return getAstCode(ast._fnAst[RUNTIME_VALUE_DICTS.symbolAst], config)
+// }
 
 export function getThrowStatementCode(ast, config) {
   return purple(RUNTIME_LITERAL.throw, config) + space(config) + getAstCode(ast.argument, config)
