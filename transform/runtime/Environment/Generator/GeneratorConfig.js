@@ -1,8 +1,10 @@
 import Environment from "..";
 import parseAst from "../..";
+import { isInstanceOf } from "../../../commonApi";
 import { ENV_DICTS, GENERATOR_DICTS, RUNTIME_LITERAL, RUNTIME_VALUE_DICTS } from "../../constant";
+import RuntimeValue from "../RuntimeValue";
 import { getUndefinedValue } from "../RuntimeValueInstance";
-import createEnviroment from "../createEnviroment";
+import createEnviroment, { createEmptyEnviromentExtraConfig } from "../createEnviroment";
 import { createRuntimeValueAst } from "../utils";
 
 let gid = 0;
@@ -15,7 +17,6 @@ export default class GeneratorConfig {
       enumerable: false,
     })
     this.id = gid++;
-    this.mounted = false;
     this.ast = x.ast;
     this.done = false;
     this.fnRv = x.fnRv;
@@ -28,15 +29,13 @@ export default class GeneratorConfig {
     this.contextThis = x.contextThis;
     this.contextArguments = x.contextArguments
     this.contextNextValue = getUndefinedValue()
+    this.contextYieldEnv = null;
+    this.pendingReturnValue = null;
     this.runtimeStack = [];
   }
-  
+
   isGeneratorConfig() {
     return this[GENERATOR_DICTS.isGeneratorConfig];
-  }
-
-  hadMounted() {
-    return this.mounted;
   }
 
   setNextValue(rv) {
@@ -47,22 +46,52 @@ export default class GeneratorConfig {
     return this.contextNextValue;
   }
 
+  setYieldEnv(env) {
+    this.contextYieldEnv = env;
+  }
+
+  getYieldEnv() {
+    return this.contextYieldEnv ?? this.runEnv;
+  }
+
+  setPendingReturnValue(rv) {
+    this.pendingReturnValue = rv;
+  }
+
   runGeneratorFunction() {
     let mounted = false;
     if (!this.runEnv) {
       this.runEnv = createEnviroment('generator_of_' + this.fnRv.getDefinedName() + '_env', this.contextEnv, {
         [ENV_DICTS.isGeneratorFunction]: true,
         [ENV_DICTS.runningGenerateConfig]: this,
-      })
+        [ENV_DICTS.isFunctionEnv]: true,
+      }, createEmptyEnviromentExtraConfig())
+      if (isInstanceOf(this.pendingReturnValue, RuntimeValue)) {
+        this.runEnv.setCurrentEnvReturnValue(this.pendingReturnValue);
+      }
+      this.runEnv.addConst(RUNTIME_LITERAL.this, this.contextThis)
+      this.runEnv.addConst(RUNTIME_LITERAL.arguments, this.contextArguments)
       mounted = true;
+      // console.log(this.contextEnv, '生成器初始化', this.contextEnv.get(RUNTIME_LITERAL.this))
     }
-    try{
-      const value =  parseAst(this.ast.body, this.runEnv);
+    this.runEnv.envStackStore.resetOldCacheEnvStack();
+    try {
+      // console.error('next-->开始')
+
+      let value = getUndefinedValue()
+      if (!this.done) {
+        value = parseAst(this.ast.body, this.runEnv);
+        if (this.runEnv.hadReturn()) {
+          value = this.runEnv.getReturnValue()
+        }
+        // console.log('运行完毕value=', value)
+      }
       this.done = true;
       return value;
-    } finally{
+    } finally {
+      // console.log(_.cloneDeep(this.ast.body))
       if (mounted) {
-        this.mounted = true;
+        this.runEnv.setCacheFromParentEnv(true);
       }
     }
   }

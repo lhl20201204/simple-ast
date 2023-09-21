@@ -1,6 +1,6 @@
 import parseAst from "../.."
 import { isInstanceOf } from "../../../commonApi"
-import { getYieldValue, isYieldError } from "../../Parse/parseYieldExpression"
+import { getYieldEnv, getYieldValue, isYieldError } from "../../Parse/parseYieldExpression"
 import { RuntimeGeneratorInstanceValue } from "../RuntimeValue"
 import { createGeneratorInstance, createObject, getFalseV, getGenerateFn, getUndefinedValue } from "../RuntimeValueInstance"
 import parseRuntimeValue from "../parseRuntimeValue"
@@ -38,9 +38,10 @@ export function getGeneratorPrototypeRv() {
         let value = getUndefinedValue()
         try{
            value = generateConfig.runGeneratorFunction();
-        }catch(e) {
+        } catch(e) {
           if (isYieldError(e)) {
             value = getYieldValue(e)
+            generateConfig.setYieldEnv(getYieldEnv(e))
           } else {
             throw e;
           }
@@ -52,10 +53,32 @@ export function getGeneratorPrototypeRv() {
         })
       }),
       return: generateFn('Generator$return',([argsRv], {_this}) => {
+        if (!isInstanceOf(_this, RuntimeGeneratorInstanceValue)) {
+          throw new Error('不是generator实例')
+        }
+        const generateConfig = _this.getGenerateConfig()
+        const env = generateConfig.getYieldEnv();
+        console.log('接受到的实例', argsRv, env);
+        if (env) {
+          env.setCurrentEnvReturnValue(argsRv)
+        } else {
+          generateConfig.setPendingReturnValue(argsRv);
+        }
+        let value = getUndefinedValue()
+        try{
+           value = generateConfig.runGeneratorFunction();
+        } catch(e) {
+          if (isYieldError(e)) {
+            value = getYieldValue(e)
+            generateConfig.setYieldEnv(getYieldEnv(e))
+          } else {
+            throw e;
+          }
+        }
         // todo
         return createObject({
-          value: argsRv[0],
-          done: getFalseV(),
+          value,
+          done: generateConfig.done,
         })
       })
     })

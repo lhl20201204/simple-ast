@@ -1,3 +1,4 @@
+import { stringFormat } from "../../commonApi";
 import RuntimeValue from "../Environment/RuntimeValue";
 import { createFunction } from "../Environment/RuntimeValueInstance";
 import { instanceOfRuntimeValue } from "../Environment/utils";
@@ -18,7 +19,7 @@ export function handleFunction (ast, env, add) {
   const value = createFunction({
     [RUNTIME_VALUE_DICTS.symbolAst]: { ...ast, [ENV_DICTS.$hideInHTML]: env.getHideInHtml()},
     [RUNTIME_VALUE_DICTS.symbolEnv]: env,
-    [RUNTIME_VALUE_DICTS.symbolName]: id ? getAstCode(id, { text: true }) : (ast._fnName ?? '匿名函数')
+    [RUNTIME_VALUE_DICTS.symbolName]: id ? getAstCode(id, { text: true }) : (stringFormat(ast._fnName) ?? '匿名函数')
   });
   // const FunctionRv = Environment.window.get('Function');
   // console.log(FunctionRv)

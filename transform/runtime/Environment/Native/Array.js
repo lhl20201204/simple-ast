@@ -9,31 +9,31 @@ Array.prototype[Symbol.iterator] = function * Array$Symbol$iterator() {
 
 export const _ArraySymbolIteratorAst = {
   "type": "ExpressionStatement",
-  "start": 0,
-  "end": 137,
+  "start": 2,
+  "end": 139,
   "expression": {
     "type": "AssignmentExpression",
-    "start": 0,
-    "end": 137,
+    "start": 2,
+    "end": 139,
     "operator": "=",
     "left": {
       "type": "MemberExpression",
-      "start": 0,
-      "end": 32,
+      "start": 2,
+      "end": 34,
       "object": {
         "type": "MemberExpression",
-        "start": 0,
-        "end": 15,
+        "start": 2,
+        "end": 17,
         "object": {
           "type": "Identifier",
-          "start": 0,
-          "end": 5,
+          "start": 2,
+          "end": 7,
           "name": "Array"
         },
         "property": {
           "type": "Identifier",
-          "start": 6,
-          "end": 15,
+          "start": 8,
+          "end": 17,
           "name": "prototype"
         },
         "computed": false,
@@ -41,18 +41,18 @@ export const _ArraySymbolIteratorAst = {
       },
       "property": {
         "type": "MemberExpression",
-        "start": 16,
-        "end": 31,
+        "start": 18,
+        "end": 33,
         "object": {
           "type": "Identifier",
-          "start": 16,
-          "end": 22,
+          "start": 18,
+          "end": 24,
           "name": "Symbol"
         },
         "property": {
           "type": "Identifier",
-          "start": 23,
-          "end": 31,
+          "start": 25,
+          "end": 33,
           "name": "iterator"
         },
         "computed": false,
@@ -63,12 +63,12 @@ export const _ArraySymbolIteratorAst = {
     },
     "right": {
       "type": "FunctionExpression",
-      "start": 35,
-      "end": 137,
+      "start": 37,
+      "end": 139,
       "id": {
         "type": "Identifier",
-        "start": 46,
-        "end": 67,
+        "start": 48,
+        "end": 69,
         "name": "Array$Symbol$iterator"
       },
       "expression": false,
@@ -77,28 +77,28 @@ export const _ArraySymbolIteratorAst = {
       "params": [],
       "body": {
         "type": "BlockStatement",
-        "start": 70,
-        "end": 137,
+        "start": 72,
+        "end": 139,
         "body": [
           {
             "type": "VariableDeclaration",
-            "start": 74,
-            "end": 84,
+            "start": 76,
+            "end": 86,
             "declarations": [
               {
                 "type": "VariableDeclarator",
-                "start": 78,
-                "end": 83,
+                "start": 80,
+                "end": 85,
                 "id": {
                   "type": "Identifier",
-                  "start": 78,
-                  "end": 79,
+                  "start": 80,
+                  "end": 81,
                   "name": "i"
                 },
                 "init": {
                   "type": "Literal",
-                  "start": 82,
-                  "end": 83,
+                  "start": 84,
+                  "end": 85,
                   "value": 0,
                   "raw": "0"
                 }
@@ -108,32 +108,32 @@ export const _ArraySymbolIteratorAst = {
           },
           {
             "type": "WhileStatement",
-            "start": 87,
-            "end": 135,
+            "start": 89,
+            "end": 137,
             "test": {
               "type": "BinaryExpression",
-              "start": 93,
-              "end": 108,
+              "start": 95,
+              "end": 110,
               "left": {
                 "type": "Identifier",
-                "start": 93,
-                "end": 94,
+                "start": 95,
+                "end": 96,
                 "name": "i"
               },
               "operator": "<",
               "right": {
                 "type": "MemberExpression",
-                "start": 97,
-                "end": 108,
+                "start": 99,
+                "end": 110,
                 "object": {
                   "type": "ThisExpression",
-                  "start": 97,
-                  "end": 101
+                  "start": 99,
+                  "end": 103
                 },
                 "property": {
                   "type": "Identifier",
-                  "start": 102,
-                  "end": 108,
+                  "start": 104,
+                  "end": 110,
                   "name": "length"
                 },
                 "computed": false,
@@ -142,37 +142,37 @@ export const _ArraySymbolIteratorAst = {
             },
             "body": {
               "type": "BlockStatement",
-              "start": 110,
-              "end": 135,
+              "start": 112,
+              "end": 137,
               "body": [
                 {
                   "type": "ExpressionStatement",
-                  "start": 116,
-                  "end": 131,
+                  "start": 118,
+                  "end": 133,
                   "expression": {
                     "type": "YieldExpression",
-                    "start": 116,
-                    "end": 131,
+                    "start": 118,
+                    "end": 133,
                     "delegate": false,
                     "argument": {
                       "type": "MemberExpression",
-                      "start": 122,
-                      "end": 131,
+                      "start": 124,
+                      "end": 133,
                       "object": {
                         "type": "ThisExpression",
-                        "start": 122,
-                        "end": 126
+                        "start": 124,
+                        "end": 128
                       },
                       "property": {
                         "type": "UpdateExpression",
-                        "start": 127,
-                        "end": 130,
+                        "start": 129,
+                        "end": 132,
                         "operator": "++",
                         "prefix": false,
                         "argument": {
                           "type": "Identifier",
-                          "start": 127,
-                          "end": 128,
+                          "start": 129,
+                          "end": 130,
                           "name": "i"
                         }
                       },

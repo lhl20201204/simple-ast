@@ -1,6 +1,6 @@
 import parseAst from "..";
 import Environment from "../Environment";
-import createEnviroment from "../Environment/createEnviroment";
+import createEnviroment, { createEmptyEnviromentExtraConfig } from "../Environment/createEnviroment";
 import getEqualValue from "../Environment/getEqualValue";
 import { AST_DICTS, ENV_DICTS, RUNTIME_LITERAL } from "../constant";
 
@@ -9,7 +9,7 @@ export default function parseSwitchStatement(ast, env) {
   const childEnv = createEnviroment('switch_body_of_env', env, {
     [ENV_DICTS.isSwitchEnv]: true,
     [ENV_DICTS.noNeedLookUpVar]: true
-  });
+  }, createEmptyEnviromentExtraConfig({ ast }));
 
   const { cases, discriminant } = ast;
 

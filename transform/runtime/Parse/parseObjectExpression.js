@@ -1,4 +1,5 @@
 import parseAst from "..";
+import { RuntimeValueAst, isInstanceOf } from "../../commonApi";
 import PropertyDescriptor from "../Environment/PropertyDescriptor";
 import { createObject, getFalseV, getUndefinedValue } from "../Environment/RuntimeValueInstance";
 import parseRuntimeValue from "../Environment/parseRuntimeValue";
@@ -10,11 +11,12 @@ export function getKeyString(key, computed,  env) {
     throw new Error('env必传')
   }
   let ret = undefined;
-   if (computed) {
+   if (computed || isInstanceOf(key, RuntimeValueAst)) {
     ret = parseRuntimeValue(parseAst(key, env));
   } else if (key.type === 'Identifier') {
     ret = key.name;
-  }  else {
+  } else {
+    console.log(key);
     throw new Error('未处理的键值类型')
   }
   return ret;

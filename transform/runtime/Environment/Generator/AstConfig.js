@@ -1,3 +1,4 @@
+import _ from "lodash";
 import { isInstanceOf } from "../../../commonApi";
 import { AST_DICTS } from "../../constant";
 import { getUndefinedValue } from "../RuntimeValueInstance";
@@ -6,7 +7,7 @@ import { getUndefinedValue } from "../RuntimeValueInstance";
 export default class AstConfig{
   constructor() {
     this[AST_DICTS.needReRun] = true;
-    this[AST_DICTS.astCacheValue] = getUndefinedValue();
+    this[AST_DICTS.astCacheValue] = null;
   }
 
   getNeedReRun() {
@@ -50,4 +51,21 @@ export function ensureAstHadConfig(ast) {
   if (!isInstanceOf(ast[AST_DICTS._config], AstConfig)) {
     ast[AST_DICTS._config] = new AstConfig()
   }
+}
+
+export function clearAstConfig(ast) {
+  if (!ast.type) {
+    throw new Error('')
+  }
+  _.forEach(ast, (v, k) => {
+    if (Array.isArray(v)) {
+      _.map(v, clearAstConfig)
+      return
+    }
+    if (k === AST_DICTS._config || !_.get(v, 'type')) {
+      return;
+    }
+    clearAstConfig(v)
+  })
+  ast[AST_DICTS._config] = new AstConfig()
 }

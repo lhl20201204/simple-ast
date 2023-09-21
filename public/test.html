@@ -33,10 +33,71 @@
     // rrrr
     // rrrr
 
-    function test() {
-      function* gen() {
+  
+function test() {
+  let x = [5, 6];
+   console.log(a)
+   for(var a of { 
+     *[Symbol.iterator]() {
+       yield 3
+       yield 4
+       yield x
+     }
+      }) {
+     console.log(a)
+   }
+   console.log(a, a=== x)
+
+   
+   function* gen() {
+  yield 1;
+  yield 2;
+  yield 3;
+}
+
+const g = gen();
+
+console.log(g.next()); // { value: 1, done: false }
+console.log(g.return("foo")); // { value: "foo", done: true }
+console.log(g.next()); // { value: undefined, done: true }
+   
+   
+   
+   
+    function * gen0() {
+      try {
+     let i = 0;
+     while(i++ < 3) {
+       yield i;
+       console.log(i);
+       throw new Error('fff')
+     }
+     console.log('while 运行结束')
+     return 4 
+      } catch(e) {
+        yield e;
+      }finally{
+        console.log('finally')
+         return 5 
+      }
+      console.log('rest')
+    }
+     const g0 = gen0()
+     console.log('----s1---')
+     console.log(g0.next())
+    console.log(g0.return(3333))
+     console.log('----s2---')
+     console.log(g0.next())
+     console.log('----s3---')
+     console.log(g0.next()) 
+     console.log('----s4---')
+     console.log(g0.next()) 
+     console.log('----end---')
+   
+      function* gen3() {
         let i = 1;
         const e = new Error('主动抛出错误')
+        // return e
         while (i++ < 2) {
           yield 1;
           try {
@@ -45,65 +106,80 @@
               throw e;
               yield
             } catch (e) { // 这里怎么处理重复e的问题？
+              console.log('catch-')
               yield 3
+              console.log('catch+')
               throw e;
             } finally {
+              console.log('finally-')
               yield 4;
+              console.log('finally+')
               throw e;
             }
             yield
           } catch (e) {
             throw e;
-            return 
-          } finally { 
+            console.log('outer-catch')
+            
+          } finally {
+             console.log('outer-finally +')
             yield 5
+            console.log('outer-finally -')
+            return 9999
           }
         }
       }
-      const g = gen()
-      console.log([
-        g.next(),
-        g.next(),
-        g.next(),
-        g.next(),
-        g.next(),
-        // g.next(),
-      ])
-      g.next()
+        const g3 = gen3()
+      // g.throw('外部传入error')
+        console.log('----1--')
+        console.log(g3.next())
+        console.log('---2--')
+        console.log(g3.next())
+        console.log('---3---')
+        console.log(g3.next())
+        console.log('---4--')
+        console.log(g3.next())
+        console.log('---5--')
+        console.log(g3.next())
+        console.log('---6--')
+        console.log(g3.next())
     }
     test()
     function test48() {
       const x = 9805;
-      let i = 1;
-      function* gen(y) {
+    let i = 1;
+    function * gen (y) {
         let j = 8;
-        j += (yield 2) + (yield 4);
-        const b = 1 + 2 + (yield 666 + (yield (y + i++ * 10)))
-        console.log(y, arguments, b, i, j)
+        j  +=  (yield 2) + (yield 4)
+        const b = 1 + 2 + (yield 666 + (yield y + i++ * 10));
+        console.log(
+            y,
+            arguments,
+            b,
+            i,
+            j
+        )
         console.log(x)
         yield x
         yield 2
         yield 3
-        console.log('j', j);
-      }
-      const g = gen(5)
-
-      const g2 = gen(6)
-      console.log(g.next(7))
-      // console.log(g.return(new Error('jjjjj')))
-      // return 之后清空执行队列。
-      console.log(g2.next())
-      console.log('----1--')
-      console.log(g.next(6))
-      console.log('---2---')
-      console.log(g.next(17))
-      console.log('---3---')
-      console.log(g.next(3))
-      console.log(g.next(4))
-      console.log(g.next(5))
-      console.log(g.next(6))
-      console.log(g.next(7))
-      console.log('end')
+        console.log('j', j)
+    } /* function end */
+    const g = gen(5);
+    const g2 = gen(6);
+    console.log(g.next(7))
+    console.log(g2.next())
+    console.log('----1--')
+    console.log(g.next(6))
+    console.log('---2---')
+    console.log(g.next(17))
+    console.log('---3---')
+    console.log(g.next(3))
+    console.log(g.next(4))
+    console.log(g.next(5))
+    console.log(g.next(6))
+    console.log(g.next(7))
+    console.log('end')
 
     }
 

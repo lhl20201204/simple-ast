@@ -1,4 +1,5 @@
 import { getAstCode } from '.';
+import { stringFormat } from '../../commonApi';
 import { DEBUGGER_DICTS, RUNTIME_LITERAL, AST_DICTS } from '../constant';
 import { getElememtCode } from './arrayCode';
 import {
@@ -129,7 +130,7 @@ export function getLiteralCode(ast, config) {
 export function getMemberExpressionCode(ast, config) {
   const { object, property, computed, optional } = ast;
   const obj = getAstCode(object, putParentOperator(config, prioritySet.get('exp.exp')));
-  const p = getAstCode(property, letInObjectPropertyKey(config))
+  const p = stringFormat(getAstCode(property, letInObjectPropertyKey(config)))
   if (computed) {
     return `${obj}${optional ? RUNTIME_LITERAL.optional : ''}[${p}]`
   }
@@ -287,7 +288,7 @@ export function getYieldExpressionCode(ast, config) {
   const shouldAddParenthesis = _.size(config.parentOperators) && opCurrentLevel < config.parentOperators[0];
   const str = `${purple(RUNTIME_LITERAL.yield, config)}${ast.delegate ? wrapSpace(
     '*'
-    ,config)  : space(config)}${getAstCode(ast.argument, putParentOperator(config, opCurrentLevel))}`;
+    ,config)  : space(config)}${ast.argument ? getAstCode(ast.argument, putParentOperator(config, opCurrentLevel)) : ''}`;
   return shouldAddParenthesis ? `(${str})` : str;
 }
 

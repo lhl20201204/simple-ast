@@ -82,7 +82,8 @@ export default class RuntimeValue {
       }
     }
 
-    if ([RUNTIME_VALUE_TYPE.string, RUNTIME_VALUE_TYPE.number].includes(this.type)) {
+    if ([RUNTIME_VALUE_TYPE.string,
+        RUNTIME_VALUE_TYPE.number].includes(this.type)) {
       if (attr === 'length') {
         return createNumber(this.value.length)
       } else if (attr === RUNTIME_LITERAL.$__proto__) {
@@ -135,6 +136,9 @@ export class RuntimeRefValue extends RuntimeValue {
     if (!oldPropertyDescriptors) {
       // 这里底层调用方法时再特殊处理
       _.forEach(this.value, (v, k) => {
+        // if (this.id === 'inner27') {
+        //   console.log(v, k)
+        // }
         this.propertyDescriptors.set(k, createSimplePropertyDescriptor({
           value: v,
         }))
@@ -498,6 +502,18 @@ export class RuntimeRefValue extends RuntimeValue {
   }
 }
 
+export class RuntimeArrayLikeValue extends RuntimeRefValue {
+  constructor(...args) {
+    super(...args)
+  }
+
+  resetAllValuePropertyDescriptor() {
+    _.forEach(this.value, (v, i) => {
+      this.setWithDescriptor(i, v)
+    }) 
+  }  
+}
+
 export class RuntimeGeneratorFunctionValue extends RuntimeRefValue {
 
   constructor(...args) {
@@ -508,6 +524,7 @@ export class RuntimeGeneratorFunctionValue extends RuntimeRefValue {
     
     const defineEnv = this.getDefinedEnv();
 
+   
     // console.error(defineEnv);
     this.setRunAst({
       ..._.cloneDeep(originAst),
@@ -534,6 +551,7 @@ export class RuntimeGeneratorFunctionValue extends RuntimeRefValue {
                         contextThis: env.getRuntimeValueByStackIndex(0),
                         contextArguments: env.getRuntimeValueByStackIndex(1),
                       }))
+                      // console.error('生成实例对象', ret);
                       return ret;
                     }, originAst )
                   ]
@@ -543,7 +561,9 @@ export class RuntimeGeneratorFunctionValue extends RuntimeRefValue {
           }
         ]
       }
-    })
+    }) 
+    
+    // console.error('声明一个生成器函数', generateCode(originAst), generateCode(this.restConfig[symbolAst]))
   }
 
 }

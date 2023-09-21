@@ -11,13 +11,13 @@ import PropertyDescriptor from "./PropertyDescriptor";
 import { _ErrorAst } from "./Native/Error";
 import { createArray, createNumber, createString, getFalseV, getFunctionClassRv, getGenerateFn, getNullValue, getObjectPrototypeRv, getReflectDefinedPropertyV, getTrueV, getUndefinedValue, runFunctionRuntimeValueInGlobalThis } from "./RuntimeValueInstance";
 import { getWindowEnv, getWindowObjectRv } from "./getWindow";
-import { createSimplePropertyDescriptor, isFunctionRuntimeValue } from "./utils";
+import { createRuntimeValueAst, createSimplePropertyDescriptor, isFunctionRuntimeValue } from "./utils";
 import { getConsoleV } from "./NativeRuntimeValue/console";
 import { getNumberFunctionV } from "./NativeRuntimeValue/number";
 import { getStringFunctionV } from "./NativeRuntimeValue/string";
 import { getMathRv } from "./NativeRuntimeValue/Math";
 import { getSymbolV } from "./NativeRuntimeValue/symbol";
-import { getArrayRv } from "./NativeRuntimeValue/array";
+import { getArrayProtoTypeV, getArrayRv } from "./NativeRuntimeValue/array";
 import { _ArraySymbolIteratorAst } from "./Native/Array";
 import { isJsSymbolType, isSymbolType } from "../../commonApi";
 
@@ -112,6 +112,129 @@ export function initEnviroment() {
     // _FunctionBindAst,
   ])
   windowRv.get('Reflect').setWithDescriptor('defineProperty', getReflectDefinedPropertyV())
+
+  const arrProtov = getArrayProtoTypeV()
+  arrProtov.propertyDescriptors.delete('length');
+  parseAst({
+    "type": "ExpressionStatement",
+    "start": 1,
+    "end": 132,
+    "expression": {
+      "type": "CallExpression",
+      "start": 1,
+      "end": 132,
+      "callee": createRuntimeValueAst(
+        getReflectDefinedPropertyV()
+        , 'Reflect$defineProperty'),
+      "arguments": [
+        createRuntimeValueAst(getArrayProtoTypeV(), 'Array$prototypr'),
+        {
+          "type": "Literal",
+          "start": 41,
+          "end": 49,
+          "value": "length",
+          "raw": "'length'"
+        },
+        {
+          "type": "ObjectExpression",
+          "start": 51,
+          "end": 131,
+          "properties": [
+            {
+              "type": "Property",
+              "start": 55,
+              "end": 72,
+              "method": true,
+              "shorthand": false,
+              "computed": false,
+              "key": {
+                "type": "Identifier",
+                "start": 55,
+                "end": 58,
+                "name": "set"
+              },
+              "kind": "init",
+              "value": createRuntimeValueAst(
+                generateFn('Array$prototype$length', ([nRv], { _this }) => {
+                  // TODO
+                  _this.value.length = parseRuntimeValue(nRv)
+                  _this.resetAllValuePropertyDescriptor();
+                }),
+                'Array$prototype$length$setter'
+              )
+            },
+            {
+              "type": "Property",
+              "start": 76,
+              "end": 86,
+              "method": true,
+              "shorthand": false,
+              "computed": false,
+              "key": {
+                "type": "Identifier",
+                "start": 76,
+                "end": 79,
+                "name": "get"
+              },
+              "kind": "init",
+              "value": createRuntimeValueAst(
+                generateFn('Array$prototype$length', ([], { _this }) => {
+                  return createNumber(_this.value.length)
+                }),
+                'Array$prototype$length$getter'
+              )
+            },
+            {
+              "type": "Property",
+              "start": 90,
+              "end": 105,
+              "method": false,
+              "shorthand": false,
+              "computed": false,
+              "key": {
+                "type": "Identifier",
+                "start": 90,
+                "end": 98,
+                "name": PROPERTY_DESCRIPTOR_DICTS.enumerable
+              },
+              "value": {
+                "type": "Literal",
+                "start": 100,
+                "end": 105,
+                "value": false,
+                "raw": "false"
+              },
+              "kind": "init"
+            },
+            {
+              "type": "Property",
+              "start": 109,
+              "end": 128,
+              "method": false,
+              "shorthand": false,
+              "computed": false,
+              "key": {
+                "type": "Identifier",
+                "start": 109,
+                "end": 121,
+                "name": PROPERTY_DESCRIPTOR_DICTS.configurable
+              },
+              "value": {
+                "type": "Literal",
+                "start": 123,
+                "end": 128,
+                "value": false,
+                "raw": "false"
+              },
+              "kind": "init"
+            }
+          ]
+        }
+      ],
+      "optional": false
+    }
+  }, globalEnv)
+
   runInnerAst([
     // _reflectAst,
     // _FunctionApplyAst, // 这俩种方式会导致globalEnv带有一个变量。

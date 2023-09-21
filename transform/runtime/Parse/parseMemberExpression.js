@@ -31,5 +31,6 @@ export default function parseMemberExpression(ast, env) {
   }
   // console.error('return',  object.get(key))
   // console.log(ast, env, generateCode(ast, { [DEBUGGER_DICTS.isTextMode]: true}), object, key);
+  // console.warn(key, typeof key, object)
   return object.get(key);
 }

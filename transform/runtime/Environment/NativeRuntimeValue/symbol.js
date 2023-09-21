@@ -17,6 +17,10 @@ export function getSymbolIteratorRv() {
   return symbol$iteratorRv;
 }
 
+export function getJsSymbolIterator() {
+  return parseRuntimeValue(getSymbolIteratorRv())
+}
+
 export function getSymbolV() {
   if (!symbolV) {
     const generateFn = getGenerateFn()

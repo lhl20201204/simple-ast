@@ -116,10 +116,15 @@ export function innerParseAst(ast, env) {
   return getNullValue()
 }
 
+// let loop = 0;
+
 export default function parseAst(ast, env) {
+  // console.log(ast);
+  // if (loop++ >3000) {
+  //   return;
+  // }
   const isGeneratorEnv = env.isInGeneratorEnv();
   if (isGeneratorEnv) {
-    // console.error(ast);
     ensureAstHadConfig(ast);
     const astConfig= ast[AST_DICTS._config];
     if (!astConfig.getNeedReRun()) {
@@ -127,7 +132,7 @@ export default function parseAst(ast, env) {
     }
     astConfig.setNeedReRun(true);
   }
-  const retRv = innerParseAst(ast, env);
+  let retRv = innerParseAst(ast, env);
   if (isGeneratorEnv) {
     const astConfig = ast[AST_DICTS._config];
     astConfig.setNeedReRun(false);

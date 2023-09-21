@@ -1,37 +1,54 @@
 import parseAst from "..";
 import { isInstanceOf } from "../../commonApi";
+import AstConfig from "../Environment/Generator/AstConfig";
 import RuntimeValue from "../Environment/RuntimeValue";
 import { getUndefinedValue } from "../Environment/RuntimeValueInstance";
+import generateCode from "../Generate";
 import { AST_DICTS } from "../constant";
 import { getStatement } from "./parseProgram";
 export default function parseBlockStatement(ast, env) {
+  const isGeneratorEnv = env.isInGeneratorEnv();
+  const run = () => {
     const stats = getStatement(ast.body, env)
-    const $config = _.get(ast, AST_DICTS._config);
-    const beforeHook = _.get($config, AST_DICTS.beforeHook);
-    const afterHook = _.get($config, AST_DICTS.afterHook)
+    const astConfig = _.get(ast, AST_DICTS._config);
     let value = getUndefinedValue()
-    // 设置前置钩子和后置钩子，方便生成器从外部中断程序。
-    if (_.isFunction(beforeHook)) {
-     beforeHook(ast, env);
-     if (env.hadReturn()){
-      return env.getReturnValue();
-     }
-    }
-    for(const s of stats) {
+
+    for (const s of stats) {
       parseAst(s, env);
-      if (env.hadReturn()) {
+      if (env.canDirectlyReturn(ast)) {
         value = env.getReturnValue()
+        if (isGeneratorEnv) {
+          console.log('return 成功')
+        }
         break;
       }
       if (env.hadBreak() || env.hadContinue()) {
         break;
       }
     }
-    if (_.isFunction(afterHook)) {
-      const t = afterHook(ast, env);
-      if (isInstanceOf(t, RuntimeValue)) {
-        value = t;
+    return value;
+  }
+
+  // console.log(isGeneratorEnv, generateCode(ast))
+  try {
+    let ret;
+    if (isGeneratorEnv) {
+      env.pushEnvStack()
+      const returnRv = env.envStackStore.check();
+      if (isInstanceOf(returnRv, RuntimeValue)) {
+        ret = returnRv;
       }
     }
-    return value;
+    if (!ret) {
+      ret = run();
+    }
+    if (isGeneratorEnv) {
+      env.popEnvStack()
+    }
+    return ret;
+  } catch (e) {
+    // console.log('捕获', e)
+    env.envStackStore.setError(e);
+    throw e;
+  }
 }

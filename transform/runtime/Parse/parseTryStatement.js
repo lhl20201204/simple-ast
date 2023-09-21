@@ -1,18 +1,25 @@
 import parseAst from "..";
 import Environment from "../Environment";
 import AstConfig, { ensureAstHadConfig } from "../Environment/Generator/AstConfig";
-import createEnviroment from "../Environment/createEnviroment";
+import createEnviroment, { createEmptyEnviromentExtraConfig } from "../Environment/createEnviroment";
 import { createLiteralAst } from "../Environment/utils";
 import { AST_DICTS, ENV_DICTS } from "../constant";
-import { isYieldError } from "./parseYieldExpression";
+import { getYieldValue, isYieldError } from "./parseYieldExpression";
 
 export default function parseTryStatement(ast, env) {
   const runFinally = () => {
+    // console.error('finally run', ast.finalizer)
     const childEnv = createEnviroment('finally_of_env', env, {
       [ENV_DICTS.isFinallyEnv]: true,
       [ENV_DICTS.noNeedLookUpVar]: true
-    })
-    parseAst(ast.finalizer, childEnv)
+    }, createEmptyEnviromentExtraConfig({ ast: ast.finalizer }))
+    try{
+      parseAst(ast.finalizer, childEnv)
+    }catch(e) {
+      // console.log(e, getYieldValue(e))
+      throw e
+    }
+   
     return childEnv;
   };
   function addFinally() {
@@ -20,15 +27,13 @@ export default function parseTryStatement(ast, env) {
       runFinally()
     }
   }
-  
 
+  const childEnv = createEnviroment('try_of_env', env, {
+    [ENV_DICTS.isTryEnv]: true,
+    [ENV_DICTS.noNeedLookUpVar]: true
+  }, createEmptyEnviromentExtraConfig({ ast: ast.block }))
   try {
-    const childEnv = createEnviroment('try_of_env', env, {
-      [ENV_DICTS.isTryEnv]: true,
-      [ENV_DICTS.noNeedLookUpVar]: true
-    })
     parseAst(ast.block, childEnv)
-    addFinally(childEnv)
   } catch (e) {
     if (isYieldError(e)) {
       throw e;
@@ -36,6 +41,7 @@ export default function parseTryStatement(ast, env) {
     if (!ast.handler) {
       if (ast.finalizer) {
        if (runFinally().hadReturn()) {
+        // console.log('提前return')
          return;
        }
       } 
@@ -45,7 +51,7 @@ export default function parseTryStatement(ast, env) {
     const childEnv = createEnviroment('catch_of_env', env, {
       [ENV_DICTS.isCatchEnv]: true,
       [ENV_DICTS.noNeedLookUpVar]: true
-    })
+    }, createEmptyEnviromentExtraConfig({ ast: ast.handler.body }))
     const { param } = ast.handler;
     const { message } = e;
     if (param) {
@@ -72,7 +78,19 @@ export default function parseTryStatement(ast, env) {
         [AST_DICTS._config]: param[AST_DICTS._config],
       }, childEnv)
     }
-    parseAst(ast.handler.body, childEnv)
-    addFinally()
+    try {
+      parseAst(ast.handler.body, childEnv)
+    } catch(e) {
+      if (!isYieldError(e)) {
+        if (ast.finalizer) {
+          if (runFinally().hadReturn()) {
+           // console.log('提前return')
+            return;
+          }
+        } 
+      }
+      throw e;
+    }
   }
+  addFinally()
 }

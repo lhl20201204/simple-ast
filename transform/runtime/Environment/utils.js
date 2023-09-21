@@ -3,7 +3,7 @@ import { GetRuntimeValueAst, RuntimeValueAst, UseRuntimeValueAst, isInstanceOf }
 import { AST_DICTS, OUTPUT_TYPE, PROPERTY_DESCRIPTOR_DICTS, RUNTIME_LITERAL, RUNTIME_VALUE_TO_OUTPUT_TYPE, RUNTIME_VALUE_TYPE } from "../constant"
 import GeneratorConfig from "./Generator/GeneratorConfig"
 import PropertyDescriptor from "./PropertyDescriptor"
-import RuntimeValue, { RuntimeConfigValue } from "./RuntimeValue"
+import RuntimeValue, { RuntimeConfigValue, RuntimeGeneratorFunctionValue } from "./RuntimeValue"
 import { getFalseV, getReflectDefinedPropertyV, getTrueV, getUndefinedValue } from "./RuntimeValueInstance"
 import parseRuntimeValue from "./parseRuntimeValue"
 
@@ -41,6 +41,10 @@ export function isUndefinedRuntimeValue(rv, ...args) {
 
 export function isFunctionRuntimeValue(rv, ...args) {
   return getRuntimeValueType(rv, ...args) === OUTPUT_TYPE.function
+}
+
+export function isGeneratorFunctionRuntimeValue(rv, ...args) {
+  return isFunctionRuntimeValue(rv, ...args) && isInstanceOf(rv, RuntimeGeneratorFunctionValue)
 }
 
 export function isObjectRuntimeValue(rv, ...args) {
@@ -290,6 +294,7 @@ export function createPropertyDesctiptor(objRv, attr, propertyDescriptorConfig, 
     }
   } else {
     if (!oldPropertyDescriptor.isPropertyDescriptorConfigurable()) {
+      console.log(oldPropertyDescriptor);
       console.error(`Reflect.defineProperty不能重新定义${attr}属性`)
       return;
     }

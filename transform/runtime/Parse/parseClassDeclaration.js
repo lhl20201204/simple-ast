@@ -12,7 +12,7 @@ import { isInstanceOf } from "../../commonApi";
 import { getObjectAttrOfPropertyDescriptor } from "./parseObjectExpression";
 import { createObject, createObjectExtends, getFalseV, getFunctionClassRv, getFunctionPrototypeRv, getUndefinedValue } from "../Environment/RuntimeValueInstance";
 import { _classConstructorSuperAst } from "../Environment/Native/ClassSuper";
-import createEnviroment from "../Environment/createEnviroment";
+import createEnviroment, { createEmptyEnviromentExtraConfig } from "../Environment/createEnviroment";
 
 function IdentifierToLiteral(ast) {
   if (ast.type !== 'Identifier') {
@@ -369,12 +369,12 @@ export default function parseClassDeclaration(ast, env) {
     env,  {
       [ENV_DICTS.isUseStrict]: true,
       [ENV_DICTS.$hideInHTML]: env.getHideInHtml()
-    })
+    }, createEmptyEnviromentExtraConfig({ast}))
   const classPrototypeDefinedEnv = createEnviroment('class_' + (idText) + '_of_prototype_defined_env',
     env, {
       [ENV_DICTS.isUseStrict]: true,
       [ENV_DICTS.$hideInHTML]: env.getHideInHtml()
-    })
+    }, createEmptyEnviromentExtraConfig({ast}))
   // console.log('class 声明 的时候创建的环境', classDefinedEnv.getEnvPath());
   const weakMap = new WeakMap();
 

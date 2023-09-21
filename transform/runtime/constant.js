@@ -58,6 +58,8 @@ export const ENV_DICTS = {
   isForEnv: 'isForEnv',
   returnFlag: 'returnFlag',
   returnValue: 'returnValue',
+  currentEnvReturnFlag: 'currentEnvReturnFlag',
+  currentEnvReturnValue: 'currentEnvReturnValue',
   isWhileEnv: 'isWhileEnv',
   isDoWhileEnv: 'isDoWhileEnv',
   isSwitchEnv: 'isSwitchEnv',
@@ -74,6 +76,7 @@ export const ENV_DICTS = {
   isOpenRuntimeValueStack: 'isOpenRuntimeValueStack',
   isYieldBlockEnv: 'isYieldBlockEnv',
   runningGenerateConfig: 'runningGenerateConfig',
+  isCacheFromParentEnv: 'isCacheFromParentEnv',
 }
 
 export const AST_DICTS = {

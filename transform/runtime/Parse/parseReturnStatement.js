@@ -8,5 +8,6 @@ export default function parseReturnStatement(ast, env) {
     throw new Error('当前不在函数内无法return')
   }
   env.setReturnValue(value);
+  env.setCurrentEnvReturnValue(value)
   return value
 }

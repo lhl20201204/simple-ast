@@ -6,7 +6,7 @@ import { getAstCode } from "../Generate";
 import { RUNTIME_LITERAL, RUNTIME_VALUE_DICTS, RUNTIME_VALUE_TYPE } from "../constant";
 import { createRuntimeValueAst, isObjectRuntimeValue, getBindRuntimeValue } from "../Environment/utils";
 import { createObject } from "../Environment/RuntimeValueInstance";
-import createEnviroment from "../Environment/createEnviroment";
+import createEnviroment, { createEmptyEnviromentExtraConfig } from "../Environment/createEnviroment";
 
 export default function parseNewExpression(ast, env) {
   // 开始创建类；
@@ -19,6 +19,8 @@ export default function parseNewExpression(ast, env) {
     const ctorName = classRv.getDefinedName();
     const classNewEnv =  createEnviroment('new_function_' + (ctorName) + '_of_env',
     env,
+    {},
+    createEmptyEnviromentExtraConfig({ ast })
   )
    classNewEnv.addConst(RUNTIME_LITERAL.this, objRv);
     const CtorRv = getBindRuntimeValue(classNewEnv, createRuntimeValueAst(classRv, ctorName));

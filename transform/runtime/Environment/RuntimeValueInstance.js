@@ -7,8 +7,8 @@ import { getArrayProtoTypeV } from "./NativeRuntimeValue/array";
 import { getGeneratorPrototypeRv } from "./NativeRuntimeValue/generator";
 import { getStringProtoTypeV } from "./NativeRuntimeValue/string";
 import PropertyDescriptor from "./PropertyDescriptor";
-import RuntimeValue, { RuntimeConfigValue, RuntimeGeneratorFunctionValue, RuntimeGeneratorInstanceValue, RuntimeRefValue } from "./RuntimeValue";
-import createEnviroment from "./createEnviroment";
+import RuntimeValue, { RuntimeArrayLikeValue, RuntimeConfigValue, RuntimeGeneratorFunctionValue, RuntimeGeneratorInstanceValue, RuntimeRefValue } from "./RuntimeValue";
+import createEnviroment, { createEmptyEnviromentExtraConfig } from "./createEnviroment";
 import parseRuntimeValue from "./parseRuntimeValue";
 import { createLiteralAst, createPropertyDesctiptor, createRuntimeValueAst, createSimplePropertyDescriptor, isFunctionRuntimeValue } from "./utils";
 
@@ -69,7 +69,7 @@ export function ensureInitRoot() {
     // console.error(env)
     const middleEnv = createEnviroment(env.name + '_call', env, {
       [ENV_DICTS.$hideInHTML]: true,
-    })
+    }, createEmptyEnviromentExtraConfig())
     middleEnv.addConst(RUNTIME_LITERAL.this, newThisRv);
     return parseAst({
       type: "CallExpression",
@@ -94,7 +94,7 @@ export function ensureInitRoot() {
     }
     const middleEnv = createEnviroment(env.name + '_apply', env, {
       [ENV_DICTS.$hideInHTML]: true,
-    })
+    }, createEmptyEnviromentExtraConfig({}))
     middleEnv.addConst(RUNTIME_LITERAL.this, newThisRv);
     return parseAst({
       type: "CallExpression",
@@ -204,7 +204,7 @@ export function createObjectExtends(superClassRv) {
 }
 
 export function createArray(value) {
-  return new RuntimeRefValue(RUNTIME_VALUE_TYPE.array, value, {
+  return new RuntimeArrayLikeValue(RUNTIME_VALUE_TYPE.array, value, {
     [RUNTIME_VALUE_DICTS.proto]: getArrayProtoTypeV()
   })
 }
@@ -287,11 +287,17 @@ export function getReflectDefinedPropertyV() {
       const hasSetOrGet = attributesRv.hasOwnProperty(RUNTIME_LITERAL.set) 
       || attributesRv.hasOwnProperty(RUNTIME_LITERAL.get);
         
+      // if (attr === 'length') {
+      //   console.log(_.cloneDeep(objRv))
+      //   console.log('Reflect.definedProperty', attr);
+      // }
+
       const newPropertyDescriptor = createPropertyDesctiptor(objRv, attr, attributesRv.value, {
         kind: PROPERTY_DESCRIPTOR_DICTS.REFLECT_DEFINE_PROPERTY
       })
+      
       return objRv.set(attr,
-        hasSetOrGet ? undefinedV: attributesRv.value.value ?? undefinedV,
+        hasSetOrGet ? undefinedV : attributesRv.value.value ?? undefinedV,
         newPropertyDescriptor,
          {
            kind: PROPERTY_DESCRIPTOR_DICTS.REFLECT_DEFINE_PROPERTY,

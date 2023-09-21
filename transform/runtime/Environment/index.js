@@ -1,5 +1,6 @@
 import { EnvJSON, isInstanceOf } from "../../commonApi";
 import { ENV_DICTS, RUNTIME_LITERAL } from "../constant";
+import EnvStackStore from "./EnvStackStore";
 import RuntimeValue from "./RuntimeValue";
 import { createObject } from "./RuntimeValueInstance";
 import { getWindowObjectRv } from "./getWindow";
@@ -33,6 +34,15 @@ export default class Environment {
     this.constMap = new Map();
     this.placeholderMap = new Map();
     this.switchPlaceHolderMap = new Map();
+    this.envStackStore = new EnvStackStore(this);
+  }
+
+  setCacheFromParentEnv(bool) {
+    this._config[ENV_DICTS.isCacheFromParentEnv] = bool
+  }
+
+  isCacheFromParentEnv() {
+    return this._config[ENV_DICTS.isCacheFromParentEnv];
   }
 
   setHideInHtml(hide) {
@@ -181,7 +191,7 @@ export default class Environment {
   }
 
   placeholder(key, kind, isSwitchPreDeclaration) {
-    if (this.isInGeneratorEnv() && this.getRunningGenerateConfig().hadMounted()) {
+    if (this.isCacheFromParentEnv()) {
       return;
     }
     if (isSwitchPreDeclaration) {
@@ -204,8 +214,41 @@ export default class Environment {
     return this.parent && this.parent.findFunctionEnv()
   }
 
+  pushEnvStack() {
+    if (this.parent) {
+      this.parent.envStackStore.push(this)
+    }
+  }
+
+  popEnvStack() {
+    if (this.parent) {
+     const t = this.parent.envStackStore.pop()
+     if (!_.isUndefined(t) && (t !== this)) {
+      throw new Error('运行时错误')
+     }
+     return t;
+    }
+  }
+
   hadReturn() {
     return this._config[ENV_DICTS.returnFlag];
+  }
+
+  setCurrentEnvReturnValue(rv) {
+    this._config[ENV_DICTS.currentEnvReturnFlag] = true;
+    this._config[ENV_DICTS.currentEnvReturnValue] = rv;
+  }
+
+  getCurrentEnvReturnValue() {
+    return this._config[ENV_DICTS.currentEnvReturnValue];
+  }
+
+  currentShouldReturn() {
+    return this._config[ENV_DICTS.currentEnvReturnFlag];
+  }
+
+  canDirectlyReturn(ast) {
+    return this.hadReturn() && !this.envStackStore.useCache(ast)
   }
 
   isFunctionEnv() {
@@ -306,10 +349,11 @@ export default class Environment {
 
   getRunningGenerateConfig() {
     let generatorEnv = this;
-    while(generatorEnv && !this.currentIsGeneratorFunctionEnv()) {
+    while(generatorEnv && !generatorEnv.currentIsGeneratorFunctionEnv()) {
       generatorEnv = generatorEnv.parent;
     }
     if (!generatorEnv || !generatorEnv.currentIsGeneratorFunctionEnv()) {
+      // console.error(this, generatorEnv)
       throw new Error('获取yield 值错误')
     }
     const generateConfig = generatorEnv._config[ENV_DICTS.runningGenerateConfig];

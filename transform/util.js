@@ -1,4 +1,4 @@
-import { EnvJSON, SPAN_TAG_HTML, isInstanceOf, isJsSymbolType } from "./commonApi";
+import { EnvJSON, SPAN_TAG_HTML, isInstanceOf, isJsSymbolType, stringFormat } from "./commonApi";
 import Environment from "./runtime/Environment";
 import PropertyDescriptor from "./runtime/Environment/PropertyDescriptor";
 import RuntimeValue, { RuntimeRefValue } from "./runtime/Environment/RuntimeValue";
@@ -20,14 +20,6 @@ export function textReplace(text) {
     console.log(text)
     console.error(e)
   }
-}
-
-function toString(str) {
-  let temp = str;
-  if (JS_TO_RUNTIME_VALUE_TYPE(temp) === RUNTIME_VALUE_TYPE.symbol) {
-    temp = temp.toString()
-  }
-  return temp;
 }
 
 const createRuntimeValueSpan = ([obj, prefix, config], text, { state }) => {
@@ -249,13 +241,13 @@ export default function writeJSON(obj, prefix, config, weakMap = new WeakMap()) 
       return ret;
     } else if (isInstanceOf(obj, RuntimeValue)) {
       if (!hasObj) {
-        ret = [`<span style="color: #0055AA;">${toString(parseRuntimeValue(obj, {
+        ret = [`<span style="color: #0055AA;">${stringFormat(parseRuntimeValue(obj, {
           [DEBUGGER_DICTS.isHTMLMode]: true,
         }))}</span>`]
         weakMap.set(obj, ret);
       } else {
         const objCopy = _.cloneDeep(obj);
-        ret = [`<span style="color: #0055AA;">${toString(parseRuntimeValue(objCopy, {
+        ret = [`<span style="color: #0055AA;">${stringFormat(parseRuntimeValue(objCopy, {
           [DEBUGGER_DICTS.isHTMLMode]: true,
         }))}</span>`]
         weakMap.set(objCopy, ret);
@@ -278,9 +270,7 @@ export default function writeJSON(obj, prefix, config, weakMap = new WeakMap()) 
   // }
   for (let attr of Reflect.ownKeys(obj)) {
     const t = obj[attr];
-    if (isJsSymbolType(attr)) {
-      attr = attr.toString()
-    }
+    attr = stringFormat(attr)
 
     if (isInstanceOf(t, Object)) {
       let next = t;

@@ -11,6 +11,10 @@ export function isJsSymbolType(s) {
   return typeof s === 'symbol';
 }
 
+export function stringFormat(s) {
+  return getJsTypeOf(s) === 'symbol' ? s.toString() : s;
+}
+
 let runtimeValueAstId = 0;
 
 class Merge{

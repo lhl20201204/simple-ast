@@ -8,6 +8,7 @@ let arrayRv;
 export function getArrayProtoTypeV() {
   if (!arrayProtoTypeV) {
     const generateFn = getGenerateFn()
+    // console.log('即将生成--->')
     arrayProtoTypeV = createObject({
       push: generateFn('Array$push', (argsRv, { _this })=> {
         _.forEach(argsRv, rv => {
@@ -23,28 +24,15 @@ export function getArrayProtoTypeV() {
         _.forEach(argsRv, rv => {
           _this.value.unshift(rv);
         })
-        _.forEach(_this.value, (v, i) => {
-          _this.setWithDescriptor(i, v)
-        }) 
+        _this.resetAllValuePropertyDescriptor()
       }),
       shift: generateFn('Array$shift', (argsRv, { _this })=> {
          const t = _this.value.shift()
-         _.forEach(_this.value, (v, i) => {
-          _this.setWithDescriptor(i, v)
-        }) 
+         _this.resetAllValuePropertyDescriptor()
          return t;
       }),
-      [parseRuntimeValue(getSymbolIteratorRv())]: generateFn('Array$Symbol$iterator', (argsRv, { _this}) => {
-         //  let i = 0;
-         // while(i < _this.length) {
-         //   yield _this[i++]
-         // }
-         // todo
-         return getUndefinedValue()
-      }, {
-        generator: true,
-      })
     })
+    // console.log(_.cloneDeep('初始化的时候length'), arrayProtoTypeV.getPropertyDescriptor('length'), _.cloneDeep(arrayProtoTypeV))
   }
   return arrayProtoTypeV;
 }
