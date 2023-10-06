@@ -31,7 +31,13 @@ export function setMemberExpression(left, right, env, config) {
   // if (k === 'a') {
   //   console.error(objectRV, k, value, '---.');
   // }
+  // if (object.name === 'console') {
+  //   console.warn(_.cloneDeep(objectRV));
+  // }
   objectRV.set(k, value, getObjectAttrOfPropertyDescriptor(objectRV,k, value, { kind: PROPERTY_DESCRIPTOR_DICTS.init, env }))
+  // if (object.name === 'console') {
+  //   console.warn(_.cloneDeep(objectRV));
+  // }
   // console.log(objectRV, k, value);
   // objectRV.value[k] = value;
   return value;

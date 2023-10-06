@@ -4,8 +4,9 @@ import parseRuntimeValue from "../parseRuntimeValue";
 
 let consoleV;
 
-export function getConsoleV() {
-  if (!consoleV) {
+
+export function getConsoleV(bool) {
+  
     consoleV = createObject({});
     const generateFn = getGenerateFn()
     consoleV.setWithDescriptor('log', generateFn('console$log', (args) => {
@@ -85,6 +86,14 @@ export function getConsoleV() {
       // 直接结构就行了
       console.error(..._.cloneDeep(newArr));
     }))
-  }
+
+    consoleV.setWithDescriptor('warn', generateFn('console$warn', (args) => {
+      const newArr = _.map(args, item => {
+        return parseRuntimeValue(item);
+      })
+      // 直接结构就行了
+      console.warn(..._.cloneDeep(newArr));
+    }))
+  
   return consoleV;
 }

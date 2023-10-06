@@ -1,8 +1,10 @@
 import parseAst from "..";
+import { isInstanceOf } from "../../commonApi";
 import Environment from "../Environment";
 import AstConfig, { ensureAstHadConfig } from "../Environment/Generator/AstConfig";
+import RuntimeValue from "../Environment/RuntimeValue";
 import createEnviroment, { createEmptyEnviromentExtraConfig } from "../Environment/createEnviroment";
-import { createLiteralAst } from "../Environment/utils";
+import { createLiteralAst, createRuntimeValueAst } from "../Environment/utils";
 import { AST_DICTS, ENV_DICTS } from "../constant";
 import { getYieldValue, isYieldError } from "./parseYieldExpression";
 
@@ -62,7 +64,9 @@ export default function parseTryStatement(ast, env) {
           {
             "type": "VariableDeclarator",
             "id": param,
-            "init": {
+            "init": isInstanceOf(e, RuntimeValue) ?
+              createRuntimeValueAst(e, 'e')
+             : {
               "type": "NewExpression",
               "callee": {
                 "type": "Identifier",
@@ -71,7 +75,7 @@ export default function parseTryStatement(ast, env) {
               "arguments": [
                 createLiteralAst(message)
               ]
-            }
+            } 
           }
         ],
         "kind": "let",

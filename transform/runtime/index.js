@@ -1,5 +1,6 @@
+import { getDebugging } from "../../debugger";
 import { isInstanceOf } from "../commonApi";
-import AstConfig, { ensureAstHadConfig } from "./Environment/Generator/AstConfig";
+import AstConfig, { ensureAstHadConfig, withRecordEnvStack } from "./Environment/Generator/AstConfig";
 import { getNullValue } from "./Environment/RuntimeValueInstance";
 import generateCode from "./Generate";
 import parseArrayExpression from "./Parse/parseArrayExpression";
@@ -12,6 +13,7 @@ import parseBreakStatement from "./Parse/parseBreakStatement";
 import parseCallExpression from "./Parse/parseCallExpression";
 import parseChainExpression from "./Parse/parseChainExpression";
 import parseClassDeclaration from "./Parse/parseClassDeclaration";
+import parseClassExpression from "./Parse/parseClassExpression";
 import parseConditionalExpression from "./Parse/parseConditionalExpression";
 import parseContinueStatement from "./Parse/parseContinueStatement";
 import parseDebuggerStatement from "./Parse/parseDebuggerStatement";
@@ -74,6 +76,7 @@ export function innerParseAst(ast, env) {
     case 'ConditionalExpression': return parseConditionalExpression(ast, env);
     case 'ChainExpression': return parseChainExpression(ast, env);
     case 'ContinueStatement': return parseContinueStatement(ast, env); 
+    case 'ClassExpression': return parseClassExpression(ast, env);
     case 'ClassDeclaration': return parseClassDeclaration(ast, env);
     case 'DebuggerStatement': return parseDebuggerStatement(ast, env);
     case 'DoWhileStatement': return parseDoWhileStatement(ast, env);
@@ -116,27 +119,19 @@ export function innerParseAst(ast, env) {
   return getNullValue()
 }
 
-// let loop = 0;
+let loop = 0;
+
+export function setLoop(x) {
+  loop = 0;
+}
 
 export default function parseAst(ast, env) {
-  // console.log(ast);
-  // if (loop++ >3000) {
+  // if (getDebugging()) {
+  //   console.log(generateCode(ast));
+  // }
+  // console.log(generateCode(ast));
+  // if (loop++ > 6000) {
   //   return;
   // }
-  const isGeneratorEnv = env.isInGeneratorEnv();
-  if (isGeneratorEnv) {
-    ensureAstHadConfig(ast);
-    const astConfig= ast[AST_DICTS._config];
-    if (!astConfig.getNeedReRun()) {
-      return astConfig.getCacheRuntimeValue()
-    }
-    astConfig.setNeedReRun(true);
-  }
-  let retRv = innerParseAst(ast, env);
-  if (isGeneratorEnv) {
-    const astConfig = ast[AST_DICTS._config];
-    astConfig.setNeedReRun(false);
-    astConfig.setCacheRuntimeValue(retRv);
-  }
-  return retRv;
+  return withRecordEnvStack(ast, env, () => innerParseAst(ast, env));
 }

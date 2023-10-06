@@ -77,9 +77,11 @@ export const ENV_DICTS = {
   isYieldBlockEnv: 'isYieldBlockEnv',
   runningGenerateConfig: 'runningGenerateConfig',
   isCacheFromParentEnv: 'isCacheFromParentEnv',
+  allowConstLetDefineAgain: 'allowConstLetDefineAgain',
 }
 
 export const AST_DICTS = {
+  _DisplayName: '_DisplayName',
   isSwitchPreDeclaration: 'isSwitchPreDeclaration',
   BlockStatement: 'BlockStatement',
   PreDeclaration: 'PreDeclaration',
@@ -95,6 +97,11 @@ export const AST_DICTS = {
   astCacheValue: 'astCacheValue',
   needReRun: 'needReRun',
   needReceiveNextValue: 'needReceiveNextValue',
+  iteratorRuntimeValue: 'iteratorRuntimeValue',
+  generatorAstConfig: 'generatorAstConfig',
+  yieldStarToForOfYieldAstConfig: 'yieldStarToForOfYieldAstConfig',
+  yieldStarToForOfRightAstConfig: 'yieldStarToForOfRightAstConfig',
+  yieldStarToForOfBodyAstConfig: 'yieldStarToForOfBodyAstConfig',
 }
 
 export const GENERATOR_DICTS = {
@@ -116,12 +123,10 @@ export const RUNTIME_VALUE_DICTS = {
   symbolOriginGeneratorAst: Symbol('$__symbolOriginGeneratorAst__'),
   symbolPrimitiveValue: Symbol('[[PrimitiveValue]]'),
   generatorConfig: Symbol('[[generatorConfig]]'),
-  generatorEnv: Symbol('[[generatorEnv]]'),
-  generatorAst: Symbol('[[generatorAst]]'),
-  generatorThis: Symbol('[[generatorThis]]'),
-  generatorArguments:  Symbol('[[generatorArguments]]'),
-  generatorLatestAst: Symbol('[[generatorLatestAst]]'),
-  generatorNextValue: Symbol('[[generatorNextValue]]'),
+  GeneratorFunction: Symbol('[[GeneratorFunction]]'),
+  promiseInstance: Symbol('promiseInstance'),
+  PromiseState: Symbol('PromiseState'),
+  PromiseResult:  Symbol('PromiseResult'),
 }
 
 export const PROPERTY_DESCRIPTOR_DICTS = {
@@ -177,13 +182,13 @@ export const RUNTIME_VALUE_TYPE = {
 }
 
 export const OUTPUT_TYPE = {
-  object: 'runtime_output_object',
-  function: 'runtime_output_function',
-  undefined: 'runtime_output_undefined',
-  number: 'runtime_output_number', 
-  string: 'runtime_output_string', 
-  boolean: 'runtime_output_boolean',
-  symbol: 'runtime_output_symbol',
+  object: 'object',
+  function: 'function',
+  undefined: 'undefined',
+  number: 'number', 
+  string: 'string', 
+  boolean: 'boolean',
+  symbol: 'symbol',
 }
 
 export function JS_TO_RUNTIME_VALUE_TYPE(x) {

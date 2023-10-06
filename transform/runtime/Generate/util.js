@@ -80,6 +80,10 @@ export function isInCallExpressionCalleer(config) {
   return {...config, [DEBUGGER_DICTS.isInCallExpressionCalleer]: true }
 }
 
+export function isExitCallExpressionCalleer(config) {
+  return {...config, [DEBUGGER_DICTS.isInCallExpressionCalleer]: false }
+}
+
 export function isFunctionEndNotRemark(config) {
   return {...config, [DEBUGGER_DICTS.isFunctionEndNotRemark]: true }
 }

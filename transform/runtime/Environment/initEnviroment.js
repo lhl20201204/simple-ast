@@ -11,15 +11,18 @@ import PropertyDescriptor from "./PropertyDescriptor";
 import { _ErrorAst } from "./Native/Error";
 import { createArray, createNumber, createString, getFalseV, getFunctionClassRv, getGenerateFn, getNullValue, getObjectPrototypeRv, getReflectDefinedPropertyV, getTrueV, getUndefinedValue, runFunctionRuntimeValueInGlobalThis } from "./RuntimeValueInstance";
 import { getWindowEnv, getWindowObjectRv } from "./getWindow";
-import { createRuntimeValueAst, createSimplePropertyDescriptor, isFunctionRuntimeValue } from "./utils";
+import { createRuntimeValueAst, createSimplePropertyDescriptor, isFunctionRuntimeValue, withWrapAsync } from "./utils";
 import { getConsoleV } from "./NativeRuntimeValue/console";
 import { getNumberFunctionV } from "./NativeRuntimeValue/number";
 import { getStringFunctionV } from "./NativeRuntimeValue/string";
 import { getMathRv } from "./NativeRuntimeValue/Math";
 import { getSymbolV } from "./NativeRuntimeValue/symbol";
 import { getArrayProtoTypeV, getArrayRv } from "./NativeRuntimeValue/array";
-import { _ArraySymbolIteratorAst } from "./Native/Array";
-import { isJsSymbolType, isSymbolType } from "../../commonApi";
+import { _ArraySymbolIteratorAst, _arrayFilterAst, _arrayIncludesAst, _arrayIndexOfAst, _arrayMapAst, _arrayReduceAst, _arraySliceAst } from "./Native/Array";
+import { isInstanceOf, isJsSymbolType, isSymbolType } from "../../commonApi";
+import { getPromiseRv } from "./NativeRuntimeValue/promise";
+import { getBooleanFunctionRv } from "./NativeRuntimeValue/boolean";
+import { _SetClassAst } from "./Native/Set";
 
 export function initEnviroment() {
   const windowRv = getWindowObjectRv()
@@ -27,7 +30,7 @@ export function initEnviroment() {
   const ObjectPrototypeV = getObjectPrototypeRv()
   const FunctionClassV = getFunctionClassRv()
   const generateFn = getGenerateFn()
-  const consoleV = getConsoleV()
+  const consoleV = getConsoleV(true)
   globalEnv.parent = null;
   globalEnv.children = [];
   globalEnv.map = new Map()
@@ -57,17 +60,18 @@ export function initEnviroment() {
   
   globalEnv.addVar(RUNTIME_LITERAL.NaN, createNumber(NaN));
 
-  console.log(globalEnv);
+  // console.log(globalEnv);
 
   globalEnv.addLet('console', consoleV);
 
   globalEnv.addLet('window', windowRv);
 
+
   globalEnv.addFunction('setTimeout', generateFn('setTimeout', ([fnRv, tR]) => {
     if (!isFunctionRuntimeValue(fnRv)) {
       throw new Error('setTimeout需要接受一个函数')
     }
-   return createNumber(setTimeout(()=> runFunctionRuntimeValueInGlobalThis(fnRv, windowRv), parseRuntimeValue(tR) ?? 0));
+   return createNumber(setTimeout(()=> withWrapAsync(createRuntimeValueAst(fnRv, 'setTimeout_callback'), globalEnv), parseRuntimeValue(tR) ?? 0));
   }))
 
   globalEnv.addFunction('clearTimeout', generateFn('clearTimeout', ([tR]) => {
@@ -79,16 +83,33 @@ export function initEnviroment() {
       throw new Error('setInterval需要接受一个函数')
     }
    return createNumber(
-    setInterval(()=> runFunctionRuntimeValueInGlobalThis(fnRv, windowRv), parseRuntimeValue(tR) ?? 0)
+    setInterval(()=> withWrapAsync(createRuntimeValueAst(fnRv, 'setInterval_callback'), globalEnv), parseRuntimeValue(tR) ?? 0)
    );
+  }))
+
+  globalEnv.addFunction('queueMicrotask', generateFn('queueMicrotask', ([fnRv]) => {
+    if (!isFunctionRuntimeValue(fnRv)) {
+      throw new Error('queueMicrotask需要接受一个函数')
+    }
+   return queueMicrotask(()=> withWrapAsync(createRuntimeValueAst(fnRv, 'queueMicrotask_callback'), globalEnv))
   }))
 
   globalEnv.addFunction('clearInterval', generateFn('clearInterval', ([tR]) => {
      clearInterval(parseRuntimeValue(tR) ?? 0)
   }))
   globalEnv.addFunction('Symbol', getSymbolV());
+  globalEnv.addFunction('Boolean', getBooleanFunctionRv());
   globalEnv.addFunction('Array', getArrayRv());
-  parseAst(_ArraySymbolIteratorAst, globalEnv);
+  [
+    _ArraySymbolIteratorAst,
+    _arrayMapAst,
+    _arrayFilterAst,
+    _arrayReduceAst,
+    _arrayIndexOfAst,
+    _arraySliceAst,
+    _arrayIncludesAst,
+  ].forEach((x) => parseAst(x, globalEnv))
+  globalEnv.addClass('Promise', getPromiseRv());
   globalEnv.addFunction('Number', getNumberFunctionV());
   globalEnv.addFunction('String', getStringFunctionV());
   globalEnv.addFunction('Math', getMathRv())
@@ -112,7 +133,7 @@ export function initEnviroment() {
     // _FunctionBindAst,
   ])
   windowRv.get('Reflect').setWithDescriptor('defineProperty', getReflectDefinedPropertyV())
-
+  parseAst(_SetClassAst, globalEnv)
   const arrProtov = getArrayProtoTypeV()
   arrProtov.propertyDescriptors.delete('length');
   parseAst({

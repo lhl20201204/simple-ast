@@ -8,6 +8,46 @@ export default class AstConfig{
   constructor() {
     this[AST_DICTS.needReRun] = true;
     this[AST_DICTS.astCacheValue] = null;
+    this[AST_DICTS.iteratorRuntimeValue] = null;
+    this[AST_DICTS.generatorAstConfig] = null;
+    this.map = new Map();
+  }
+
+  set(key, astConfig) {
+    if (!isInstanceOf(astConfig, AstConfig)) {
+      throw new Error('挂载错误')
+    }
+    this.map.set(key, astConfig);
+  }
+
+  get(key) {
+    return this.map.get(key);
+  }
+
+  getOrNew(key) {
+    return function () {
+      if (!isInstanceOf(this.map.get(key), AstConfig)) {
+        this.map.set(key, new AstConfig())
+      }
+      return this.map.get(key);
+    }
+  } 
+
+  getGeneratorAstConfig = this.getOrNew(AST_DICTS.generatorAstConfig)
+
+  getYieldStarToForOfRightAstConfig = this.getOrNew(AST_DICTS.yieldStarToForOfRightAstConfig)
+
+  getYieldStarToForOfBodyAstConfig = this.getOrNew(AST_DICTS.yieldStarToForOfBodyAstConfig)
+
+  getYieldStarToForOfYieldAstConfig = this.getOrNew(AST_DICTS.yieldStarToForOfYieldAstConfig)
+
+  setIteratorRuntimeValue(rv) {
+    // console.error(rv);
+    this.map.set(AST_DICTS.iteratorRuntimeValue, rv)
+  }
+
+  getIteratorRuntimeValue() {
+    return this.map.get(AST_DICTS.iteratorRuntimeValue)
   }
 
   getNeedReRun() {
@@ -68,4 +108,24 @@ export function clearAstConfig(ast) {
     clearAstConfig(v)
   })
   ast[AST_DICTS._config] = new AstConfig()
+}
+
+
+export function withRecordEnvStack(ast, env, cb) {
+  const isGeneratorEnv = env.isInGeneratorEnv();
+  if (isGeneratorEnv) {
+    ensureAstHadConfig(ast);
+    const astConfig= ast[AST_DICTS._config];
+    if (!astConfig.getNeedReRun()) {
+      return astConfig.getCacheRuntimeValue()
+    }
+    astConfig.setNeedReRun(true);
+  }
+  let retRv = cb();
+  if (isGeneratorEnv) {
+    const astConfig = ast[AST_DICTS._config];
+    astConfig.setNeedReRun(false);
+    astConfig.setCacheRuntimeValue(retRv);
+  }
+  return retRv;
 }

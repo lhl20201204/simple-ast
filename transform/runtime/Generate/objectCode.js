@@ -30,7 +30,7 @@ export function getObjectExpressionCode(ast, config) {
         }${
           value.id ? leftKey : ''
         }${space(config)}${getAstCode(value, replaceFunctionName(
-          value.id ? getAstCode(value.id, config) : leftKey,
+          value?.id?.type ? getAstCode(value.id, config) : leftKey,
           tabSpace(hideFunctionField(config))))}`
     }
     

@@ -2,7 +2,7 @@ import { textList } from "./test";
 import transform from "./transform";
 import { AST } from "./transform/getAst";
 import Ast from './transform/runtime/ast/index';
-import parseAst from "./transform/runtime";
+import parseAst, { setLoop } from "./transform/runtime";
 import Environment from "./transform/runtime/Environment";
 import { getWindowEnv } from "./transform/runtime/Environment/getWindow";
 import generateCode from "./transform/runtime/Generate";
@@ -101,6 +101,7 @@ const inputAst = function (e) {
 paste.onclick = async (e) => {
   const value = await navigator.clipboard.readText();
   result.innerHTML = value;
+  setLoop(0)
   console.clear();
   Environment.envId = 1;
   inputAst({

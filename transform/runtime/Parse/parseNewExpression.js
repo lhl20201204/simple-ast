@@ -15,20 +15,17 @@ export default function parseNewExpression(ast, env) {
   const classRv = parseAst(callee, env);
   if ([RUNTIME_VALUE_TYPE.function, RUNTIME_VALUE_TYPE.class].includes(classRv.type)) {
     const objRv = createObject({})
-    const ctorEnv = classRv.getDefinedEnv()
     const ctorName = classRv.getDefinedName();
-    const classNewEnv =  createEnviroment('new_function_' + (ctorName) + '_of_env',
-    env,
-    {},
-    createEmptyEnviromentExtraConfig({ ast })
-  )
-   classNewEnv.addConst(RUNTIME_LITERAL.this, objRv);
+    const classNewEnv = createEnviroment(
+      'new_function_' + (ctorName) + '_of_env',
+      env,
+      {},
+      createEmptyEnviromentExtraConfig({ ast })
+    )
+    classNewEnv.addConst(RUNTIME_LITERAL.this, objRv);
     const CtorRv = getBindRuntimeValue(classNewEnv, createRuntimeValueAst(classRv, ctorName));
-   // const e = new Error()
-   // 将实例对象的隐式原型指向构造函数的显式原型
-    // e.__proto__ = Error.prototype
     objRv.setProto(classRv.getProtoType())
-   
+
     const retRv = parseAst({
       type: 'CallExpression',
       callee: createRuntimeValueAst(
@@ -38,9 +35,9 @@ export default function parseNewExpression(ast, env) {
       arguments: args,
       optional: false,
     }, classNewEnv)
-     
 
-   
+
+
     // todo 判断其是否是引用对象
     if (isObjectRuntimeValue(retRv)) {
       return retRv;
@@ -48,6 +45,6 @@ export default function parseNewExpression(ast, env) {
     // console.log(objRv, '---->')
     return objRv;
   }
-  
+
   throw new Error('不是构造函数');
 }

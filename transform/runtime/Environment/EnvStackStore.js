@@ -20,8 +20,8 @@ export default class EnvStackStore{
   }
 
   check() {
-    if (!_.isNil(this.error)) {
-      throw this.error;
+    if (_.has(this.error, 'current')) {
+      throw this.error.current;
     }
 
     if (this.owner.currentShouldReturn()) {
@@ -35,11 +35,10 @@ export default class EnvStackStore{
   }
   
   setError(error) {
-    if (!isInstanceOf(error, Error)) {
-      throw new Error('运行时错误')
-    }
     if (!isYieldError(error)) {
-      this.error = error;
+      this.error = {
+        current: error
+      };
     }
   }
 
@@ -55,7 +54,7 @@ export default class EnvStackStore{
     const env = this.oldCacheEnvStack.shift()
     env.setCacheFromParentEnv(true);
     env.envStackStore.resetOldCacheEnvStack();
-    console.log('使用缓存', _.cloneDeep(env));
+    // console.log('使用缓存', _.cloneDeep(env));
     return env;
   }
 

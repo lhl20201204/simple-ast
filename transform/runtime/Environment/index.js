@@ -31,10 +31,23 @@ export default class Environment {
     this.unvisibleRuntimeValueStack = [];
     this.map = new Map()
     this.keyMap = new Map();
-    this.constMap = new Map();
     this.placeholderMap = new Map();
     this.switchPlaceHolderMap = new Map();
     this.envStackStore = new EnvStackStore(this);
+  }
+
+  hasKey(key) {
+    return this.keyMap.has(key)
+  }
+
+  allowConstLetDefineAgain(bool, cb) {
+    this._config[ENV_DICTS.allowConstLetDefineAgain] = bool;
+    cb()
+    this._config[ENV_DICTS.allowConstLetDefineAgain] = false;
+  }
+
+  getAllowConstLetDefineAgain() {
+    return  !!this._config[ENV_DICTS.allowConstLetDefineAgain];
   }
 
   setCacheFromParentEnv(bool) {
@@ -84,7 +97,7 @@ export default class Environment {
   }
 
   addConst(key, value) {
-    if (this.keyMap.has(key)) {
+    if (this.keyMap.has(key) && !this.getAllowConstLetDefineAgain()) {
       throw new Error(`${key} 已被定义`);
     }
     this.checkPlaceHolded(key)
@@ -97,8 +110,8 @@ export default class Environment {
     if (this.keyMap.get(key) === 'params') {
       return;
     }
-    if (this.keyMap.has(key) 
-    && !['var'].includes(this.keyMap.get(key))
+    if (this.keyMap.has(key)
+      && !['var'].includes(this.keyMap.get(key))
     ) {
       throw new Error(`${key} 已被定义`);
     }
@@ -117,7 +130,7 @@ export default class Environment {
   }
 
   addLet(key, value, resign) {
-    if ((!resign && this.keyMap.has(key))) {
+    if ((!resign && this.keyMap.has(key)) && !this.getAllowConstLetDefineAgain()) {
       console.error(this.keyMap);
       throw new Error(`${key} 已经定义`);
     }
@@ -129,7 +142,7 @@ export default class Environment {
 
   addFunction(key, value) {
     // this.checkPlaceHolded(key)
-    const env = this.getDefineEnvByKey(key) ??  Environment.window;
+    const env = this.getDefineEnvByKey(key) ?? Environment.window;
     const originType = env.keyMap.get(key);
     // 可能为undefined; 比如预提升
     if (originType === 'var') {
@@ -171,7 +184,7 @@ export default class Environment {
     if (env.hasAttrPlaceholded(key)) {
       throw new Error(`Cannot access '${key}' before initialization`)
     }
-    return env.map.get(key) 
+    return env.map.get(key)
   }
 
   set(key, value) {
@@ -222,11 +235,11 @@ export default class Environment {
 
   popEnvStack() {
     if (this.parent) {
-     const t = this.parent.envStackStore.pop()
-     if (!_.isUndefined(t) && (t !== this)) {
-      throw new Error('运行时错误')
-     }
-     return t;
+      const t = this.parent.envStackStore.pop()
+      if (!_.isUndefined(t) && (t !== this)) {
+        throw new Error('出入栈运行时错误')
+      }
+      return t;
     }
   }
 
@@ -281,8 +294,8 @@ export default class Environment {
 
   isWhileEnv() {
     return this._config[ENV_DICTS.isWhileEnv]
-     || this._config[ENV_DICTS.isDoWhileEnv]
-     || (this.parent && this.parent.isWhileEnv());
+      || this._config[ENV_DICTS.isDoWhileEnv]
+      || (this.parent && this.parent.isWhileEnv());
   }
 
   isSwitchEnv() {
@@ -290,11 +303,11 @@ export default class Environment {
   }
 
   isTryCatchFinallyEnv() {
-    return this._config[ENV_DICTS.isTryEnv] || this._config[ENV_DICTS.isFinallyEnv] ||this._config[ENV_DICTS.isCatchEnv];
+    return this._config[ENV_DICTS.isTryEnv] || this._config[ENV_DICTS.isFinallyEnv] || this._config[ENV_DICTS.isCatchEnv];
   }
 
   isInTryCatchFinallyEnv() {
-    if(this.isTryCatchFinallyEnv()) {
+    if (this.isTryCatchFinallyEnv()) {
       return true;
     }
     return !!this.parent && this.parent.isInTryCatchFinallyEnv()
@@ -340,16 +353,16 @@ export default class Environment {
 
   isInGeneratorEnv() {
     return this.currentIsGeneratorFunctionEnv() ||
-     (!!this.parent && this.parent.isInGeneratorEnv())
+      (!!this.parent && this.parent.isInGeneratorEnv())
   }
 
-  setCurrentIsGeneratorFunctionEnv(bool){
+  setCurrentIsGeneratorFunctionEnv(bool) {
     this._config[ENV_DICTS.isGeneratorFunction] = bool;
   }
 
   getRunningGenerateConfig() {
     let generatorEnv = this;
-    while(generatorEnv && !generatorEnv.currentIsGeneratorFunctionEnv()) {
+    while (generatorEnv && !generatorEnv.currentIsGeneratorFunctionEnv()) {
       generatorEnv = generatorEnv.parent;
     }
     if (!generatorEnv || !generatorEnv.currentIsGeneratorFunctionEnv()) {
@@ -437,7 +450,7 @@ export default class Environment {
       if (skipField.has(key)) {
         return;
       }
-      const rv =  this.map.get(key)
+      const rv = this.map.get(key)
       obj[key] = parseRuntimeValue(rv);
     })
     if (!noGetChildren && _.size(this.children)) {

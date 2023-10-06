@@ -1,6 +1,6 @@
-import parseFunctionDeclaration, { handleFunction } from "./parseFunctionDeclaration";
+import generateCode from "../Generate";
+import parseFunctionDeclaration, { innerParseFunction } from "./parseFunctionDeclaration";
 
 export default function parseFunctionExpression(ast, env) {
-  // console.error('parseFunctionExpression')
-  return handleFunction(ast, env, false);
+  return innerParseFunction(ast, env, false);
 }

@@ -1,14 +1,34 @@
 import parseAst from "..";
+import { isInstanceOf } from "../../commonApi";
 import Environment from "../Environment";
-import { getWindowObjectRv } from "../Environment/getWindow";
+import RuntimeValue from "../Environment/RuntimeValue";
+import { getWindowEnv, getWindowObjectRv } from "../Environment/getWindow";
 import parseRuntimeValue from "../Environment/parseRuntimeValue";
-import { instanceOfRuntimeValue } from "../Environment/utils";
+import { createLiteralAst, instanceOfRuntimeValue } from "../Environment/utils";
+
+export function JSErrorToRuntimeValue(err) {
+  if (isInstanceOf(err, RuntimeValue)) {
+    return err;
+  }
+  if (isInstanceOf(err, Error)) {
+    // todo跟踪yield *
+    return parseAst({
+      "type": "NewExpression",
+      "callee": {
+        "type": "Identifier",
+        "name": "Error"
+      },
+      "arguments": [
+        createLiteralAst(err.message)
+      ]
+    }, getWindowEnv())
+  }
+
+  throw new Error('未处理的error运行时错误')
+}
 
 export default function parseThrowStatement(ast, env) {
   const rv = parseAst(ast.argument, env);
-  if (instanceOfRuntimeValue(rv, getWindowObjectRv().get('Error'))) {
-    const text = parseRuntimeValue(rv.get('message'))
-    // console.error(text, '----')
-    throw new Error(`${text}`);
-  }
+  // console.error('抛出', rv);
+  throw rv;
 }

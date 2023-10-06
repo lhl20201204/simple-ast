@@ -1,3 +1,11 @@
 export const debuggerConfig = {
-   currentTask: null,
+   debugging: false,
+}
+
+export function setDebugging(bool) {
+   debuggerConfig.debugging = bool
+}
+
+export function getDebugging() {
+   return debuggerConfig.debugging
 }

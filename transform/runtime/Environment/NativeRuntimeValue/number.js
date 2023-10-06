@@ -27,7 +27,7 @@ export function getNumberFunctionV() {
   if (!NumberFunctionV) {
     const generateFn = getGenerateFn();
     NumberFunctionV = generateFn('Number', ([rv], { _this }) => {
-      const ret = createNumber(parseRuntimeValue(rv))
+      const ret = createNumber(Number(parseRuntimeValue(rv)))
       if (parseRuntimeValue(instanceOfRuntimeValue(_this, NumberFunctionV))) {
         _this.set(RUNTIME_VALUE_DICTS.symbolPrimitiveValue, rv, new PropertyDescriptor({
           kind: PROPERTY_DESCRIPTOR_DICTS.REFLECT_DEFINE_PROPERTY,

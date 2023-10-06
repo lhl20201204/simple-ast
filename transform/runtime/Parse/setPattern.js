@@ -5,11 +5,12 @@ import parseRuntimeValue from "../Environment/parseRuntimeValue";
 import Environment from "../Environment";
 import { getMemberPropertyKey } from "./parseMemberExpression";
 import { getObjectPropertyExpressionKey } from "./parseObjectExpression";
-import { PROPERTY_DESCRIPTOR_DICTS, RUNTIME_LITERAL, RUNTIME_VALUE_TYPE } from "../constant";
+import { AST_DICTS, PROPERTY_DESCRIPTOR_DICTS, RUNTIME_LITERAL, RUNTIME_VALUE_TYPE } from "../constant";
 import { getObjectAttrOfPropertyDescriptor, isUndefinedRuntimeValue } from "../Environment/utils";
 import PropertyDescriptor from "../Environment/PropertyDescriptor";
 import { isInstanceOf } from "../../commonApi";
 import { createArray, createObject, getUndefinedValue } from "../Environment/RuntimeValueInstance";
+import { ensureAstHadConfig } from "../Environment/Generator/AstConfig";
 
 function getType(restConfig, env) {
   if ((restConfig.useSet 
@@ -31,9 +32,18 @@ export function setIdentifierPattern(argsRv, paramsAst, env, restConfig) {
     const { kind } = restConfig;
     const oldDescriptor = getObjectAttrOfPropertyDescriptor(env, paramsAst.name, argsRv, { kind: kind ?? PROPERTY_DESCRIPTOR_DICTS.init, env});
     // console.error('env-set', paramsAst.name, oldDescriptor)
-    env[getType(restConfig, env)](paramsAst.name, argsRv, oldDescriptor);
+    env[getType(restConfig, env, paramsAst.name)](paramsAst.name, argsRv, oldDescriptor);
   } else {
-    env[getType(restConfig, env)](paramsAst.name, argsRv);
+    // if (paramsAst.name === 'x') {
+    //   console.log(restConfig, getType(restConfig, env, paramsAst.name), env)
+    // }
+
+    env.allowConstLetDefineAgain( 
+      restConfig.allowConstLetDefineAgain,
+      () => env[getType(restConfig, env)](paramsAst.name, argsRv))
+    // if (paramsAst.name === 'originLog') {
+    //     console.warn(argsRv, _.cloneDeep(env.get('console').get('log')))
+    // }
   }
   // console.log(getType(restConfig, env), paramsAst.name)
  
@@ -98,6 +108,7 @@ export function setMemberExpression(v, ast, env, restConfig) {
   const objectRV = parseAst(object, env);
   let k = getMemberPropertyKey(ast, env);
   // console.error(k)
+  // console.warn(object);
   objectRV.set(k, v, getObjectAttrOfPropertyDescriptor(objectRV, k, v, { kind, env }))
 }
 
@@ -113,7 +124,7 @@ export function setVariableDeclaration(v, ast, env, restConfig) {
 //   objRv[getType(restConfig, env)](paramsAst.name, argsRv);
 // }
 
-export default function setPattern(v, ast, env, restConfig ) {
+function innerSetPattern(v, ast, env, restConfig ) {
   if (!restConfig) {
     throw new Error('restConfig必传')
   }
@@ -128,6 +139,25 @@ export default function setPattern(v, ast, env, restConfig ) {
   }
   console.error(v, ast);
   throw new Error('未处理的setPattern')
+}
+
+export default function setPattern(v, ast, env, restConfig ) {
+  // const isGeneratorEnv = env.isInGeneratorEnv();
+  // if (isGeneratorEnv) {
+  //   ensureAstHadConfig(ast);
+  //   const astConfig= ast[AST_DICTS._config];
+  //   if (!astConfig.getNeedReRun()) {
+  //     return astConfig.getCacheRuntimeValue()
+  //   }
+  //   astConfig.setNeedReRun(true);
+  // }
+  // let retRv = innerSetPattern(v, ast, env, restConfig )
+  // if (isGeneratorEnv) {
+  //   const astConfig = ast[AST_DICTS._config];
+  //   astConfig.setNeedReRun(false);
+  //   astConfig.setCacheRuntimeValue(retRv);
+  // }
+  return  innerSetPattern(v, ast, env, restConfig );
 }
 
 

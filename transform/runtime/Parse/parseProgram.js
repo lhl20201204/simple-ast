@@ -6,6 +6,11 @@ import { initEnviroment } from "../Environment/initEnviroment";
 import generateCode from "../Generate";
 import { createLookUpUndefinedAst } from "../Environment/NativeRuntimeValue/undefined";
 import { getPreDeclarationKey } from "./parsePreDeclaration";
+import { isInstanceOf } from "../../commonApi";
+import RuntimeValue from "../Environment/RuntimeValue";
+import parseRuntimeValue from "../Environment/parseRuntimeValue";
+import { createRuntimeValueAst, ifErrorIsRuntimeValueWillParse, isFunctionRuntimeValue } from "../Environment/utils";
+import { runFunctionRuntimeValueInGlobalThis } from "../Environment/RuntimeValueInstance";
 
 
 export function getTotalDefineKeyList(astList) {
@@ -215,7 +220,12 @@ export default function parseProgram(ast) {
   const env = getWindowEnv()
   initEnviroment()
   const statements = getStatement(ast.body, env);
-  _.forEach(statements, c => {
-    parseAst(c, env)
-  });
+  try {
+    for(const c of  statements) {
+      parseAst(c, env)
+    }
+  } catch(e) {
+    e = ifErrorIsRuntimeValueWillParse(e)
+    throw e;
+  }
 }

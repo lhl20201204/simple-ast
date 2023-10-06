@@ -1,7 +1,7 @@
 import { getAstCode } from ".";
 import { DEBUGGER_DICTS, RUNTIME_LITERAL } from "../constant";
 import { getElememtCode } from "./arrayCode";
-import { prefixSpace, purple, remark, space, tabSpace, wrapBlockWithBigBrace, wrapSmallBracket, wrapSpace } from "./util";
+import { isExitCallExpressionCalleer, prefixSpace, purple, remark, space, tabSpace, wrapBlockWithBigBrace, wrapSmallBracket, wrapSpace } from "./util";
 
 export function getRemark( content, config) {
   if (!config) {
@@ -14,7 +14,7 @@ export function getFunctionDeclarationCode(ast, config) {
   const { async, generator, id, body, params } = ast;
   const GeneratorStr = generator ? wrapSpace('*', config) : space(config)
   return `${async ? purple(RUNTIME_LITERAL.async, config) + space(config) : ''}${purple(RUNTIME_LITERAL.function, config)}${GeneratorStr}${getAstCode(id, config)}${space(config)}(${getElememtCode(params, config)})${space(config)
-  }${wrapBlockWithBigBrace(body, config)}${
+  }${wrapBlockWithBigBrace(body, (config))}${
     remark(` /* ${RUNTIME_LITERAL.function} end */`, config)}`
 }
 
@@ -43,7 +43,7 @@ export function getFunctionExpressionCode(ast, config) {
   }${
     nameStr
   }(${getElememtCode(params, config)})${space(config)}${
-    wrapBlockWithBigBrace(body, config)
+    wrapBlockWithBigBrace(body, (config))
   }${
     getRemark(RUNTIME_LITERAL.function, config)
   }`
@@ -53,7 +53,7 @@ export function getFunctionExpressionCode(ast, config) {
 export function getArrowFunctionExpressionCode(ast, config) {
   const { async, params, body } = ast;
   const ret = `${async ? purple(RUNTIME_LITERAL.async, config) + space(config) : ''}(${getElememtCode(params, config)})${purple(wrapSpace('=>', config), config)}${
-    wrapBlockWithBigBrace(body, config)
+    body.type === 'BlockStatement' ? wrapBlockWithBigBrace(body, isExitCallExpressionCalleer(config)) : getAstCode(body, config)
   }${
     remark(
     config[DEBUGGER_DICTS.isInCallExpressionCalleer] || config[DEBUGGER_DICTS.isFunctionEndNotRemark] ? "" : ` /* arrow ${RUNTIME_LITERAL.function} end */`, config)}`

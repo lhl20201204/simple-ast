@@ -5,7 +5,7 @@ import { letFunctionInClassMethodDefinition, prefixSpace, purple, remark, space,
 
 export function getClassCode(ast, config, type) {
   const { id, body, superClass } = ast;
-  return `${purple(RUNTIME_LITERAL.class, config)}${space(config)}${getAstCode(id,config)}${
+  return `${purple(RUNTIME_LITERAL.class, config)}${space(config)}${id ? getAstCode(id,config) : ''}${
     superClass ? space(config) + purple(RUNTIME_LITERAL.extends, config) + space(config) + getAstCode(superClass, config) : ''
   }${space(config)}${
     wrapBigBrace(getAstCode(body, config), config)

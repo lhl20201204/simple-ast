@@ -2,10 +2,13 @@ import parseAst from "..";
 import { isInstanceOf } from "../../commonApi";
 import AstConfig from "../Environment/Generator/AstConfig";
 import RuntimeValue from "../Environment/RuntimeValue";
-import { getUndefinedValue } from "../Environment/RuntimeValueInstance";
+import { getUndefinedValue, runFunctionRuntimeValueInGlobalThis } from "../Environment/RuntimeValueInstance";
+import { getWindowEnv, getWindowObjectRv } from "../Environment/getWindow";
+import { createRuntimeValueAst, isFunctionRuntimeValue } from "../Environment/utils";
 import generateCode from "../Generate";
 import { AST_DICTS } from "../constant";
 import { getStatement } from "./parseProgram";
+import { isYieldError } from "./parseYieldExpression";
 export default function parseBlockStatement(ast, env) {
   const isGeneratorEnv = env.isInGeneratorEnv();
   const run = () => {
@@ -17,9 +20,9 @@ export default function parseBlockStatement(ast, env) {
       parseAst(s, env);
       if (env.canDirectlyReturn(ast)) {
         value = env.getReturnValue()
-        if (isGeneratorEnv) {
-          console.log('return 成功')
-        }
+        // if (isGeneratorEnv) {
+        //   console.log('return 成功')
+        // }
         break;
       }
       if (env.hadBreak() || env.hadContinue()) {
@@ -49,6 +52,17 @@ export default function parseBlockStatement(ast, env) {
   } catch (e) {
     // console.log('捕获', e)
     env.envStackStore.setError(e);
+    // const f = getWindowObjectRv().hasOwnProperty('onerror') && getWindowObjectRv().get('onerror');
+   
+    // if (f && isFunctionRuntimeValue(f) && !isYieldError(e)) {
+    //   runFunctionRuntimeValueInGlobalThis(createRuntimeValueAst(
+    //     f,
+    //     'window_onerror'
+    //   ), 
+    //   getWindowEnv(),
+    //   createRuntimeValueAst(e, 'e')
+    //   )
+    // }
     throw e;
   }
 }

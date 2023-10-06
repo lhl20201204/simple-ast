@@ -1,9 +1,10 @@
 import parseAst from "..";
 import { isInstanceOf } from "../../commonApi";
 import generateCode from "../Generate";
-import { DEBUGGER_DICTS, PROPERTY_DESCRIPTOR_DICTS, RUNTIME_LITERAL, RUNTIME_VALUE_DICTS, RUNTIME_VALUE_TYPE } from "../constant";
+import { DEBUGGER_DICTS, GENERATOR_DICTS, PROPERTY_DESCRIPTOR_DICTS, RUNTIME_LITERAL, RUNTIME_VALUE_DICTS, RUNTIME_VALUE_TYPE } from "../constant";
 import createGenerateConfig from "./Generator";
 import GeneratorConfig from "./Generator/GeneratorConfig";
+import { getBooleanPrototypeRv } from "./NativeRuntimeValue/boolean";
 import getGeneratorRv from "./NativeRuntimeValue/generator";
 import { getNumberPrototypeV } from "./NativeRuntimeValue/number";
 import { getStringProtoTypeV } from "./NativeRuntimeValue/string";
@@ -103,6 +104,9 @@ export default class RuntimeValue {
     if (this.type === RUNTIME_VALUE_TYPE.number) {
       return getNumberPrototypeV()
     }
+    if (this.type === RUNTIME_VALUE_TYPE.boolean) {
+      return getBooleanPrototypeRv()
+    }
     return this.restConfig[proto] ?? getUndefinedValue();
   }
 
@@ -135,12 +139,22 @@ export class RuntimeRefValue extends RuntimeValue {
 
     if (!oldPropertyDescriptors) {
       // 这里底层调用方法时再特殊处理
+      // console.log(Object.getOwnPropertySymbols(this.value));
       _.forEach(this.value, (v, k) => {
         // if (this.id === 'inner27') {
         //   console.log(v, k)
         // }
         this.propertyDescriptors.set(k, createSimplePropertyDescriptor({
           value: v,
+        }))
+      })
+      
+      _.forEach(Object.getOwnPropertySymbols(this.value), (k) => {
+        if (k === GENERATOR_DICTS.isGeneratorConfig) {
+          return;
+        }
+        this.propertyDescriptors.set(k, createSimplePropertyDescriptor({
+          value: this.value[k],
         }))
       })
     }
@@ -298,7 +312,7 @@ export class RuntimeRefValue extends RuntimeValue {
     return getUndefinedValue()
   }
 
-  setWithDescriptor(attr, rv, descriptor) {
+  setWithDescriptor(attr, rv, descriptor = undefined) {
     if (descriptor && !isInstanceOf(descriptor, PropertyDescriptor)) {
       throw new Error('必须传PropertyDescriptor实例对象')
     }
@@ -419,7 +433,7 @@ export class RuntimeRefValue extends RuntimeValue {
     this.restConfig[proto] = rv;
   }
 
-  setProtoType(rv) {
+  setProtoType(rv, noWritable) {
     if (!isInstanceOf(rv, RuntimeRefValue)) {
       throw new Error('原型链指向失败')
     }
@@ -428,6 +442,7 @@ export class RuntimeRefValue extends RuntimeValue {
     this.propertyDescriptors.set(RUNTIME_LITERAL.$prototype, createSimplePropertyDescriptor({
       value: rv,
       [PROPERTY_DESCRIPTOR_DICTS.enumerable]: getFalseV(),
+      [PROPERTY_DESCRIPTOR_DICTS.writable]: noWritable ?  getFalseV() : getTrueV()
     }))
   }
 
@@ -463,7 +478,7 @@ export class RuntimeRefValue extends RuntimeValue {
   }
 
   getDefinedName() {
-    return this.restConfig[symbolName]
+    return this.restConfig[symbolName] ?? ('匿名' + (this.type === RUNTIME_VALUE_TYPE.class ? '类' : '函数'))
   }
 
   getMergeCtor() {
@@ -520,11 +535,13 @@ export class RuntimeGeneratorFunctionValue extends RuntimeRefValue {
     super(...args)
     const originArgs = _.cloneDeep(args);
     const originAst = this.getDefinedAst()
+    const originName = this.getDefinedName();
     this.restConfig[symbolOriginGeneratorAst] = originAst;
     
     const defineEnv = this.getDefinedEnv();
 
    
+    // console.log('开始定义', originName);
     // console.error(defineEnv);
     this.setRunAst({
       ..._.cloneDeep(originAst),
@@ -545,11 +562,11 @@ export class RuntimeGeneratorFunctionValue extends RuntimeRefValue {
                     createRuntimeValueAst((env) => {
                       const ret = createConfigRuntimeValue(createGenerateConfig({
                         ast: _.cloneDeep(originAst),
-                        fnRv: new RuntimeRefValue(..._.cloneDeep(originArgs)),
-                        defineEnv,
+                        name: originName,
                         contextEnv: env,
                         contextThis: env.getRuntimeValueByStackIndex(0),
                         contextArguments: env.getRuntimeValueByStackIndex(1),
+                        GeneratorFunctionRv: this,
                       }))
                       // console.error('生成实例对象', ret);
                       return ret;
@@ -569,14 +586,10 @@ export class RuntimeGeneratorFunctionValue extends RuntimeRefValue {
 }
 
 export class RuntimeGeneratorInstanceValue extends RuntimeRefValue {
-  constructor(...args) {
-    super(...args)
-  }
-
   getGenerateConfig() {
     const ret = this.restConfig[RUNTIME_VALUE_DICTS.generatorConfig];
     if (!isInstanceOf(ret, GeneratorConfig)) {
-      throw new Error('运行时错误')
+      throw new Error('generatorConfig不对，运行时错误')
     }
     return ret;
   }
@@ -585,4 +598,20 @@ export class RuntimeGeneratorInstanceValue extends RuntimeRefValue {
 
 export class RuntimeConfigValue extends RuntimeRefValue {
 
+}
+
+export class RuntimePromiseInstanceValue extends RuntimeRefValue {
+  setPromiseState(rv) {
+    this.setWithDescriptor(RUNTIME_VALUE_DICTS.PromiseState, rv);
+  }
+  setPromiseResult(rv) {
+    this.setWithDescriptor(RUNTIME_VALUE_DICTS.PromiseResult,rv);
+  }
+  getPromiseInstance() {
+    const ret =  this.restConfig[RUNTIME_VALUE_DICTS.promiseInstance]
+    if (!isInstanceOf(ret, Promise)) {
+      throw new Error('promise不对运行时错误')
+    }
+    return ret;
+  }
 }

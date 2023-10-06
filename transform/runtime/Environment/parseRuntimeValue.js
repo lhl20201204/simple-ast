@@ -33,14 +33,19 @@ const runtimeValueToJSFunction = (rv, config) => {
   `; 
   const args = [..._.map(ast.params, a => generateCode(a, { [DEBUGGER_DICTS.isTextMode]: true }))]
   
-  const fnName = rv.getDefinedName() ?? '匿名函数';
+  let fnName = rv.getDefinedName() ?? '匿名函数';
+  if (_.indexOf(_.toString(fnName), '.') > -1) {
+    fnName = _.isSymbol(fnName) ? Symbol.keyFor(fnName) : '未处理函数'
+  }
+  const t = `(()=> {
+    return ${ast.async ? 'async' : ''} function ${
+      ast.generator ? '*' : ''
+    } ${['delete'].includes(fnName) ? '$' + fnName : fnName}(${args.join(',')}) {
+      ${bodyCode}
+}})()`;
+
   const obj = {
-    [fnName]: eval(`(()=> {
-      return ${ast.async ? 'async' : ''} function ${
-        ast.generator ? '*' : ''
-      } ${fnName}(${args.join(',')}) {
-        ${bodyCode}
-}})()`),
+    [fnName]: eval(t),
   }
   const ret = obj[fnName];
   config.weakMap.set(rv, ret)

@@ -1,6 +1,6 @@
 import Environment from ".";
 import parseAst from "..";
-import { isInstanceOf } from "../../commonApi";
+import { RuntimeValueAst, isInstanceOf } from "../../commonApi";
 import { DEBUGGER_DICTS, ENV_DICTS, JS_TO_RUNTIME_VALUE_TYPE, PROPERTY_DESCRIPTOR_DICTS, RUNTIME_LITERAL, RUNTIME_VALUE_DICTS, RUNTIME_VALUE_TYPE } from "../constant";
 import GeneratorConfig from "./Generator/GeneratorConfig";
 import { getArrayProtoTypeV } from "./NativeRuntimeValue/array";
@@ -106,12 +106,12 @@ export function ensureInitRoot() {
 
   FunctionPrototypeV.setWithDescriptor('apply', applyRv)
 
-  const ObjectToStringRv = generateFn('Object$toString', ([argsRv]) => {
-    console.log(parseRuntimeValue(argsRv))
+  const ObjectToStringRv = generateFn('Object$toString', ([], { _this }) => {
+    return createString(String(parseRuntimeValue(_this)))
   });
 
 
-  ObjectPrototypeV.setWithDescriptor('toString',ObjectToStringRv)
+  ObjectPrototypeV.setWithDescriptor('toString', ObjectToStringRv)
 
   const ObjecthasOwnPropertyRv = generateFn('Object$hasOwnProperty', ([attrRv], { _this }) => {
     return _this.hasOwnProperty(parseRuntimeValue(attrRv)) ? getTrueV() : getFalseV()
@@ -124,7 +124,7 @@ export function ensureInitRoot() {
     if (_this === ObjectPrototypeV) {
       return getNullValue()
     }
-    return  _this.getProto()
+    return _this.getProto()
   });
 
   const set__proto__Rv = generateFn('Object$prototype$__proto__', ([argsRv], { _this }) => {
@@ -217,15 +217,26 @@ export function createNumber(num) {
   return new RuntimeValue(RUNTIME_VALUE_TYPE.number, num);
 }
 
-export function runFunctionRuntimeValueInGlobalThis(fnRv, windowRv) {
-  return parseAst(
+export function createBoolean(bool) {
+  return bool ? getTrueV() : getFalseV()
+}
+
+export function runFunctionRuntimeValueInGlobalThis(fnRvAst, windowEnv, ...args) {
+  if (!isInstanceOf(fnRvAst, RuntimeValueAst)) {
+    throw new Error('传的不是functionAst运行时错误');
+  }
+  const fnRv = fnRvAst.value;
+  if (!isFunctionRuntimeValue(fnRv)) {
+    throw new Error('非函数')
+  }
+  const retRv = parseAst(
     {
       "type": "ExpressionStatement",
       "expression": {
         "type": "CallExpression",
         "callee": {
           "type": "MemberExpression",
-          "object": createRuntimeValueAst(fnRv, 'setTimeout_handler'),
+          "object": fnRvAst,
           "property": {
             "type": "Identifier",
             "name": "call"
@@ -234,16 +245,19 @@ export function runFunctionRuntimeValueInGlobalThis(fnRv, windowRv) {
           "optional": false
         },
         "arguments": [
-          createRuntimeValueAst(windowRv.get('this'), 'globalThis')
+          createRuntimeValueAst(windowEnv.get('this'), 'globalThis'),
+          ...args,
         ],
         "optional": false
       }
     }, fnRv.getDefinedEnv())
+  return retRv;
+
 }
 
 export function createFunction(config) {
   const isGenerator = _.get(config[RUNTIME_VALUE_DICTS.symbolAst], 'generator');
-   
+
   _.set(config, RUNTIME_VALUE_DICTS.proto, getFunctionPrototypeRv())
   const ret = new (isGenerator ? RuntimeGeneratorFunctionValue : RuntimeRefValue)(RUNTIME_VALUE_TYPE.function, {}, config)
   ret.setProtoType(createObject({
@@ -261,13 +275,13 @@ export function createFunction(config) {
     //     [argsRv], { _this }
     //   ) => {
     //     try {
-          
+
     //     } catch(e) {
-          
+
     //     }
     //   })
     // })
-    
+
   }
   return ret;
 }
@@ -284,9 +298,9 @@ export function getReflectDefinedPropertyV() {
     ) => {
       const attr = parseRuntimeValue(attrRv);
       const undefinedV = getUndefinedValue();
-      const hasSetOrGet = attributesRv.hasOwnProperty(RUNTIME_LITERAL.set) 
-      || attributesRv.hasOwnProperty(RUNTIME_LITERAL.get);
-        
+      const hasSetOrGet = attributesRv.hasOwnProperty(RUNTIME_LITERAL.set)
+        || attributesRv.hasOwnProperty(RUNTIME_LITERAL.get);
+
       // if (attr === 'length') {
       //   console.log(_.cloneDeep(objRv))
       //   console.log('Reflect.definedProperty', attr);
@@ -295,13 +309,13 @@ export function getReflectDefinedPropertyV() {
       const newPropertyDescriptor = createPropertyDesctiptor(objRv, attr, attributesRv.value, {
         kind: PROPERTY_DESCRIPTOR_DICTS.REFLECT_DEFINE_PROPERTY
       })
-      
+
       return objRv.set(attr,
         hasSetOrGet ? undefinedV : attributesRv.value.value ?? undefinedV,
         newPropertyDescriptor,
-         {
-           kind: PROPERTY_DESCRIPTOR_DICTS.REFLECT_DEFINE_PROPERTY,
-         }
+        {
+          kind: PROPERTY_DESCRIPTOR_DICTS.REFLECT_DEFINE_PROPERTY,
+        }
       )
     })
   }
@@ -360,7 +374,7 @@ export const describeNativeFunction = (env, proto, ObjectPrototypeV) => (name, n
         body: [
           {
             type: "ExpressionStatement",
-            expression: createLiteralAst( "[native code] of " + name),
+            expression: createLiteralAst("[native code] of " + name),
           }
         ],
       },

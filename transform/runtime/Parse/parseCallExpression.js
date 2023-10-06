@@ -1,4 +1,5 @@
 import parseAst from "..";
+import { getDebugging } from "../../../debugger";
 import { isInstanceOf, stringFormat } from "../../commonApi";
 import Environment from "../Environment";
 import RuntimeValue, { RuntimeRefValue } from "../Environment/RuntimeValue";
@@ -6,7 +7,7 @@ import { createObject, getUndefinedValue } from "../Environment/RuntimeValueInst
 import createEnviroment, { createEmptyEnviromentExtraConfig } from "../Environment/createEnviroment";
 import { getWindowObjectRv } from "../Environment/getWindow";
 import parseRuntimeValue from "../Environment/parseRuntimeValue";
-import { isFunctionRuntimeValue, isGeneratorFunctionRuntimeValue } from "../Environment/utils";
+import { createRuntimeValueAst, isFunctionRuntimeValue, isGeneratorFunctionRuntimeValue, isUndefinedRuntimeValue } from "../Environment/utils";
 import generateCode, { getAstCode } from "../Generate";
 import { AST_DICTS, ENV_DICTS, RUNTIME_LITERAL, RUNTIME_VALUE_DICTS, RUNTIME_VALUE_TYPE } from "../constant";
 import { getMemberPropertyKey } from "./parseMemberExpression";
@@ -33,7 +34,7 @@ const logger = false;
 export default function parseCallExpression(ast, env) {
   const { callee, arguments: args, optional } = ast;
 
-  logger && console.log(getAstCode(ast, {
+  (logger || getDebugging()) && console.warn(getAstCode(ast, {
     text: true,
     isFunctionEndNotRemark: true,
     isInCallExpressionCalleer: true,
@@ -50,6 +51,9 @@ export default function parseCallExpression(ast, env) {
   if (callee.type === 'Identifier') {
     fnRv = env.get(callee.name);
     if (!isFunctionRuntimeValue(fnRv)) {
+      if (optional && isUndefinedRuntimeValue(fnRv)) {
+        return getUndefinedValue()
+      }
       throw new Error(`${generateCode(callee)}不是可执行函数`)
     }
     // fnAst = fnRv.value; 
@@ -77,6 +81,9 @@ export default function parseCallExpression(ast, env) {
   } else if (callee.type === AST_DICTS.RuntimeValue) {
     fnRv = parseAst(callee, env);
     if (!isFunctionRuntimeValue(fnRv)) {
+      if (optional && isUndefinedRuntimeValue(fnRv)) {
+        return getUndefinedValue()
+      }
       throw new Error(`${generateCode(callee)}不是可执行函数`)
     }
     // fnAst = rv.value;
@@ -108,13 +115,22 @@ export default function parseCallExpression(ast, env) {
     //   _this =  _this.get
     //
 
+    
+
     name = getMemberPropertyKey(callee, env);
 
-    fnRv = parseAst(callee, env)
+    fnRv = parseAst({
+      ...callee,
+      object: createRuntimeValueAst(_this, callee.object),
+    }, env)
     // if (typeof name !== 'string') {
     //   console.warn(_this, '_this', name, fnRv,  fnRv.getRunAst())
     // }
+
     if (!isFunctionRuntimeValue(fnRv)) {
+      if (optional && isUndefinedRuntimeValue(fnRv)) {
+        return getUndefinedValue()
+      }
       throw new Error(`${generateCode(callee)}不是可执行函数`)
     }
     // fnAst = calleeRv.value;
@@ -131,6 +147,9 @@ export default function parseCallExpression(ast, env) {
   } else if (callee.type === 'CallExpression') {
     fnRv = parseAst(callee, env);
     if (!isFunctionRuntimeValue(fnRv)) {
+      if (optional && isUndefinedRuntimeValue(fnRv)) {
+        return getUndefinedValue()
+      }
       throw new Error(`${generateCode(callee.callee)}函数返回不是函数`)
     }
     // fnAst = fnRv;
@@ -142,7 +161,7 @@ export default function parseCallExpression(ast, env) {
     if (optional) {
       return getUndefinedValue()
     }
-    console.log(callee, name, env)
+    console.log(callee, name, env, optional)
     throw new Error(`${name} 不是可执行函数`)
   }
 
@@ -185,6 +204,10 @@ export default function parseCallExpression(ast, env) {
   if (restParamsAst) {
     setPattern(new RuntimeRefValue(RUNTIME_VALUE_TYPE.arguments, restArgsRVValue), restParamsAst.argument, childEnv, { kind: 'params' });
   }
+
+  // if (restParamsAst?.argument?.name === 'p') {
+  //   console.warn(childEnv)
+  // }
 
   // if (isGeneratorFunctionRuntimeValue(fnRv)) {
   //   console.warn(name, type, _this, childEnv, generateCode(body))

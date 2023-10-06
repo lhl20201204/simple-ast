@@ -19,12 +19,10 @@ export default class GeneratorConfig {
     this.id = gid++;
     this.ast = x.ast;
     this.done = false;
-    this.fnRv = x.fnRv;
-    this.defineEnv = x.defineEnv;
-    this.fnRv.setDefinedEnv(this.defineEnv);
-    // this.fnRv.value[RUNTIME_VALUE_DICTS.symbolEnv] = this.defineEnv;
+    this.name = x.name;
     this.contextEnv = x.contextEnv;
     this.runEnv = null;
+    this.GeneratorFunctionRv = x.GeneratorFunctionRv;
     // this.contextEnv.setCurrentIsGeneratorFunctionEnv(true)
     this.contextThis = x.contextThis;
     this.contextArguments = x.contextArguments
@@ -58,10 +56,14 @@ export default class GeneratorConfig {
     this.pendingReturnValue = rv;
   }
 
+  setPendingErrorValue(rv) {
+    this.pendingErrorValue = rv;
+  }
+
   runGeneratorFunction() {
     let mounted = false;
     if (!this.runEnv) {
-      this.runEnv = createEnviroment('generator_of_' + this.fnRv.getDefinedName() + '_env', this.contextEnv, {
+      this.runEnv = createEnviroment('generator_of_' + _.toString(this.name) + '_env', this.contextEnv, {
         [ENV_DICTS.isGeneratorFunction]: true,
         [ENV_DICTS.runningGenerateConfig]: this,
         [ENV_DICTS.isFunctionEnv]: true,
@@ -69,6 +71,10 @@ export default class GeneratorConfig {
       if (isInstanceOf(this.pendingReturnValue, RuntimeValue)) {
         this.runEnv.setCurrentEnvReturnValue(this.pendingReturnValue);
       }
+      if (isInstanceOf(this.pendingErrorValue, RuntimeValue)) {
+        this.runEnv.envStackStore.setError(this.pendingErrorValue)
+      }
+
       this.runEnv.addConst(RUNTIME_LITERAL.this, this.contextThis)
       this.runEnv.addConst(RUNTIME_LITERAL.arguments, this.contextArguments)
       mounted = true;

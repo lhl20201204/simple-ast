@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+
+<body>
+  <div id="content"></div>
+  <script>
+    const OldPromise = Promise;
+    class MyPromise {
+      static pending = 'pending';
+      static fulfilled = 'fulfilled';
+      static rejected = 'rejected';
+
+      constructor(callback) {
+        this.state = MyPromise.pending;
+        this.nextResolveRejectList = [];
+        this.set = new Set([this]);
+        try {
+          callback(this.resolve, this.reject)
+        } catch (e) {
+          this.reject(e)
+        }
+      }
+
+      static resolve(x) {
+        return new MyPromise((res) => res(x))
+      }
+
+      static reject(e) {
+        return new MyPromise((res, rej) => rej(e))
+      }
+
+      static all(promiseList) {
+        const arr = []
+        let count = 0;
+        const len = promiseList.length;
+        return new MyPromise((res, rej) => {
+          promiseList.forEach((p, i) => {
+            p.then((d) => {
+              arr[i] = d
+              if (++count === len) {
+                res(arr)
+              }
+            }, rej)
+          })
+        })
+      }
+
+      static allSettled(promiseList) {
+        const arr = []
+        let count = 0;
+        const len = promiseList.length;
+        return new MyPromise((res) => {
+          const handle = (i, fn) => (value) => {
+            arr[i] = fn(value)
+            if (++count === len) {
+              res(arr)
+            }
+          }
+          promiseList.forEach((p, i) => p.then(handle(i, (value) => ({ status: MyPromise.fulfilled, value })),
+            handle(i, (reason) => ({ status: MyPromise.rejected, reason }))))
+        })
+      }
+
+      static race(promiseList) {
+        return new MyPromise((res, rej) => promiseList.forEach(p => p.then(res, rej)))
+      }
+
+      $wrap(promise) {
+        this.set.add(promise);
+        this.set.forEach(x => {
+          promise.set.add(x)
+        })
+        return promise;
+      }
+
+      $run = () => {
+        const isEmpty = !this.nextResolveRejectList.length;
+        const oldState = this.state;
+
+        queueMicrotask(() => {
+            if (isEmpty) {
+              if (oldState === MyPromise.rejected
+                && !this.nextResolveRejectList.length) {
+                setTimeout(() => {
+                  // console.warn('主动抛出', new Error().stack)
+                  throw this.rejectResult; 
+                })
+              }
+              return;
+            }
+
+            for (const [res, rej, thenCb, catchCb] of this.nextResolveRejectList) {
+              try {
+                const handle = (ret) => {
+                  if (ret instanceof MyPromise) {
+                    if (this.set.has(ret)) {
+                      throw new Error('Uncaught (in promise) TypeError: Chaining cycle detected for promise #<Promise>')
+                    }
+                    ret.then(res)
+                  } else {
+                    res(ret)
+                  }
+                }
+                this.state === MyPromise.fulfilled && handle(thenCb(this.resolveResult))
+                this.state === MyPromise.rejected && handle(catchCb(this.rejectResult))
+              } catch (e) {
+                // Sconsole.warn('Promise', e)
+                rej(e)
+              }
+            }
+            this.nextResolveRejectList.length = 0;
+        })
+
+      }
+
+      resolve = (x) => {
+        if (this.state === MyPromise.pending) {
+          this.resolveResult = x;
+          this.state = MyPromise.fulfilled;
+          this.$run()
+        }
+      }
+
+      reject = (e) => {
+        if (this.state === MyPromise.pending) {
+          this.rejectResult = e;
+          this.state = MyPromise.rejected;
+          this.$run()
+        }
+      }
+
+
+      then(thenCb, catchCb) {
+        if (typeof thenCb !== 'function') {
+          thenCb = (x) => x
+        }
+        if (typeof catchCb !== 'function') {
+          catchCb = (e) => { throw e }
+        }
+        return this.$wrap(new MyPromise((res, rej) => {
+          this.nextResolveRejectList.push([res, rej, thenCb, catchCb])
+          if (this.state !== MyPromise.pending) {
+            this.$run()
+          }
+        }));
+      }
+
+      catch(cb) {
+        return this.then(undefined, cb);
+      }
+
+      finally(cb) {
+        return this.$wrap(new MyPromise((res, rej) => {
+          const handle = (fn) => (x) => {
+            try {
+              cb()
+              fn(x)
+            } catch (e) {
+              rej(e)
+            } finally {
+              fn = null
+            }
+          }
+          this.then(handle(res), handle(rej))
+        }));
+      }
+    }
+
+
+  </script>
+  <script src="./promise.test.js"></script>
+</body>
+
+</html>

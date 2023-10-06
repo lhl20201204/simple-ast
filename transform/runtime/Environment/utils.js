@@ -2,9 +2,10 @@ import parseAst from ".."
 import { GetRuntimeValueAst, RuntimeValueAst, UseRuntimeValueAst, isInstanceOf } from "../../commonApi"
 import { AST_DICTS, OUTPUT_TYPE, PROPERTY_DESCRIPTOR_DICTS, RUNTIME_LITERAL, RUNTIME_VALUE_TO_OUTPUT_TYPE, RUNTIME_VALUE_TYPE } from "../constant"
 import GeneratorConfig from "./Generator/GeneratorConfig"
+import { getJsSymbolIterator, getSymbolIteratorRv } from "./NativeRuntimeValue/symbol"
 import PropertyDescriptor from "./PropertyDescriptor"
-import RuntimeValue, { RuntimeConfigValue, RuntimeGeneratorFunctionValue } from "./RuntimeValue"
-import { getFalseV, getReflectDefinedPropertyV, getTrueV, getUndefinedValue } from "./RuntimeValueInstance"
+import RuntimeValue, { RuntimeConfigValue, RuntimeGeneratorFunctionValue, RuntimeGeneratorInstanceValue } from "./RuntimeValue"
+import { getFalseV, getReflectDefinedPropertyV, getTrueV, getUndefinedValue, runFunctionRuntimeValueInGlobalThis } from "./RuntimeValueInstance"
 import parseRuntimeValue from "./parseRuntimeValue"
 
 export function getRuntimeValueType(rv) {
@@ -438,4 +439,81 @@ export const getGenerateInstanceConfig = (rvList) => {
 
   // TODO 处理 a yield a * 2 这种
 
+}
+
+
+export function getIterableRvOfGeneratorInstanceOfNext(iterableRv, env) {
+  if (
+    !isInstanceOf(iterableRv, RuntimeGeneratorInstanceValue) &&
+    !isGeneratorFunctionRuntimeValue(iterableRv.get(getJsSymbolIterator()))) {
+    throw new Error(`for of 语句的遍历对象必须是生成器实例，
+    或者实现 * Symbol[iterator]间接得到生成器实例的方法`);
+  }
+  const genInstanceRv = parseAst({
+    "type": "CallExpression",
+    "callee": {
+      "type": "MemberExpression",
+      "object": createRuntimeValueAst(iterableRv, '_ref'),
+      "property": createRuntimeValueAst(
+        getSymbolIteratorRv(),
+        'Symbol$iterator'
+      ),
+      "computed": true,
+      "optional": false
+    },
+    "arguments": [],
+    "optional": false
+  },
+    env,
+  )
+
+  let stepRv = null;
+  const execNext = () => {
+    stepRv = parseAst({
+      "type": "CallExpression",
+      "callee": {
+        "type": "MemberExpression",
+        "object": createRuntimeValueAst(genInstanceRv, '_gen'),
+        "property": {
+          "type": "Identifier",
+          "name": "next"
+        },
+        "computed": false,
+        "optional": false
+      },
+      "arguments": [
+      ],
+      "optional": false
+    }, env)
+    return stepRv;
+  };
+  const getNextRv = () => stepRv;
+  const getLatestDoneAndValueRv = () => {
+    execNext()
+    return {
+      value: getNextRv().get('value'),
+      done: getNextRv().get('done'),
+    }
+  }
+  return {
+    execNext,
+    getNextRv,
+    getLatestDoneAndValueRv,
+  }
+}
+
+export function ifErrorIsRuntimeValueWillParse(e) {
+  if (isInstanceOf(e, RuntimeValue)) {
+    return parseRuntimeValue(e)
+  }
+  return e;
+}
+
+export function withWrapAsync (...args) {
+  try {
+    runFunctionRuntimeValueInGlobalThis(...args)
+  }catch(e) {
+    e = ifErrorIsRuntimeValueWillParse(e);
+    throw e;
+  }
 }
