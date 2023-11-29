@@ -1,4 +1,3 @@
-import parseAst from "..";
 import { isInstanceOf } from "../../commonApi";
 import generateCode from "../Generate";
 import { DEBUGGER_DICTS, GENERATOR_DICTS, PROPERTY_DESCRIPTOR_DICTS, RUNTIME_LITERAL, RUNTIME_VALUE_DICTS, RUNTIME_VALUE_TYPE } from "../constant";
@@ -600,15 +599,30 @@ export class RuntimeConfigValue extends RuntimeRefValue {
 
 }
 
+let promiseId = 0
 export class RuntimePromiseInstanceValue extends RuntimeRefValue {
+  constructor(...args) {
+    super(...args)
+    this.promiseId = promiseId++;
+  }
+  getId() {
+    return this.promiseId
+  }
   setPromiseState(rv) {
+    if (!isInstanceOf(rv, RuntimeValue)) {
+      throw new Error('promise保存状态有问题');
+    }
     this.setWithDescriptor(RUNTIME_VALUE_DICTS.PromiseState, rv);
   }
   setPromiseResult(rv) {
+    if (!isInstanceOf(rv, RuntimeValue)) {
+      console.warn(rv);
+      throw new Error('promise保存结果有问题');
+    }
     this.setWithDescriptor(RUNTIME_VALUE_DICTS.PromiseResult,rv);
   }
   getPromiseInstance() {
-    const ret =  this.restConfig[RUNTIME_VALUE_DICTS.promiseInstance]
+    const ret =  this.restConfig[RUNTIME_VALUE_DICTS.PromiseInstance]
     if (!isInstanceOf(ret, Promise)) {
       throw new Error('promise不对运行时错误')
     }

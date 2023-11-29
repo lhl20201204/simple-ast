@@ -1,12 +1,12 @@
 // throw 1;
 
 const onlyTestLastly = false;
-const closeTest = true;
-
+const closeTest = false;
+// const OldPromise = Promise;
 const originLog = console.log
 // const Promise = MyPromise;
 // 抛出错误的地方不对， 正版的捕获不到。
-const diffCount = Number(Boolean(Promise === MyPromise));
+const diffCount =  Number(Boolean(Promise === MyPromise));
 let consoleLogArr = [];
 const result = [];
 // const originDebounce = () => {
@@ -80,7 +80,7 @@ setTimeout(() => {
     if (!task.length) {
       return;
     }
-    const current = new OldPromise((res) => {
+    const current = new Promise((res) => {
       next = res
     })
     const [fn, flag] = task.shift();
@@ -159,7 +159,7 @@ setTimeout(() => {
     function test2() {
       queueMicrotask(() => {
         console.log(1)
-        setTimeout(() =>{
+        setTimeout(() => {
           queueMicrotask(() => {
             console.log(4)
             setTimeout(() => {
@@ -167,12 +167,12 @@ setTimeout(() => {
                 console.log(6)
               })
             })
-            
+
           })
         })
       })
       queueMicrotask(() => {
-        console.log(2)  
+        console.log(2)
       })
       queueMicrotask(() => {
         console.log(3)
@@ -183,11 +183,11 @@ setTimeout(() => {
             })
           })
         })
-        
-        
+
+
       })
     }
-    
+
     function test3() {
       queueMicrotask(() => {
         console.log(2)
@@ -219,7 +219,101 @@ setTimeout(() => {
       }, 2000)
     }
 
-    test3()
+    function test4() {
+      function a(t) {
+        return new Promise((res) => setTimeout(() => res(t), 2000))
+      }
+
+      async function b(t) {
+        return t;
+      }
+
+      async function* foo() {
+        yield await Promise.resolve('a');
+        yield await Promise.resolve('b');
+        yield await Promise.resolve('c');
+      }
+
+      let str = '';
+
+      async function generate() {
+        console.log(0)
+        for await (const val of foo()) {
+          console.log(val)
+          str = str + val;
+        }
+        console.log(str);
+      }
+
+      async function x1() {
+        console.log('s2')
+        console.log(await Promise.resolve('1'));
+        console.log(await Promise.resolve('3'));
+        console.log(await Promise.resolve('5'));
+      }
+      async function x2() {
+        console.log('s3')
+        console.log(await Promise.resolve('2'));
+        console.log(await Promise.resolve('4'));
+        console.log(await Promise.resolve('6'));
+      }
+      generate();
+      x1();
+      x2();
+      b('d').then(console.log)
+      console.log('start')
+    }
+
+    function test5() {
+      async function* foo() {
+        yield 'a';
+        yield 'b'
+        yield 'c';
+      }
+
+      let str = '';
+
+      async function generate() {
+        let time = Date.now()
+        for await (const val of foo()) {
+          console.log(val, Date.now() - time)
+          str = str + val;
+        }
+        console.log(str);
+      }
+
+      async function x1() {
+        console.log(0)
+        // Promise.resolve(1).then((x) => {
+        //   console.log(x)
+        //   console.log(2)
+        // })
+        console.log(await 1)
+        console.log(2)
+      }
+
+      x1();
+      console.log(3)
+
+      // async function x1() {
+      //   console.log('s2')
+      //   console.log(await Promise.resolve('1'));
+      //   console.log(await 3);
+      //   console.log(await 5);
+      // }
+      // async function x2() {
+      //   console.log('s3')
+      //   console.log(await Promise.resolve('2'));
+      //   console.log(await 4);
+      //   console.log(await 6);
+      // }
+
+      generate();
+      // x1()
+      // x2()
+    }
+
+    test5()
 
   } else {
     run();
@@ -699,6 +793,56 @@ test((next) => {
       console.log(0, r)
       next()
     })
+})
+
+test((next) => {
+  const p = new Promise(r => setTimeout(r, 1000))
+  const p2 = new Promise((r, rej) => setTimeout(rej, 1000))
+  console.log(0, p === Promise.resolve(p), Promise.resolve(p) === Promise.resolve(p))
+  console.log(1, p2 === Promise.reject(p2), Promise.reject(p2) === Promise.reject(p2))
+  p.then((x) => {
+    console.log(2, x)
+  })
+
+  p2.catch((x) => {
+    console.error(3, x)
+    next(0)
+  })
+
+})
+
+test((next) => {
+  const p = new Promise((res, rej) => {
+    setTimeout(() => {
+      rej(0);
+    }, 1000)
+  }).catch(c => {
+    console.log(1, c)
+    next()
+  });
+
+  const p2 = new Promise((res,r) => {
+    r(1)
+  }).catch((e) => {
+    console.log(0,e)
+  })
+})
+
+test((next) => {
+  const p = new Promise((res, rej) => {
+    setTimeout(() => {
+      rej(0);
+    }, 1000)
+  }).catch(c => {
+    console.log(1, c)
+    next()
+  });
+
+  const p2 = new Promise((res,r) => {
+    r(p)
+  }).catch((e) => {
+    console.log(0,e)
+  })
 })
 
 

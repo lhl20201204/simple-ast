@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+
+<body>
+  <script>
+    async function* foo() {
+      yield await new Promise((r) => setTimeout(() => { r('a') }, 2000));
+      yield await new Promise((r) => setTimeout(() => { r('b') }, 5000));
+      yield await new Promise((r) => setTimeout(() => { r('c') }, 2000));
+    }
+
+    function* foo2() {
+      yield new Promise((r) => setTimeout(() => { r('g') }, 2000));
+      yield new Promise((r) => setTimeout(() => { r('h') }, 5000));
+      yield new Promise((r) => setTimeout(() => { r('i') }, 2000));
+    }
+
+    let str = '';
+
+    async function generate() {
+      console.log('tag1', Number(new Date()))
+      for await (const val of foo()) {
+        console.log(val);
+        str = str + val;
+      }
+      console.log('tag1', Number(new Date()))
+      console.log(str);
+    }
+
+    async function generate2() {
+      console.log('tag2', Number(new Date()))
+      const d = await new Promise((r) => setTimeout(() => { r('d') }, 2000));
+      console.log(d);
+      const e = await new Promise((r) => setTimeout(() => { r('e') }, 5000));
+      console.log(e);
+      const f = await new Promise((r) => setTimeout(() => { r('f') }, 2000));
+      console.log(f);
+      console.log('tag2', Number(new Date()))
+    }
+
+    async function generate3() {
+      const gen = foo2();
+      console.log('tag3', Number(new Date()))
+      const g = await gen.next().value
+      console.log(g)
+      const h = await gen.next().value
+      console.log(h)
+      const i = await gen.next().value
+      console.log(i)
+      console.log('tag3', Number(new Date()))
+    }
+
+    async function generate4() {
+      console.log('start')
+      await 1;
+      console.log('end')
+    }
+
+    async function generate5() {
+      new Promise(r => r('2222')).then(console.log)
+    }
+  
+    ; (async () => {
+      generate5();
+      generate4();
+      generate3()
+      generate()
+      generate2()
+    })();
+  </script>
+</body>
+
+</html>

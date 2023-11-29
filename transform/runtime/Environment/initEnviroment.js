@@ -23,6 +23,9 @@ import { isInstanceOf, isJsSymbolType, isSymbolType } from "../../commonApi";
 import { getPromiseRv } from "./NativeRuntimeValue/promise";
 import { getBooleanFunctionRv } from "./NativeRuntimeValue/boolean";
 import { _SetClassAst } from "./Native/Set";
+import { getDateRv } from "./NativeRuntimeValue/Date";
+import { _runAsyncFunctionAst, _wrapGeneratorFunctionToAsyncFunctionAst } from "./Native/async";
+import { getWrapGeneratorFunctionToAsyncFunctionRv, setIsNativeRuntimeValueTransForming, setWrapGeneratorFunctionToAsyncFunctionRv } from "./NativeRuntimeValue/async";
 
 export function initEnviroment() {
   const windowRv = getWindowObjectRv()
@@ -66,6 +69,7 @@ export function initEnviroment() {
 
   globalEnv.addLet('window', windowRv);
 
+  setWrapGeneratorFunctionToAsyncFunctionRv(parseAst(_wrapGeneratorFunctionToAsyncFunctionAst, globalEnv))
 
   globalEnv.addFunction('setTimeout', generateFn('setTimeout', ([fnRv, tR]) => {
     if (!isFunctionRuntimeValue(fnRv)) {
@@ -113,6 +117,7 @@ export function initEnviroment() {
   globalEnv.addFunction('Number', getNumberFunctionV());
   globalEnv.addFunction('String', getStringFunctionV());
   globalEnv.addFunction('Math', getMathRv())
+  globalEnv.addFunction('Date', getDateRv())
   globalEnv.addConst(RUNTIME_LITERAL.this, windowRv);
 
   // console.error( '开始')

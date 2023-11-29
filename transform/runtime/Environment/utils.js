@@ -517,3 +517,27 @@ export function withWrapAsync (...args) {
     throw e;
   }
 }
+
+export function awaitToYield (ast) {
+  if (Array.isArray(ast)) {
+    return _.map(ast, awaitToYield)
+  }
+  if (!_.isObject(ast)) {
+    return ast === 'AwaitExpression' ? 'YieldExpression' : ast;
+  }
+  const copyAst = {};
+  for(const attr in ast) {
+    copyAst[attr] = awaitToYield(ast[attr]);
+  }
+  return copyAst;
+}
+
+export function AsyncFuncitonAstToGeneratorAst(ast) {
+  return {
+    ..._.cloneDeep(ast),
+    type: 'FunctionExpression',
+    async: false,
+    generator: true,
+    body: awaitToYield(ast.body)
+  }
+}

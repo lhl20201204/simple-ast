@@ -67,6 +67,7 @@ export default function parseCallExpression(ast, env) {
       // console.log('劫持', name , _this, nativeTempArgsRvValue);
       nativeFnRetRv = nativeFnCb(nativeTempArgsRvValue, { _this, env })
       if (nativeFnRetRv && !isInstanceOf(nativeFnRetRv, RuntimeValue)) {
+        console.error(nativeFnRetRv, '类型')
         throw new Error('内置函数必须返回runtimeValue')
       }
     }
@@ -96,6 +97,7 @@ export default function parseCallExpression(ast, env) {
       // console.log('劫持', name , _this, nativeTempArgsRvValue);
       nativeFnRetRv = nativeFnCb(nativeTempArgsRvValue, { _this, env })
       if (nativeFnRetRv && !isInstanceOf(nativeFnRetRv, RuntimeValue)) {
+        console.error(nativeFnRetRv, '类型')
         throw new Error('内置函数必须返回runtimeValue')
       }
     }
@@ -141,6 +143,7 @@ export default function parseCallExpression(ast, env) {
       // console.log('劫持', name , _this, nativeTempArgsRvValue);
       nativeFnRetRv = nativeFnCb(nativeTempArgsRvValue, { _this, env })
       if (nativeFnRetRv && !isInstanceOf(nativeFnRetRv, RuntimeValue)) {
+        console.error(nativeFnRetRv, '类型')
         throw new Error('内置函数必须返回runtimeValue')
       }
     }

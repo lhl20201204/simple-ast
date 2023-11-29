@@ -124,7 +124,7 @@ export const RUNTIME_VALUE_DICTS = {
   symbolPrimitiveValue: Symbol('[[PrimitiveValue]]'),
   generatorConfig: Symbol('[[generatorConfig]]'),
   GeneratorFunction: Symbol('[[GeneratorFunction]]'),
-  promiseInstance: Symbol('promiseInstance'),
+  PromiseInstance: Symbol('promiseInstance'),
   PromiseState: Symbol('PromiseState'),
   PromiseResult:  Symbol('PromiseResult'),
 }

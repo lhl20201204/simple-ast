@@ -84,46 +84,57 @@
         const oldState = this.state;
 
         queueMicrotask(() => {
-            if (isEmpty) {
-              if (oldState === MyPromise.rejected
-                && !this.nextResolveRejectList.length) {
-                setTimeout(() => {
-                  // console.warn('主动抛出', new Error().stack)
-                  throw this.rejectResult; 
-                })
-              }
-              return;
+          if (isEmpty) {
+            if (oldState === MyPromise.rejected
+              && !this.nextResolveRejectList.length) {
+              setTimeout(() => {
+                // console.warn('主动抛出', new Error().stack)
+                throw this.rejectResult;
+              })
             }
+            return;
+          }
 
-            for (const [res, rej, thenCb, catchCb] of this.nextResolveRejectList) {
-              try {
-                const handle = (ret) => {
-                  if (ret instanceof MyPromise) {
-                    if (this.set.has(ret)) {
-                      throw new Error('Uncaught (in promise) TypeError: Chaining cycle detected for promise #<Promise>')
-                    }
-                    ret.then(res)
-                  } else {
-                    res(ret)
+          for (const [res, rej, thenCb, catchCb] of this.nextResolveRejectList) {
+            try {
+              const handle = (ret) => {
+                if (ret instanceof MyPromise) {
+                  if (this.set.has(ret)) {
+                    throw new Error('Uncaught (in promise) TypeError: Chaining cycle detected for promise #<Promise>')
                   }
+                  ret.then(res)
+                } else {
+                  res(ret)
                 }
-                this.state === MyPromise.fulfilled && handle(thenCb(this.resolveResult))
-                this.state === MyPromise.rejected && handle(catchCb(this.rejectResult))
-              } catch (e) {
-                // Sconsole.warn('Promise', e)
-                rej(e)
               }
+              this.state === MyPromise.fulfilled && handle(thenCb(this.resolveResult))
+              this.state === MyPromise.rejected && handle(catchCb(this.rejectResult))
+            } catch (e) {
+              // Sconsole.warn('Promise', e)
+              rej(e)
             }
-            this.nextResolveRejectList.length = 0;
+          }
+          this.nextResolveRejectList.length = 0;
         })
 
       }
 
       resolve = (x) => {
         if (this.state === MyPromise.pending) {
-          this.resolveResult = x;
           this.state = MyPromise.fulfilled;
-          this.$run()
+          if (x instanceof MyPromise) {
+            x.then((x) => {
+              this.resolveResult = x;
+              this.$run()
+            }, (e) => {
+              this.rejectResult = e;
+              this.state = MyPromise.rejected;
+              this.$run()
+            })
+          } else {
+            this.resolveResult = x;
+            this.$run()
+          }
         }
       }
 

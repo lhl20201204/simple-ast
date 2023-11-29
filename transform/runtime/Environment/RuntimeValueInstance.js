@@ -4,13 +4,14 @@ import { RuntimeValueAst, isInstanceOf } from "../../commonApi";
 import { DEBUGGER_DICTS, ENV_DICTS, JS_TO_RUNTIME_VALUE_TYPE, PROPERTY_DESCRIPTOR_DICTS, RUNTIME_LITERAL, RUNTIME_VALUE_DICTS, RUNTIME_VALUE_TYPE } from "../constant";
 import GeneratorConfig from "./Generator/GeneratorConfig";
 import { getArrayProtoTypeV } from "./NativeRuntimeValue/array";
+import { getWrapGeneratorFunctionToAsyncFunctionRv } from "./NativeRuntimeValue/async";
 import { getGeneratorPrototypeRv } from "./NativeRuntimeValue/generator";
 import { getStringProtoTypeV } from "./NativeRuntimeValue/string";
 import PropertyDescriptor from "./PropertyDescriptor";
-import RuntimeValue, { RuntimeArrayLikeValue, RuntimeConfigValue, RuntimeGeneratorFunctionValue, RuntimeGeneratorInstanceValue, RuntimeRefValue } from "./RuntimeValue";
+import RuntimeValue, { RuntimeArrayLikeValue, RuntimeAsyncFunctionValue, RuntimeConfigValue, RuntimeGeneratorFunctionValue, RuntimeGeneratorInstanceValue, RuntimeRefValue } from "./RuntimeValue";
 import createEnviroment, { createEmptyEnviromentExtraConfig } from "./createEnviroment";
 import parseRuntimeValue from "./parseRuntimeValue";
-import { createLiteralAst, createPropertyDesctiptor, createRuntimeValueAst, createSimplePropertyDescriptor, isFunctionRuntimeValue } from "./utils";
+import { AsyncFuncitonAstToGeneratorAst, createLiteralAst, createPropertyDesctiptor, createRuntimeValueAst, createSimplePropertyDescriptor, isFunctionRuntimeValue } from "./utils";
 
 
 let reflectDefinePropertyV;
@@ -256,33 +257,29 @@ export function runFunctionRuntimeValueInGlobalThis(fnRvAst, windowEnv, ...args)
 }
 
 export function createFunction(config) {
-  const isGenerator = _.get(config[RUNTIME_VALUE_DICTS.symbolAst], 'generator');
+  const ast = config[RUNTIME_VALUE_DICTS.symbolAst];
+  const isGenerator = _.get(ast, 'generator');
+  const isAsync = _.get(ast, 'async')
 
   _.set(config, RUNTIME_VALUE_DICTS.proto, getFunctionPrototypeRv())
-  const ret = new (isGenerator ? RuntimeGeneratorFunctionValue : RuntimeRefValue)(RUNTIME_VALUE_TYPE.function, {}, config)
+  if (!isGenerator && isAsync) {
+   const fnRv = getWrapGeneratorFunctionToAsyncFunctionRv();
+   return parseAst({
+    type: 'CallExpression',
+    callee: createRuntimeValueAst(fnRv, 'WrapGeneratorFunctionToAsyncFunction', fnRv.getDefinedAst()),
+    arguments: [
+      AsyncFuncitonAstToGeneratorAst(ast)
+    ]
+   }, config[RUNTIME_VALUE_DICTS.symbolEnv])
+  }
+  let FunctionCtor = RuntimeRefValue;
+  if (isGenerator && !isAsync) {
+    FunctionCtor = RuntimeGeneratorFunctionValue;
+  }
+  const ret = new FunctionCtor(RUNTIME_VALUE_TYPE.function, {}, config)
   ret.setProtoType(createObject({
     constructor: ret,
   }))
-  if (isGenerator) {
-    // const generateFn = getGenerateFn()
-    // const contextRv = createObject({
-    //   value: getUndefinedValue(),
-    //   done: getFalseV(),
-    //   sent: getUndefinedValue(),
-    // })
-    // const objRv = createObject({
-    //   next: generateFn(ret.getDefinedName() + '$generator$next', (
-    //     [argsRv], { _this }
-    //   ) => {
-    //     try {
-
-    //     } catch(e) {
-
-    //     }
-    //   })
-    // })
-
-  }
   return ret;
 }
 
