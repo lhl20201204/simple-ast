@@ -72,6 +72,7 @@ export const ENV_DICTS = {
   isFinallyEnv: 'isFinallyEnv',
   noNeedLookUpVar: 'noNeedLookUpVar',
   isGeneratorFunction: 'isGeneratorFunction',
+  isAsyncFunction: 'isAsyncFunction',
   yieldValue: 'yieldValue',
   isOpenRuntimeValueStack: 'isOpenRuntimeValueStack',
   isYieldBlockEnv: 'isYieldBlockEnv',
@@ -106,6 +107,7 @@ export const AST_DICTS = {
 
 export const GENERATOR_DICTS = {
   yieldInnerRuntimeValue: Symbol('$__yieldInnerRuntimeValue__'),
+  isAwaitError:  Symbol('$__isAwaitError__'),
   yieldInnerEnv:  Symbol('$__yieldInnerEnv__'),
   isGeneratorConfig: Symbol('$__isGeneratorConfig__'),
 }

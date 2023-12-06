@@ -1,11 +1,13 @@
+import Environment from "."
 import parseAst from ".."
 import { GetRuntimeValueAst, RuntimeValueAst, UseRuntimeValueAst, isInstanceOf } from "../../commonApi"
 import { AST_DICTS, OUTPUT_TYPE, PROPERTY_DESCRIPTOR_DICTS, RUNTIME_LITERAL, RUNTIME_VALUE_TO_OUTPUT_TYPE, RUNTIME_VALUE_TYPE } from "../constant"
 import GeneratorConfig from "./Generator/GeneratorConfig"
+import { getPromiseRv } from "./NativeRuntimeValue/promise"
 import { getJsSymbolIterator, getSymbolIteratorRv } from "./NativeRuntimeValue/symbol"
 import PropertyDescriptor from "./PropertyDescriptor"
-import RuntimeValue, { RuntimeConfigValue, RuntimeGeneratorFunctionValue, RuntimeGeneratorInstanceValue } from "./RuntimeValue"
-import { getFalseV, getReflectDefinedPropertyV, getTrueV, getUndefinedValue, runFunctionRuntimeValueInGlobalThis } from "./RuntimeValueInstance"
+import RuntimeValue, { RuntimeConfigValue, RuntimeGeneratorFunctionValue, RuntimeGeneratorInstanceValue, RuntimePromiseInstanceValue } from "./RuntimeValue"
+import { createString, getFalseV, getGenerateFn, getReflectDefinedPropertyV, getTrueV, getUndefinedValue, runFunctionRuntimeValueInGlobalThis } from "./RuntimeValueInstance"
 import parseRuntimeValue from "./parseRuntimeValue"
 
 export function getRuntimeValueType(rv) {
@@ -540,4 +542,70 @@ export function AsyncFuncitonAstToGeneratorAst(ast) {
     generator: true,
     body: awaitToYield(ast.body)
   }
+}
+
+export function PromiseRvThen({
+  promiseInstanceRv,
+  thenCb,
+  thenCbIntroduction,
+  env,
+}) {
+  if (!isInstanceOf(env, Environment)
+   || !isInstanceOf(promiseInstanceRv, RuntimePromiseInstanceValue)
+  ) {
+    throw new Error('入参缺少')
+  }
+  const generateFn = getGenerateFn()
+  return parseAst({
+    type: 'CallExpression',
+    callee: {
+      type: 'MemberExpression',
+      object: createRuntimeValueAst(  promiseInstanceRv, 'innerPromiseInstance'),
+      property: createRuntimeValueAst(createString('then'), 'then'),
+      computed: false,
+      optional: false,
+    },
+    arguments: [
+      createRuntimeValueAst(generateFn(thenCbIntroduction, thenCb), thenCbIntroduction)
+    ]
+  }, env)
+}
+
+export function PromiseRvResolve(valueRv, env) {
+  if (!isInstanceOf(env, Environment)
+  ) {
+    throw new Error('入参缺少env')
+  }
+  return parseAst({
+    type: 'CallExpression',
+    callee: {
+      type: 'MemberExpression',
+      object: createRuntimeValueAst(getPromiseRv(), 'Promise'),
+      property: createRuntimeValueAst(createString('resolve'), 'resolve'),
+      computed: false,
+      optional: false,
+    },
+    arguments: [
+      createRuntimeValueAst(valueRv, '_innerValue'),
+    ]
+  }, env)
+}
+
+export function consolePromiseRv(PIrv, env) {
+  if (!isInstanceOf(env, Environment)
+  ) {
+    throw new Error('入参缺少env')
+  }
+  if (!isInstanceOf(PIrv, RuntimePromiseInstanceValue)) {
+    console.log(parseRuntimeValue(PIrv))
+  } else {
+    PromiseRvThen({
+      promiseInstanceRv: PIrv,
+      thenCb: ([argsRv]) => {
+        console.log('promise-resolve-value:', parseRuntimeValue(argsRv))
+      },
+      env
+    })
+  }
+
 }

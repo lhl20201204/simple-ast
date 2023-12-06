@@ -24,6 +24,7 @@ export default function parseForStatement(ast, env) {
       [ENV_DICTS.isForEnv]: true,
       [ENV_DICTS.noNeedLookUpVar]: true
     }, createEmptyEnviromentExtraConfig({ ast: body }))
+    bodyEnv.copyFromParentEnv(initEnv);
     parseAst(body, bodyEnv);
     if (bodyEnv.hadBreak() || bodyEnv.canDirectlyReturn(body)) {
       break;

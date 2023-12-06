@@ -36,6 +36,15 @@ export default class Environment {
     this.envStackStore = new EnvStackStore(this);
   }
 
+  copyFromParentEnv(parentEnv) {
+    for(const [x,y] of parentEnv.keyMap) {
+      this.keyMap.set(x, y)
+    }
+    for(const [x,y] of parentEnv.map) {
+      this.map.set(x, y)
+    }
+  }
+
   hasKey(key) {
     return this.keyMap.has(key)
   }
@@ -351,6 +360,15 @@ export default class Environment {
     return this._config[ENV_DICTS.isGeneratorFunction]
   }
 
+  currentIsAsyncFunctionEnv() {
+    return this._config[ENV_DICTS.isAsyncFunction]
+  }
+
+  isInAsyncEnv() {
+    return this.currentIsAsyncFunctionEnv() ||
+      (!!this.parent && this.parent.isInAsyncEnv())
+  }
+
   isInGeneratorEnv() {
     return this.currentIsGeneratorFunctionEnv() ||
       (!!this.parent && this.parent.isInGeneratorEnv())
@@ -358,6 +376,10 @@ export default class Environment {
 
   setCurrentIsGeneratorFunctionEnv(bool) {
     this._config[ENV_DICTS.isGeneratorFunction] = bool;
+  }
+
+  setCurrentIsAsyncFunctionEnv(bool) {
+    this._config[ENV_DICTS.isAsyncFunction] = bool;
   }
 
   getRunningGenerateConfig() {

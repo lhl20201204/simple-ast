@@ -2,7 +2,7 @@ import Environment from "..";
 import parseAst from "../..";
 import { isInstanceOf } from "../../../commonApi";
 import { ENV_DICTS, GENERATOR_DICTS, RUNTIME_LITERAL, RUNTIME_VALUE_DICTS } from "../../constant";
-import RuntimeValue from "../RuntimeValue";
+import RuntimeValue, { RuntimePromiseInstanceValue } from "../RuntimeValue";
 import { getUndefinedValue } from "../RuntimeValueInstance";
 import createEnviroment, { createEmptyEnviromentExtraConfig } from "../createEnviroment";
 import { createRuntimeValueAst } from "../utils";
@@ -29,7 +29,12 @@ export default class GeneratorConfig {
     this.contextNextValue = getUndefinedValue()
     this.contextYieldEnv = null;
     this.pendingReturnValue = null;
+    this.pendingPromiseNextValue = null;
     this.runtimeStack = [];
+  }
+
+  canAwaitable() {
+    return  this.ast.async;
   }
 
   isGeneratorConfig() {
@@ -46,6 +51,21 @@ export default class GeneratorConfig {
 
   setYieldEnv(env) {
     this.contextYieldEnv = env;
+  }
+
+  isNotPendingPromiseNextValue() {
+    return !isInstanceOf(this.pendingPromiseNextValue, RuntimePromiseInstanceValue)
+  }
+
+  setPendingPromiseNextValue(rv) {
+    if (!isInstanceOf(rv, RuntimePromiseInstanceValue) ) {
+      throw new Error();
+    }
+    this.pendingPromiseNextValue = rv;
+  }
+
+  getPendingPromiseNextValue() {
+    return this.pendingPromiseNextValue;
   }
 
   getYieldEnv() {
@@ -65,6 +85,7 @@ export default class GeneratorConfig {
     if (!this.runEnv) {
       this.runEnv = createEnviroment('generator_of_' + _.toString(this.name) + '_env', this.contextEnv, {
         [ENV_DICTS.isGeneratorFunction]: true,
+        [ENV_DICTS.isAsyncFunction]: this.canAwaitable(),
         [ENV_DICTS.runningGenerateConfig]: this,
         [ENV_DICTS.isFunctionEnv]: true,
       }, createEmptyEnviromentExtraConfig())

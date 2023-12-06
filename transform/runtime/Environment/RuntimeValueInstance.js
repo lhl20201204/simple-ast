@@ -8,7 +8,7 @@ import { getWrapGeneratorFunctionToAsyncFunctionRv } from "./NativeRuntimeValue/
 import { getGeneratorPrototypeRv } from "./NativeRuntimeValue/generator";
 import { getStringProtoTypeV } from "./NativeRuntimeValue/string";
 import PropertyDescriptor from "./PropertyDescriptor";
-import RuntimeValue, { RuntimeArrayLikeValue, RuntimeAsyncFunctionValue, RuntimeConfigValue, RuntimeGeneratorFunctionValue, RuntimeGeneratorInstanceValue, RuntimeRefValue } from "./RuntimeValue";
+import RuntimeValue, { RuntimeArrayLikeValue, RuntimeAsyncFunctionValue, RuntimeAyncGeneratorFunctionValue, RuntimeConfigValue, RuntimeGeneratorFunctionValue, RuntimeGeneratorInstanceValue, RuntimeRefValue } from "./RuntimeValue";
 import createEnviroment, { createEmptyEnviromentExtraConfig } from "./createEnviroment";
 import parseRuntimeValue from "./parseRuntimeValue";
 import { AsyncFuncitonAstToGeneratorAst, createLiteralAst, createPropertyDesctiptor, createRuntimeValueAst, createSimplePropertyDescriptor, isFunctionRuntimeValue } from "./utils";
@@ -275,6 +275,8 @@ export function createFunction(config) {
   let FunctionCtor = RuntimeRefValue;
   if (isGenerator && !isAsync) {
     FunctionCtor = RuntimeGeneratorFunctionValue;
+  } else if (isGenerator && isAsync) {
+    FunctionCtor = RuntimeAyncGeneratorFunctionValue;
   }
   const ret = new FunctionCtor(RUNTIME_VALUE_TYPE.function, {}, config)
   ret.setProtoType(createObject({

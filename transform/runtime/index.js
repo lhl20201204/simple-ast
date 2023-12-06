@@ -7,6 +7,7 @@ import parseArrayExpression from "./Parse/parseArrayExpression";
 import parseArrowFunctionExpression from "./Parse/parseArrowFunctionExpression";
 import parseAssignmentExpression from "./Parse/parseAssignmentExpression";
 import parseAssignmentPattern from "./Parse/parseAssignmentPattern";
+import parseAwaitExpression from "./Parse/parseAwaitExpression";
 import parseBinaryExpression from "./Parse/parseBinaryExpression";
 import parseBlockStatement from "./Parse/parseBlockStatement";
 import parseBreakStatement from "./Parse/parseBreakStatement";
@@ -65,6 +66,7 @@ export function innerParseAst(ast, env) {
   // console.log( generateCode(ast));
   const type  = ast.type;
   switch(type) {  
+    case 'AwaitExpression': return parseAwaitExpression(ast, env);
     case 'ArrowFunctionExpression': return parseArrowFunctionExpression(ast, env);
     case 'ArrayExpression': return parseArrayExpression(ast, env); 
     case 'AssignmentExpression': return parseAssignmentExpression(ast, env);

@@ -2,7 +2,7 @@ export const _code = `
 function wrap(f) {
   function _runGeneratorInstance(g, v)  {
    const t = g.next(v)
-   return t.done ? Promise.resolve(v) : Promise.resolve(t.value).then(r => _runGeneratorInstance.call(this, g, v))
+   return t.done ? Promise.resolve(v) : Promise.resolve(t.value).then(r => _runGeneratorInstance.call(this, g, t.value))
   }
   return function (...args) { 
     return _runGeneratorInstance.call(this, f.call(this,...args))}
@@ -11,12 +11,12 @@ function wrap(f) {
 
 export const _wrapGeneratorFunctionToAsyncFunctionAst = {
   "type": "FunctionExpression",
-  "start": 130,
-  "end": 432,
+  "start": 0,
+  "end": 308,
   "id": {
     "type": "Identifier",
-    "start": 139,
-    "end": 143,
+    "start": 9,
+    "end": 13,
     "name": "wrap"
   },
   "expression": false,
@@ -25,24 +25,24 @@ export const _wrapGeneratorFunctionToAsyncFunctionAst = {
   "params": [
     {
       "type": "Identifier",
-      "start": 144,
-      "end": 145,
+      "start": 14,
+      "end": 15,
       "name": "f"
     }
   ],
   "body": {
     "type": "BlockStatement",
-    "start": 147,
-    "end": 432,
+    "start": 17,
+    "end": 308,
     "body": [
       {
         "type": "FunctionDeclaration",
-        "start": 151,
-        "end": 332,
+        "start": 21,
+        "end": 208,
         "id": {
           "type": "Identifier",
-          "start": 160,
-          "end": 181,
+          "start": 30,
+          "end": 51,
           "name": "_runGeneratorInstance"
         },
         "expression": false,
@@ -51,55 +51,55 @@ export const _wrapGeneratorFunctionToAsyncFunctionAst = {
         "params": [
           {
             "type": "Identifier",
-            "start": 182,
-            "end": 183,
+            "start": 52,
+            "end": 53,
             "name": "g"
           },
           {
             "type": "Identifier",
-            "start": 185,
-            "end": 186,
+            "start": 55,
+            "end": 56,
             "name": "v"
           }
         ],
         "body": {
           "type": "BlockStatement",
-          "start": 189,
-          "end": 332,
+          "start": 59,
+          "end": 208,
           "body": [
             {
               "type": "VariableDeclaration",
-              "start": 194,
-              "end": 213,
+              "start": 64,
+              "end": 83,
               "declarations": [
                 {
                   "type": "VariableDeclarator",
-                  "start": 200,
-                  "end": 213,
+                  "start": 70,
+                  "end": 83,
                   "id": {
                     "type": "Identifier",
-                    "start": 200,
-                    "end": 201,
+                    "start": 70,
+                    "end": 71,
                     "name": "t"
                   },
                   "init": {
                     "type": "CallExpression",
-                    "start": 204,
-                    "end": 213,
+                    "start": 74,
+                    "end": 83,
                     "callee": {
                       "type": "MemberExpression",
-                      "start": 204,
-                      "end": 210,
+                      "start": 74,
+                      "end": 80,
                       "object": {
                         "type": "Identifier",
-                        "start": 204,
-                        "end": 205,
+                        "start": 74,
+                        "end": 75,
                         "name": "g"
                       },
                       "property": {
                         "type": "Identifier",
-                        "start": 206,
-                        "end": 210,
+                        "start": 76,
+                        "end": 80,
                         "name": "next"
                       },
                       "computed": false,
@@ -108,8 +108,8 @@ export const _wrapGeneratorFunctionToAsyncFunctionAst = {
                     "arguments": [
                       {
                         "type": "Identifier",
-                        "start": 211,
-                        "end": 212,
+                        "start": 81,
+                        "end": 82,
                         "name": "v"
                       }
                     ],
@@ -121,26 +121,26 @@ export const _wrapGeneratorFunctionToAsyncFunctionAst = {
             },
             {
               "type": "ReturnStatement",
-              "start": 217,
-              "end": 328,
+              "start": 87,
+              "end": 204,
               "argument": {
                 "type": "ConditionalExpression",
-                "start": 224,
-                "end": 328,
+                "start": 94,
+                "end": 204,
                 "test": {
                   "type": "MemberExpression",
-                  "start": 224,
-                  "end": 230,
+                  "start": 94,
+                  "end": 100,
                   "object": {
                     "type": "Identifier",
-                    "start": 224,
-                    "end": 225,
+                    "start": 94,
+                    "end": 95,
                     "name": "t"
                   },
                   "property": {
                     "type": "Identifier",
-                    "start": 226,
-                    "end": 230,
+                    "start": 96,
+                    "end": 100,
                     "name": "done"
                   },
                   "computed": false,
@@ -148,22 +148,22 @@ export const _wrapGeneratorFunctionToAsyncFunctionAst = {
                 },
                 "consequent": {
                   "type": "CallExpression",
-                  "start": 233,
-                  "end": 251,
+                  "start": 103,
+                  "end": 121,
                   "callee": {
                     "type": "MemberExpression",
-                    "start": 233,
-                    "end": 248,
+                    "start": 103,
+                    "end": 118,
                     "object": {
                       "type": "Identifier",
-                      "start": 233,
-                      "end": 240,
+                      "start": 103,
+                      "end": 110,
                       "name": "Promise"
                     },
                     "property": {
                       "type": "Identifier",
-                      "start": 241,
-                      "end": 248,
+                      "start": 111,
+                      "end": 118,
                       "name": "resolve"
                     },
                     "computed": false,
@@ -172,8 +172,8 @@ export const _wrapGeneratorFunctionToAsyncFunctionAst = {
                   "arguments": [
                     {
                       "type": "Identifier",
-                      "start": 249,
-                      "end": 250,
+                      "start": 119,
+                      "end": 120,
                       "name": "v"
                     }
                   ],
@@ -181,30 +181,30 @@ export const _wrapGeneratorFunctionToAsyncFunctionAst = {
                 },
                 "alternate": {
                   "type": "CallExpression",
-                  "start": 254,
-                  "end": 328,
+                  "start": 124,
+                  "end": 204,
                   "callee": {
                     "type": "MemberExpression",
-                    "start": 254,
-                    "end": 283,
+                    "start": 124,
+                    "end": 153,
                     "object": {
                       "type": "CallExpression",
-                      "start": 254,
-                      "end": 278,
+                      "start": 124,
+                      "end": 148,
                       "callee": {
                         "type": "MemberExpression",
-                        "start": 254,
-                        "end": 269,
+                        "start": 124,
+                        "end": 139,
                         "object": {
                           "type": "Identifier",
-                          "start": 254,
-                          "end": 261,
+                          "start": 124,
+                          "end": 131,
                           "name": "Promise"
                         },
                         "property": {
                           "type": "Identifier",
-                          "start": 262,
-                          "end": 269,
+                          "start": 132,
+                          "end": 139,
                           "name": "resolve"
                         },
                         "computed": false,
@@ -213,18 +213,18 @@ export const _wrapGeneratorFunctionToAsyncFunctionAst = {
                       "arguments": [
                         {
                           "type": "MemberExpression",
-                          "start": 270,
-                          "end": 277,
+                          "start": 140,
+                          "end": 147,
                           "object": {
                             "type": "Identifier",
-                            "start": 270,
-                            "end": 271,
+                            "start": 140,
+                            "end": 141,
                             "name": "t"
                           },
                           "property": {
                             "type": "Identifier",
-                            "start": 272,
-                            "end": 277,
+                            "start": 142,
+                            "end": 147,
                             "name": "value"
                           },
                           "computed": false,
@@ -235,8 +235,8 @@ export const _wrapGeneratorFunctionToAsyncFunctionAst = {
                     },
                     "property": {
                       "type": "Identifier",
-                      "start": 279,
-                      "end": 283,
+                      "start": 149,
+                      "end": 153,
                       "name": "then"
                     },
                     "computed": false,
@@ -245,8 +245,8 @@ export const _wrapGeneratorFunctionToAsyncFunctionAst = {
                   "arguments": [
                     {
                       "type": "ArrowFunctionExpression",
-                      "start": 284,
-                      "end": 327,
+                      "start": 154,
+                      "end": 203,
                       "id": null,
                       "expression": true,
                       "generator": false,
@@ -254,29 +254,29 @@ export const _wrapGeneratorFunctionToAsyncFunctionAst = {
                       "params": [
                         {
                           "type": "Identifier",
-                          "start": 284,
-                          "end": 285,
+                          "start": 154,
+                          "end": 155,
                           "name": "r"
                         }
                       ],
                       "body": {
                         "type": "CallExpression",
-                        "start": 289,
-                        "end": 327,
+                        "start": 159,
+                        "end": 203,
                         "callee": {
                           "type": "MemberExpression",
-                          "start": 289,
-                          "end": 315,
+                          "start": 159,
+                          "end": 185,
                           "object": {
                             "type": "Identifier",
-                            "start": 289,
-                            "end": 310,
+                            "start": 159,
+                            "end": 180,
                             "name": "_runGeneratorInstance"
                           },
                           "property": {
                             "type": "Identifier",
-                            "start": 311,
-                            "end": 315,
+                            "start": 181,
+                            "end": 185,
                             "name": "call"
                           },
                           "computed": false,
@@ -285,20 +285,33 @@ export const _wrapGeneratorFunctionToAsyncFunctionAst = {
                         "arguments": [
                           {
                             "type": "ThisExpression",
-                            "start": 316,
-                            "end": 320
+                            "start": 186,
+                            "end": 190
                           },
                           {
                             "type": "Identifier",
-                            "start": 322,
-                            "end": 323,
+                            "start": 192,
+                            "end": 193,
                             "name": "g"
                           },
                           {
-                            "type": "Identifier",
-                            "start": 325,
-                            "end": 326,
-                            "name": "v"
+                            "type": "MemberExpression",
+                            "start": 195,
+                            "end": 202,
+                            "object": {
+                              "type": "Identifier",
+                              "start": 195,
+                              "end": 196,
+                              "name": "t"
+                            },
+                            "property": {
+                              "type": "Identifier",
+                              "start": 197,
+                              "end": 202,
+                              "name": "value"
+                            },
+                            "computed": false,
+                            "optional": false
                           }
                         ],
                         "optional": false
@@ -314,12 +327,12 @@ export const _wrapGeneratorFunctionToAsyncFunctionAst = {
       },
       {
         "type": "ReturnStatement",
-        "start": 335,
-        "end": 430,
+        "start": 211,
+        "end": 306,
         "argument": {
           "type": "FunctionExpression",
-          "start": 342,
-          "end": 430,
+          "start": 218,
+          "end": 306,
           "id": null,
           "expression": false,
           "generator": false,
@@ -327,43 +340,43 @@ export const _wrapGeneratorFunctionToAsyncFunctionAst = {
           "params": [
             {
               "type": "RestElement",
-              "start": 352,
-              "end": 359,
+              "start": 228,
+              "end": 235,
               "argument": {
                 "type": "Identifier",
-                "start": 355,
-                "end": 359,
+                "start": 231,
+                "end": 235,
                 "name": "args"
               }
             }
           ],
           "body": {
             "type": "BlockStatement",
-            "start": 361,
-            "end": 430,
+            "start": 237,
+            "end": 306,
             "body": [
               {
                 "type": "ReturnStatement",
-                "start": 368,
-                "end": 429,
+                "start": 244,
+                "end": 305,
                 "argument": {
                   "type": "CallExpression",
-                  "start": 375,
-                  "end": 429,
+                  "start": 251,
+                  "end": 305,
                   "callee": {
                     "type": "MemberExpression",
-                    "start": 375,
-                    "end": 401,
+                    "start": 251,
+                    "end": 277,
                     "object": {
                       "type": "Identifier",
-                      "start": 375,
-                      "end": 396,
+                      "start": 251,
+                      "end": 272,
                       "name": "_runGeneratorInstance"
                     },
                     "property": {
                       "type": "Identifier",
-                      "start": 397,
-                      "end": 401,
+                      "start": 273,
+                      "end": 277,
                       "name": "call"
                     },
                     "computed": false,
@@ -372,27 +385,27 @@ export const _wrapGeneratorFunctionToAsyncFunctionAst = {
                   "arguments": [
                     {
                       "type": "ThisExpression",
-                      "start": 402,
-                      "end": 406
+                      "start": 278,
+                      "end": 282
                     },
                     {
                       "type": "CallExpression",
-                      "start": 408,
-                      "end": 428,
+                      "start": 284,
+                      "end": 304,
                       "callee": {
                         "type": "MemberExpression",
-                        "start": 408,
-                        "end": 414,
+                        "start": 284,
+                        "end": 290,
                         "object": {
                           "type": "Identifier",
-                          "start": 408,
-                          "end": 409,
+                          "start": 284,
+                          "end": 285,
                           "name": "f"
                         },
                         "property": {
                           "type": "Identifier",
-                          "start": 410,
-                          "end": 414,
+                          "start": 286,
+                          "end": 290,
                           "name": "call"
                         },
                         "computed": false,
@@ -401,17 +414,17 @@ export const _wrapGeneratorFunctionToAsyncFunctionAst = {
                       "arguments": [
                         {
                           "type": "ThisExpression",
-                          "start": 415,
-                          "end": 419
+                          "start": 291,
+                          "end": 295
                         },
                         {
                           "type": "SpreadElement",
-                          "start": 420,
-                          "end": 427,
+                          "start": 296,
+                          "end": 303,
                           "argument": {
                             "type": "Identifier",
-                            "start": 423,
-                            "end": 427,
+                            "start": 299,
+                            "end": 303,
                             "name": "args"
                           }
                         }

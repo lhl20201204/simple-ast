@@ -584,6 +584,10 @@ export class RuntimeGeneratorFunctionValue extends RuntimeRefValue {
 
 }
 
+export class RuntimeAyncGeneratorFunctionValue extends RuntimeGeneratorFunctionValue {
+  
+}
+
 export class RuntimeGeneratorInstanceValue extends RuntimeRefValue {
   getGenerateConfig() {
     const ret = this.restConfig[RUNTIME_VALUE_DICTS.generatorConfig];

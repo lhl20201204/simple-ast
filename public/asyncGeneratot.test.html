@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+
+<body>
+  <div id="contanier"></div>
+  <script id="src">
+
+    let pro = Promise.resolve('第1轮微任务开始')
+
+    for(let i = 0; i< 9; i++) {
+      pro = pro.then((x) => {
+        console.log(x)
+        return '第' + (i+ 2) + '轮微任务开始'
+      })
+    }
+
+    async function* createAsyncGenerator() {
+      console.log(2)
+      const t = await 5
+      console.log('t', t)
+      const x = yield t + 2;
+      console.log(6, x)
+      const y = yield await 9
+      console.log(8, y)
+      const z =yield await 11
+      console.log(10, z)
+      return 12
+    }
+    const asyncGen = createAsyncGenerator();
+    console.log(1)
+    asyncGen.next().then((res) => console.log( res.value, 'a'));
+    console.log(3)
+    asyncGen.next('x').then((res) => console.log(res.value, 'b'));
+    console.log(4)
+    asyncGen.next('y').then((res) => console.log( res.value, 'c'));
+    asyncGen.next('z').then((res) => console.log( res.value, 'd'));
+    console.log('main-end')
+  </script>
+  <script>
+    const d = document.getElementById('contanier')
+    d.innerHTML = document.getElementById('src').innerText.replaceAll(' ', '&nbsp;&nbsp;').replaceAll('\n', '<br/>')
+
+    document.body.appendChild(d);
+
+  </script>
+</body>
+
+</html>
