@@ -103,6 +103,7 @@ export const AST_DICTS = {
   yieldStarToForOfYieldAstConfig: 'yieldStarToForOfYieldAstConfig',
   yieldStarToForOfRightAstConfig: 'yieldStarToForOfRightAstConfig',
   yieldStarToForOfBodyAstConfig: 'yieldStarToForOfBodyAstConfig',
+  forOfAwaitInitAstConfig: 'forOfAwaitInitAstConfig',
 }
 
 export const GENERATOR_DICTS = {

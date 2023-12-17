@@ -10,7 +10,7 @@
 <body>
   <div id="content"></div>
   <script>
-    const OldPromise = Promise;
+    // const OldPromise = Promise;
     class MyPromise {
       static pending = 'pending';
       static fulfilled = 'fulfilled';
@@ -28,7 +28,7 @@
       }
 
       static resolve(x) {
-        return new MyPromise((res) => res(x))
+        return (x instanceof MyPromise) ? x : new MyPromise((res) => res(x))
       }
 
       static reject(e) {
@@ -107,7 +107,17 @@
                   res(ret)
                 }
               }
-              this.state === MyPromise.fulfilled && handle(thenCb(this.resolveResult))
+              if (this.state === MyPromise.fulfilled) {
+                if (this.resolveResult instanceof MyPromise) {
+                  this.resolveResult.then((t) =>{
+                    queueMicrotask(() => {
+                      handle(thenCb(t))
+                    })
+                  })
+                } else {
+                  handle(thenCb(this.resolveResult))
+                }
+              } 
               this.state === MyPromise.rejected && handle(catchCb(this.rejectResult))
             } catch (e) {
               // Sconsole.warn('Promise', e)
@@ -121,20 +131,9 @@
 
       resolve = (x) => {
         if (this.state === MyPromise.pending) {
+          this.resolveResult = x;
           this.state = MyPromise.fulfilled;
-          if (x instanceof MyPromise) {
-            x.then((x) => {
-              this.resolveResult = x;
-              this.$run()
-            }, (e) => {
-              this.rejectResult = e;
-              this.state = MyPromise.rejected;
-              this.$run()
-            })
-          } else {
-            this.resolveResult = x;
-            this.$run()
-          }
+          this.$run()
         }
       }
 

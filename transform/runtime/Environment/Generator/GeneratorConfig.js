@@ -3,7 +3,7 @@ import parseAst from "../..";
 import { isInstanceOf } from "../../../commonApi";
 import { ENV_DICTS, GENERATOR_DICTS, RUNTIME_LITERAL, RUNTIME_VALUE_DICTS } from "../../constant";
 import RuntimeValue, { RuntimePromiseInstanceValue } from "../RuntimeValue";
-import { getUndefinedValue } from "../RuntimeValueInstance";
+import { createObject, getTrueV, getUndefinedValue } from "../RuntimeValueInstance";
 import createEnviroment, { createEmptyEnviromentExtraConfig } from "../createEnviroment";
 import { createRuntimeValueAst } from "../utils";
 
@@ -30,6 +30,7 @@ export default class GeneratorConfig {
     this.contextYieldEnv = null;
     this.pendingReturnValue = null;
     this.pendingPromiseNextValue = null;
+    this.pendingResolveCallbackList = [];
     this.runtimeStack = [];
   }
 
@@ -78,6 +79,18 @@ export default class GeneratorConfig {
 
   setPendingErrorValue(rv) {
     this.pendingErrorValue = rv;
+  }
+
+  clearPromiseCallbackList(env, index) {
+    if (!_.isNumber(index)) {
+      throw new Error('index 必须为数字')
+    }
+    this.pendingResolveCallbackList.shift()
+    this.pendingResolveCallbackList.forEach(t => t[index](createObject({
+      value: getUndefinedValue(),
+      done: getTrueV()
+    }), env))
+    this.pendingResolveCallbackList.length = 0;
   }
 
   runGeneratorFunction() {

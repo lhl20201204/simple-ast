@@ -4,6 +4,7 @@ import { getPromisePrototypeRv } from "../NativeRuntimeValue/promise";
 import { RuntimePromiseInstanceValue } from "../RuntimeValue";
 import { createString, getFunctionPrototypeRv } from "../RuntimeValueInstance";
 import { getWindowEnv } from "../getWindow";
+import { createPromiseRvAndPromiseResolveCallback } from "../utils";
 
 
 export default function createPromiseInstanceRv(config) {
@@ -34,6 +35,5 @@ export default function createPromiseInstanceRv(config) {
   //     getHandle('rejected')(e)
   //   }
   // })();
-
   return ret;
 }

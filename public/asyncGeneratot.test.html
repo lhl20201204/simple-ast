@@ -13,33 +13,127 @@
 
     let pro = Promise.resolve('第1轮微任务开始')
 
-    for(let i = 0; i< 9; i++) {
+    for (let i = 0; i < 20; i++) {
       pro = pro.then((x) => {
         console.log(x)
-        return '第' + (i+ 2) + '轮微任务开始'
+        return '第' + (i + 2) + '轮微任务开始'
       })
     }
 
+    function run() {
+
+      let last =  Promise.resolve(5)
+        .then(res => {
+          console.log('my', 't', res)
+          return ('a')
+        }).then(res => {
+          console.log('my', res)
+          return 'b'
+        }).then((b) => {
+          console.log('my', b)
+          return {
+            value: 7 
+          }
+        })
+
+
+      let t = last.then(x => x);
+      t.then(res => console.log('my', res.value, 'a'));
+
+
+      // next('x')
+      last = last.then(() => {
+        console.log('my', 6, 'x')
+        return 'c'
+      }).then(res => {
+        console.log('my', res)
+        return 'd'
+      }).then((b) => {
+        console.log('my', b)
+        return 9
+      }).then((value) => {
+        return {
+          value
+        }
+      });
+
+      t = last.then(x => x);
+      t.then(res => console.log('my', res.value, 'b'));
+
+
+      last = last.then(() => {
+        console.log('my', 8, 'y')
+        return 'e'
+      }).then(res => {
+        console.log('my', res)
+        return 11
+      }).then((value) => {
+        return {
+           value
+        }
+      })
+
+      t = last.then(x => x);
+
+      t.then(res => console.log('my', res.value, 'c'));
+
+
+      last = last.then(() => 'f')
+      .then(x =>{
+        console.log('my',x)
+        console.log('my', 10, 'z')
+        return {
+          value: 12
+        }
+       }
+      )
+      
+      t = last.then(x => x);
+      t.then(res => console.log('my', res.value, 'd'));
+    }
+
+    run()
     async function* createAsyncGenerator() {
+      yield 8888
       console.log(2)
       const t = await 5
       console.log('t', t)
+      const t1 = await 'a'
+      console.log(t1)
+      const t5 = await 'b'
+      console.log(t5)
       const x = yield t + 2;
       console.log(6, x)
+      try {
+        console.log(iojojono)
+      } catch(e) {
+        console.error(e);
+        throw e
+      }
+      const t2 = await 'c'
+      console.log(t2)
+      return '9999'
+      const t6 = await 'd'
+      console.log(t6)
       const y = yield await 9
       console.log(8, y)
-      const z =yield await 11
+      const t3 = await 'e'
+      console.log(t3)
+      const z = yield await 11
+      const t4 = await 'f'
+      console.log(t4)
       console.log(10, z)
       return 12
     }
     const asyncGen = createAsyncGenerator();
     console.log(1)
-    asyncGen.next().then((res) => console.log( res.value, 'a'));
+    asyncGen.next().then((res) => console.log(res.value, 'a'));
     console.log(3)
     asyncGen.next('x').then((res) => console.log(res.value, 'b'));
     console.log(4)
-    asyncGen.next('y').then((res) => console.log( res.value, 'c'));
-    asyncGen.next('z').then((res) => console.log( res.value, 'd'));
+    asyncGen.next('y').then((res) => console.log(res.value, 'c'));
+    asyncGen.next('z').then((res) => console.log(res.value, 'd'));
+    asyncGen.next('z2').then((res) => console.log(res.value, 'e'));
     console.log('main-end')
   </script>
   <script>

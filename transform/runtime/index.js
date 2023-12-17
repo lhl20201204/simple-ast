@@ -129,11 +129,11 @@ export function setLoop(x) {
 
 export default function parseAst(ast, env) {
   // if (getDebugging()) {
-  //   console.log(generateCode(ast));
+    // console.log(generateCode(ast));
   // }
   // console.log(generateCode(ast));
   // if (loop++ > 6000) {
   //   return;
   // }
-  return withRecordEnvStack(ast, env, () => innerParseAst(ast, env));
+  return withRecordEnvStack(ast, env, innerParseAst);
 }

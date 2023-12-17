@@ -7,13 +7,17 @@ import { getJsSymbolIterator, getSymbolIteratorRv } from "../Environment/NativeR
 import { RuntimeGeneratorInstanceValue } from "../Environment/RuntimeValue";
 import createEnviroment, { createEmptyEnviromentExtraConfig } from "../Environment/createEnviroment";
 import parseRuntimeValue from "../Environment/parseRuntimeValue";
-import { createRuntimeValueAst, isGeneratorFunctionRuntimeValue } from "../Environment/utils";
+import { PromiseRvThen, createRuntimeValueAst, isGeneratorFunctionRuntimeValue } from "../Environment/utils";
 import generateCode from "../Generate";
 import { AST_DICTS, ENV_DICTS, RUNTIME_VALUE_TYPE } from "../constant";
 import setPattern from "./setPattern";
 
 export default function parseForOfStatement(ast, env) {
-  const { left, right, body } = ast;
+  const { left, right, body, await: isAwait } = ast;
+  if (!env.isInAsyncEnv() && isAwait) {
+    throw new Error('当前不在async函数定义范围内无法在forof语句使用' + RUNTIME_LITERAL.await)
+  }
+
   const iteratorableRv = parseAst(right, env);
   // todo 先处理类数组类型
   if (
@@ -74,10 +78,12 @@ export default function parseForOfStatement(ast, env) {
       "arguments": [
       ],
       "optional": false
-    }, env)
+    }, env);
+    // console.log(genInstanceRv)
     return stepRv;
   };
   const getStepRv = () => stepRv;
+
   if (isInstanceOf(rightAstConfig, AstConfig)) {
     if (_.isNil(rightAstConfig.getIteratorRuntimeValue())) {
       rightAstConfig.setIteratorRuntimeValue(setStepRv())
@@ -87,7 +93,22 @@ export default function parseForOfStatement(ast, env) {
     setStepRv()
   }
 
-  while (!parseRuntimeValue(getStepRv().get('done'))) {
+  const run = () => {
+    let stepCurrentRv = getStepRv()
+    if (isAwait) {
+      const forOfAwaitInitAstConfig = rightAstConfig.getForOfAwaitInitAstConfig()
+      stepCurrentRv = parseAst({
+        [AST_DICTS._config]: forOfAwaitInitAstConfig,
+        type: 'AwaitExpression',
+        argument: createRuntimeValueAst(stepCurrentRv, 'leftInit'),
+      }, env)
+    }
+    if (parseRuntimeValue(stepCurrentRv.get('done'))) {
+      return;
+    }
+    const leftValueRv = stepCurrentRv.get('value');
+
+
     const paramsEnv = createEnviroment('for_of_statement_params', env, {
       [ENV_DICTS.noNeedLookUpVar]: true
     }, createEmptyEnviromentExtraConfig({ ast }))
@@ -95,12 +116,12 @@ export default function parseForOfStatement(ast, env) {
       paramsEnv.pushEnvStack()
     }
     const childEnv = createEnviroment('for_of_statement_body', paramsEnv, {
-      isForOfEnv: true,
+      [ENV_DICTS.isForOfEnv]: true,
       [ENV_DICTS.isForEnv]: true,
       [ENV_DICTS.noNeedLookUpVar]: true
     }, createEmptyEnviromentExtraConfig({ ast }))
 
-    setPattern(getStepRv().get('value'), left, paramsEnv, {
+    setPattern(leftValueRv, left, paramsEnv, {
       kind: left.kind,
       useSet: left.kind === 'var',
       allowConstLetDefineAgain: paramsEnv.isCacheFromParentEnv(),
@@ -110,15 +131,19 @@ export default function parseForOfStatement(ast, env) {
       paramsEnv.popEnvStack()
     }
     if (childEnv.hadBreak() || childEnv.canDirectlyReturn(body)) {
-      break;
+      return;
     }
     if (childEnv.hadContinue()) {
       childEnv.setContinueFlag(false)
     }
     setStepRv()
     if (isInGenerator) {
+      rightAstConfig.resetForOfAwaitInitAstConfig();
       rightAstConfig.setIteratorRuntimeValue(getStepRv())
       clearAstConfig(body);
     }
+    run()
   }
+
+  run()
 }

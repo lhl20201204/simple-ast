@@ -9,7 +9,145 @@ function wrap(f) {
 }
 `
 
-export const _wrapGeneratorFunctionToAsyncFunctionAst = {
+export const _code2 = `
+function wrap(f) {
+  return function (...args) { 
+    return f.call(this,...args).next()
+  }
+}
+`
+
+export const _wrapGeneratorFunctionToAsyncFunctionAst ={
+  "type": "FunctionExpression",
+  "start": 0,
+  "end": 94,
+  "id": {
+    "type": "Identifier",
+    "start": 9,
+    "end": 13,
+    "name": "wrap"
+  },
+  "expression": false,
+  "generator": false,
+  "async": false,
+  "params": [
+    {
+      "type": "Identifier",
+      "start": 14,
+      "end": 15,
+      "name": "f"
+    }
+  ],
+  "body": {
+    "type": "BlockStatement",
+    "start": 17,
+    "end": 94,
+    "body": [
+      {
+        "type": "ReturnStatement",
+        "start": 21,
+        "end": 92,
+        "argument": {
+          "type": "FunctionExpression",
+          "start": 28,
+          "end": 92,
+          "id": null,
+          "expression": false,
+          "generator": false,
+          "async": false,
+          "params": [
+            {
+              "type": "RestElement",
+              "start": 38,
+              "end": 45,
+              "argument": {
+                "type": "Identifier",
+                "start": 41,
+                "end": 45,
+                "name": "args"
+              }
+            }
+          ],
+          "body": {
+            "type": "BlockStatement",
+            "start": 47,
+            "end": 92,
+            "body": [
+              {
+                "type": "ReturnStatement",
+                "start": 54,
+                "end": 88,
+                "argument": {
+                  "type": "CallExpression",
+                  "start": 61,
+                  "end": 88,
+                  "callee": {
+                    "type": "MemberExpression",
+                    "start": 61,
+                    "end": 86,
+                    "object": {
+                      "type": "CallExpression",
+                      "start": 61,
+                      "end": 81,
+                      "callee": {
+                        "type": "MemberExpression",
+                        "start": 61,
+                        "end": 67,
+                        "object": {
+                          "type": "Identifier",
+                          "start": 61,
+                          "end": 62,
+                          "name": "f"
+                        },
+                        "property": {
+                          "type": "Identifier",
+                          "start": 63,
+                          "end": 67,
+                          "name": "call"
+                        },
+                        "computed": false,
+                        "optional": false
+                      },
+                      "arguments": [
+                        {
+                          "type": "ThisExpression",
+                          "start": 68,
+                          "end": 72
+                        },
+                        {
+                          "type": "SpreadElement",
+                          "start": 73,
+                          "end": 80,
+                          "argument": {
+                            "type": "Identifier",
+                            "start": 76,
+                            "end": 80,
+                            "name": "args"
+                          }
+                        }
+                      ],
+                      "optional": false
+                    },
+                    "property": {
+                      "type": "Identifier",
+                      "start": 82,
+                      "end": 86,
+                      "name": "next"
+                    },
+                    "computed": false,
+                    "optional": false
+                  },
+                  "arguments": [],
+                  "optional": false
+                }
+              }
+            ]
+          }
+        }
+      }
+    ]
+  }
+} || {
   "type": "FunctionExpression",
   "start": 0,
   "end": 308,

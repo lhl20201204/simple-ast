@@ -33,6 +33,8 @@ export default class AstConfig{
     }
   } 
 
+  
+
   getGeneratorAstConfig = this.getOrNew(AST_DICTS.generatorAstConfig)
 
   getYieldStarToForOfRightAstConfig = this.getOrNew(AST_DICTS.yieldStarToForOfRightAstConfig)
@@ -40,6 +42,12 @@ export default class AstConfig{
   getYieldStarToForOfBodyAstConfig = this.getOrNew(AST_DICTS.yieldStarToForOfBodyAstConfig)
 
   getYieldStarToForOfYieldAstConfig = this.getOrNew(AST_DICTS.yieldStarToForOfYieldAstConfig)
+
+  getForOfAwaitInitAstConfig = this.getOrNew(AST_DICTS.forOfAwaitInitAstConfig)
+
+  resetForOfAwaitInitAstConfig = () => {
+    this.map.set(AST_DICTS.forOfAwaitInitAstConfig, new AstConfig())
+  }
 
   setIteratorRuntimeValue(rv) {
     // console.error(rv);
@@ -121,7 +129,7 @@ export function withRecordEnvStack(ast, env, cb) {
     }
     astConfig.setNeedReRun(true);
   }
-  let retRv = cb();
+  let retRv = cb(ast, env);
   if (isGeneratorEnv) {
     const astConfig = ast[AST_DICTS._config];
     astConfig.setNeedReRun(false);

@@ -241,8 +241,10 @@ export function getTemplateElementCode(ast, config) {
 }
 
 export function getForOfOrInStatementCode(ast, config, type) {
-  const { left, right, body } = ast;
-  return `${purple(RUNTIME_LITERAL.for, config)}${space(config)}(${space(config)}${getAstCode(left, letVariableDeclarationInForOFStatement(config))}${space(config)}${type}${space(config)}${getAstCode(right, config)}${space(config)})${space(config)}{\n${getAstCode(body, tabSpace(config))}\n${prefixSpace(config)}}${space(config)}${remark(` /* ${RUNTIME_LITERAL.for} ` + type + ' end */', config)}`
+  const { left, right, body, await: isAwait } = ast;
+  return `${purple(RUNTIME_LITERAL.for, config)}${
+    isAwait ? wrapSpace(purple(RUNTIME_LITERAL.await, config), config): space(config)
+  }(${space(config)}${getAstCode(left, letVariableDeclarationInForOFStatement(config))}${space(config)}${type}${space(config)}${getAstCode(right, config)}${space(config)})${space(config)}{\n${getAstCode(body, tabSpace(config))}\n${prefixSpace(config)}}${space(config)}${remark(` /* ${RUNTIME_LITERAL.for} ` + type + ' end */', config)}`
 }
 
 export function getForOfStatementCode(ast, config) {

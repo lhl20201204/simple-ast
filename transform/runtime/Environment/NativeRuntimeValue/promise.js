@@ -66,10 +66,7 @@ export function ensureHadPromise() {
           if (state === PENDING) {
             state = FULFILLED;
             if (isInstanceOf(rv, RuntimePromiseInstanceValue)) {
-              rv.getPromiseInstance().then(rv => {
-                promiseResult = rv;
-                res(rv)
-              })
+              res(rv.getPromiseInstance())
             } else {
               promiseResult = rv;
               res(rv)

@@ -8,6 +8,7 @@ import { getWindowEnv } from "./transform/runtime/Environment/getWindow";
 import generateCode from "./transform/runtime/Generate";
 import writeJSON, { textReplace } from "./transform/util";
 import { DEBUGGER_DICTS } from "./transform/runtime/constant";
+import { createPromiseRvAndPromiseResolveCallback } from "./transform/runtime/Environment/utils";
 
 source.onscroll= _.throttle(() => {
   const dom =  document.getElementById('currentDebuggerSpan');

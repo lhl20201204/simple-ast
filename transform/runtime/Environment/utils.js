@@ -3,6 +3,7 @@ import parseAst from ".."
 import { GetRuntimeValueAst, RuntimeValueAst, UseRuntimeValueAst, isInstanceOf } from "../../commonApi"
 import { AST_DICTS, OUTPUT_TYPE, PROPERTY_DESCRIPTOR_DICTS, RUNTIME_LITERAL, RUNTIME_VALUE_TO_OUTPUT_TYPE, RUNTIME_VALUE_TYPE } from "../constant"
 import GeneratorConfig from "./Generator/GeneratorConfig"
+import { _codePromiseResolveAst } from "./Native/promise"
 import { getPromiseRv } from "./NativeRuntimeValue/promise"
 import { getJsSymbolIterator, getSymbolIteratorRv } from "./NativeRuntimeValue/symbol"
 import PropertyDescriptor from "./PropertyDescriptor"
@@ -547,7 +548,7 @@ export function AsyncFuncitonAstToGeneratorAst(ast) {
 export function PromiseRvThen({
   promiseInstanceRv,
   thenCb,
-  thenCbIntroduction,
+  thenCbIntroduction = 'args',
   env,
 }) {
   if (!isInstanceOf(env, Environment)
@@ -608,4 +609,26 @@ export function consolePromiseRv(PIrv, env) {
     })
   }
 
+}
+
+export function createPromiseRvAndPromiseResolveCallback(env) {
+  if (!isInstanceOf(env, Environment)) {
+    throw new Error('env比传')
+  }
+  const ret = parseAst(_.cloneDeep(_codePromiseResolveAst), env)
+  return {
+    promiseRv: ret.get('promise'),
+    promiseResolveCallback: (argsRv, env) => {
+      if (!isInstanceOf(env, Environment)) {
+        throw new Error('env比传')
+      }
+      return parseAst({
+      "type": "CallExpression",
+      "callee": createRuntimeValueAst(ret.get('promiseResolve'), 'promiseResolve'),
+      "arguments": [
+        createRuntimeValueAst(argsRv, '_innerargsRv')
+      ],
+      "optional": false
+    }, env)}
+  }
 }

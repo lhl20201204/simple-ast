@@ -268,7 +268,10 @@ export function createFunction(config) {
     type: 'CallExpression',
     callee: createRuntimeValueAst(fnRv, 'WrapGeneratorFunctionToAsyncFunction', fnRv.getDefinedAst()),
     arguments: [
-      AsyncFuncitonAstToGeneratorAst(ast)
+      {
+        ..._.cloneDeep(ast),
+        generator: true,
+      }
     ]
    }, config[RUNTIME_VALUE_DICTS.symbolEnv])
   }

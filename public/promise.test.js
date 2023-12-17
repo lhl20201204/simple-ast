@@ -1,12 +1,12 @@
 // throw 1;
 
-const onlyTestLastly = false;
+const onlyTestLastly = true;
 const closeTest = false;
 // const OldPromise = Promise;
 const originLog = console.log
-// const Promise = MyPromise;
+const Promise = MyPromise;
 // 抛出错误的地方不对， 正版的捕获不到。
-const diffCount =  Number(Boolean(Promise === MyPromise));
+const isMyPromise = Promise === MyPromise;
 let consoleLogArr = [];
 const result = [];
 // const originDebounce = () => {
@@ -134,7 +134,6 @@ setTimeout(() => {
       setTimeout(() => {
         console.log(2, 'promise1', promise1)
         console.log(3, 'promise2', promise2)
-        // next(diffCount)
       }, 2000)
     }
 
@@ -489,7 +488,7 @@ test((next) => {
   setTimeout(() => {
     console.log(2, 'promise1', promise1)
     console.log(3, 'promise2', promise2)
-    next(diffCount)
+    next(isMyPromise ? 1 : 0)
   }, 2000)
   //   
 })
@@ -511,7 +510,7 @@ test((next) => {
     console.log(4, "timer2");
     console.log(5, "promise1", promise1);
     console.log(6, "promise2", promise2);
-    next(diffCount)
+    next(isMyPromise ? 1 : 0)
   }, 2000);
 
 })
@@ -806,7 +805,7 @@ test((next) => {
 
   p2.catch((x) => {
     console.error(3, x)
-    next(0)
+    next(isMyPromise ? 3 : 0)
   })
 
 })
@@ -843,6 +842,34 @@ test((next) => {
   }).catch((e) => {
     console.log(0,e)
   })
+})
+
+test((next) => {
+  // const originLog = console.log
+  originLog(Promise, 'MyPromise')
+  const selfLog = (t) => console.log(t-1, t)
+  let  pro  =  Promise.resolve('第1轮微任务开始')
+  for(let  i  =  0;  i<  10;  i++)  {
+      pro = pro.then((x)  =>  {
+        if ( i < 3) {
+          originLog(x)
+        } else {
+         console.log(i+1, x)
+        }
+          return  '第'  +  (i+  2)  +  '轮微任务开始'
+      })
+  }
+
+
+  Promise.resolve(1).then(selfLog)
+  Promise.resolve(new  Promise(r  =>  r(2))).then(selfLog)
+  Promise.resolve(new  Promise(r  =>  new  Promise(t=>t(3)).then(r))).then(selfLog)
+  Promise.resolve(new  Promise((r) =>{ 
+    r(new Promise(t=>t(4)))
+  })).then(selfLog);
+
+
+  pro.then(() => next())
 })
 
 
