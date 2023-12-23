@@ -1,6 +1,10 @@
 import _ from "lodash"
 import { isInstanceOf } from "../../commonApi";
 
+function flattenToken(tokenArr) {
+  return [...tokenArr, ..._.flatten(_.map(tokenArr, 'prefixTokens'))];
+}
+
 export function getTotalToken(ast) {
   if (Array.isArray(ast)) {
     return _.flatten(_.map(ast, c => getTotalToken(c)))
@@ -8,20 +12,22 @@ export function getTotalToken(ast) {
   if (!(isInstanceOf(ast, ASTItem))) {
     return [];
   }
-  return ast.tokens;
+  console.log('ast', ast);
+  return flattenToken(ast.tokens)
 }
 
 export default class ASTItem{
   constructor(value) {
     Object.assign(this, value)
-    const tokensList =  _.size(this.restTokens) ? [...this.restTokens ] : [];
+    const tokensList =  flattenToken(this.restTokens ?? []);
     for(const x in value) {
-      if (x === 'restTokens') {
+      if (['restTokens', 'prefixTokens'].includes(x)) {
         continue;
       }
       const tokens = getTotalToken(value[x]);
       tokensList.push(...tokens)
     }
+    console.log('value', _.cloneDeep(value));
     this.tokens = (_.uniqBy(_.flatten(tokensList), x => x.start + '#' + x.end)).sort(
       (a,b) => a.start - b.start
     );

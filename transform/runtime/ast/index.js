@@ -14,7 +14,7 @@ class TokenChar {
 }
 
 class Token {
-  constructor(type, value) {
+  constructor(type, value, prefixTokens = []) {
     this.type = type;
     this.chars = value;
     this.value = value.map(c => c.char).join('');
@@ -24,6 +24,14 @@ class Token {
     this.endRow = _.last(value).row;
     this.endCol = _.last(value).col;
     this.end = _.last(value).index;
+    if (_.size(prefixTokens) && _.some(prefixTokens, c => !(c instanceof Token))) {
+      throw new Error('无效相关token');
+    }
+    this.prefixTokens = prefixTokens;
+  }
+
+  static createToken(...args) {
+    return new Token(...args);
   }
 }
 
@@ -37,19 +45,24 @@ const TOKEN_TYPE = {
   STRING: 'STRING',
   NUMBER: 'NUMBER',
   OPTIONAL: 'OPTIONAL',
+  EOF: 'EOF',
 }
+
+const EOFFlag = 'EOF';
+const EndStatement = 'EndStatement';
 
 export default class AST {
 
   nextCharIs(str) {
-    if (!str) {
+    if (_.isNil(str)) {
       return this.sourceCode[0]
     }
     if (Array.isArray(str)) {
       return str.some(c => this.nextCharIs(c))
     }
-    const size = _.size(str)
-    return str === this.sourceCode.slice(0, size).join('');
+    const size = _.size(str);
+    const target = this.sourceCode.slice(0, size).join('');
+    return str === target;
   }
 
   expectChar(str) {
@@ -87,7 +100,7 @@ export default class AST {
 
   eatWord() {
     const c = this.nextCharIs()
-    if (!c) {
+    if (!c || c === EOFFlag) {
       return []
     }
     if (c.toLowerCase() !== c.toUpperCase()) {
@@ -135,7 +148,7 @@ export default class AST {
     return _.flatten(ret);
   }
 
-  eatToken() {
+  eatToken(prefixTokens = []) {
     // 字符
     for (const item of [
       ['===', TOKEN_TYPE.STRICT_EQUAL],
@@ -144,29 +157,40 @@ export default class AST {
       ['?.', TOKEN_TYPE.OPTIONAL],
       ['.', TOKEN_TYPE.POINT],
       [' ', TOKEN_TYPE.SPLIT],
+      [String.fromCharCode(160), TOKEN_TYPE.SPLIT],
       ['\n', TOKEN_TYPE.SPLIT],
     ]) {
       const c = item[0]
       if (this.nextCharIs(c)) {
-        return new Token(item[1], this.eat(c))
+        const token =  Token.createToken(item[1], this.eat(c), prefixTokens)
+        if (token.type === TOKEN_TYPE.SPLIT) {
+          return this.eatToken([...prefixTokens, token]);
+        }
+        return token;
       }
     }
 
     const number = this.eatNumber()
     if (number.length) {
-      return new Token(TOKEN_TYPE.NUMBER, number)
+      return Token.createToken(TOKEN_TYPE.NUMBER, number, prefixTokens)
     }
 
     const word = this.eatWord()
     if (word.length) {
-      return new Token(TOKEN_TYPE.WORD, word)
+      return Token.createToken(TOKEN_TYPE.WORD, word, prefixTokens)
     }
 
     const str = this.eatString()
     if (str.length) {
-      return new Token(TOKEN_TYPE.STRING, str)
+      return Token.createToken(TOKEN_TYPE.STRING, str, prefixTokens)
     }
-    if (this.sourceCode.length) {
+    
+    const len = this.sourceCode.length
+    if (len > 0) {
+      if (len === 1 && this.sourceCode[0] === EOFFlag) {
+        const ret = Token.createToken(TOKEN_TYPE.EOF, this.eat(), prefixTokens);
+        return ret;
+      }
       console.error(this.nextCharIs())
       throw new Error('未处理的token')
     }
@@ -176,8 +200,9 @@ export default class AST {
     this.row = 0;
     this.col = 0;
     this.index = 0;
-    this.sourceCode = sourceCode.split('')
-    // console.log(this.sourceCode);
+    const c = sourceCode.split('')
+    c.push(EOFFlag)
+    this.sourceCode = c
     return this;
   }
 
@@ -245,24 +270,14 @@ export default class AST {
     throw new Error('未处理的语法');
   }
 
-  eatSplit() {
-    const restTokens = []
-    while (this.nextTokenIs(TOKEN_TYPE.SPLIT)) {
-      restTokens.push(this.eatToken())
-    }
-    return restTokens;
-  }
-
   getPriorityAstFunc(attr, tokenType, astType) {
     return () => {
-      const restTokens = this.eatSplit();
+      const restTokens = [];
       let left = this[attr]()
-      restTokens.push(...this.eatSplit())
       while (this.nextTokenIs(tokenType)) {
         const operatorToken = this.eatToken();
-        restTokens.push(operatorToken, ...this.eatSplit());
+        restTokens.push(operatorToken);
         let right = this[attr]()
-        restTokens.push(...this.eatSplit());
         left = new ASTItem({
           type: astType,
           left,
@@ -300,7 +315,7 @@ export default class AST {
     if (!token) {
       return null;
     }
-    this.sourceCode.unshift(..._.map(token.chars, 'char'))
+    this.sourceCode.unshift(..._.map(_.flatten(_.map(token.prefixTokens, 'chars'), 'char'), 'char'), ..._.map(token.chars, 'char'))
     this.row = temp[0];
     this.col = temp[1];
     this.index = temp[2]
@@ -314,8 +329,8 @@ export default class AST {
   }
 
   getStatementAst() {
-    this.eatSplit()
     const token = this.nextTokenIs();
+    console.log('语句开始', token, this.sourceCode.length)
     switch (token.type) {
       case TOKEN_TYPE.NUMBER:
       case TOKEN_TYPE.STRING:
@@ -325,13 +340,17 @@ export default class AST {
         });
       case TOKEN_TYPE.WORD:
         return this.getExpressionStatementAst();
+      case TOKEN_TYPE.EOF:
+        return new ASTItem({
+          type: EndStatement,
+          restTokens: [this.eatToken()]
+        });
     }
     console.error(token.type)
     throw new Error('未处理的语法');
   }
 
   getAst() {
-    const restTokens = this.eatSplit()
     const body = [];
     while (this.sourceCode.length) {
       const ast = this.getStatementAst()
@@ -339,11 +358,13 @@ export default class AST {
         body.push(ast)
       }
     }
+    if (_.get(body.pop(), 'type') !== EndStatement) {
+      throw new Error(body,'解析出错');
+    }
     return new ASTItem({
       type: 'Program',
       body,
       sourceType: 'module',
-      restTokens
     })
   }
 

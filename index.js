@@ -75,8 +75,13 @@ const writeAst = (ast) => {
   // console.log(test.getAst())
 }
 
+const astInstance = new Ast()
+
 const write = (text) => {
-  const ast = transform(text);
+  // const ast = transform(text);
+  astInstance.markSourceCode(text);
+  const ast = astInstance.getAst();
+  console.log(ast)
   writeAst(ast);
 }
 
