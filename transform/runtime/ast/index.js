@@ -6,7 +6,6 @@ import _ from "lodash";
 import ASTItem from "./ASTITem";
 import { valueToRaw } from "./utils";
 import { isInstanceOf } from "../../commonApi";
-
 class TokenChar {
   constructor(value) {
     Object.assign(this, value)
@@ -30,23 +29,65 @@ class Token {
     this.prefixTokens = prefixTokens;
   }
 
+  is(type) {
+    return this.type === type;
+  }
+
   static createToken(...args) {
     return new Token(...args);
   }
 }
 
 const TOKEN_TYPE = {
-  SPLIT: 'SPLIT',
-  POINT: 'POINT',
-  STRICT_EQUAL: 'STRICT_EQUAL',
-  AND: 'AND',
-  OR: 'OR',
+  SPLIT: '  SPLIT',
+  POINT: '. POINT',
+  STRICT_EQUAL: '=== STRICT_EQUAL',
+  AND: '&& AND',
+  OR: '|| OR',
+  MUl: '* MUl',
+  DIV: '/ DIV',
+  PLUS: '+ PLUS',
+  SUBTRACT: '- SUBTRACT',
   WORD: 'WORD',
   STRING: 'STRING',
   NUMBER: 'NUMBER',
-  OPTIONAL: 'OPTIONAL',
+  OPTIONAL: '?. OPTIONAL',
+  OPTIONALCall: '?.( OPTIONALCall',
   EOF: 'EOF',
+  QUESTION: '? QUESTION',
+  COLON: ': COLON',
+  LeftParenthesis: '( LeftParenthesis',
+  RightParenthesis: ') RightParenthesis',
+  LeftBracket: '[ LeftBracket',
+  RightBracket: '] RightBracket',
+  COMMA: ', COMMA',
+  SEMICOLON: '; SEMICOLON',
+  EQUAL: '= EQUAL',
+  NEW: 'NEW',
+  CONST: 'CONST',
 }
+
+const AST_TYPE = {
+  Program: 'Program',
+  Literal: 'Literal',
+  Identifier: 'Identifier',
+  MemberExpression: 'MemberExpression',
+  NewExpression: 'NewExpression',
+  ArrayExpression: 'ArrayExpression',
+  BinaryExpression: 'BinaryExpression',
+  LogicalExpression: 'LogicalExpression',
+  ConditionalExpression: 'ConditionalExpression',
+  VariableDeclaration: 'VariableDeclaration',
+  VariableDeclarator: 'VariableDeclarator',
+  CallExpression: 'CallExpression',
+  ExpressionStatement: 'ExpressionStatement',
+}
+
+const ReservedKeyList = [
+ [ 'new', TOKEN_TYPE.NEW],
+ ['const', TOKEN_TYPE.CONST]
+]
+
 
 const EOFFlag = 'EOF';
 const EndStatement = 'EndStatement';
@@ -73,7 +114,7 @@ export default class AST {
   }
 
   expectToken(type) {
-    if (!this.nextTokenIs(type)) {
+    if (_.isNil(type) || !this.nextTokenIs(type) ) {
       throw new Error(`预期是${type}的token`)
     }
     return this.eatToken()
@@ -154,9 +195,23 @@ export default class AST {
       ['===', TOKEN_TYPE.STRICT_EQUAL],
       ['&&', TOKEN_TYPE.AND],
       ['||', TOKEN_TYPE.OR],
+      ['?.(', TOKEN_TYPE.OPTIONALCall],
       ['?.', TOKEN_TYPE.OPTIONAL],
+      ['?', TOKEN_TYPE.QUESTION], 
+      [':', TOKEN_TYPE.COLON],
       ['.', TOKEN_TYPE.POINT],
       [' ', TOKEN_TYPE.SPLIT],
+      ['*', TOKEN_TYPE.MUl],
+      ['/', TOKEN_TYPE.DIV],
+      ['+', TOKEN_TYPE.PLUS],
+      ['-', TOKEN_TYPE.SUBTRACT],
+      ['(', TOKEN_TYPE.LeftParenthesis],
+      [')', TOKEN_TYPE.RightParenthesis],
+      ['[', TOKEN_TYPE.LeftBracket],
+      [']', TOKEN_TYPE.RightBracket],
+      [',', TOKEN_TYPE.COMMA],
+      [';', TOKEN_TYPE.SEMICOLON],
+      ['=', TOKEN_TYPE.EQUAL],
       [String.fromCharCode(160), TOKEN_TYPE.SPLIT],
       ['\n', TOKEN_TYPE.SPLIT],
     ]) {
@@ -177,6 +232,12 @@ export default class AST {
 
     const word = this.eatWord()
     if (word.length) {
+      const wordStr = _.map(word, 'char').join('');
+      for(const x of ReservedKeyList) {
+        if (x[0] === wordStr) {
+         return Token.createToken(x[1], word, prefixTokens)
+        }
+      }
       return Token.createToken(TOKEN_TYPE.WORD, word, prefixTokens)
     }
 
@@ -194,6 +255,29 @@ export default class AST {
       console.error(this.nextCharIs())
       throw new Error('未处理的token')
     }
+  }
+
+  nextTokenIs(type) {
+    const temp = [ 
+      this.row,
+      this.col,
+      this.index
+    ]
+    const token = this.eatToken();
+    if (!token) {
+      return null;
+    }
+    this.sourceCode.unshift(..._.map(_.flatten(_.map(token.prefixTokens, 'chars'), 'char'), 'char'), ..._.map(token.chars, 'char'))
+    this.row = temp[0];
+    this.col = temp[1];
+    this.index = temp[2]
+    if (!type) {
+      return token
+    }
+    if (Array.isArray(type)) {
+      return type.some(t => this.nextTokenIs(t))
+    }
+    return token.type === type;
   }
 
   markSourceCode(sourceCode) {
@@ -224,7 +308,7 @@ export default class AST {
   getLiteralAst() {
     const token = this.expectToken([TOKEN_TYPE.STRING, TOKEN_TYPE.NUMBER])
     const ret = new ASTItem({
-      type: 'Literal',
+      type: AST_TYPE.Literal,
       value: token.value,
       raw: valueToRaw(token.value),
       restTokens: [token],
@@ -236,38 +320,96 @@ export default class AST {
   getIdentifierAst() {
     const token = this.expectToken([TOKEN_TYPE.WORD])
     return new ASTItem({
-      type: 'Identifier',
+      type: AST_TYPE.Identifier,
       name: token.value,
       restTokens: [token],
     })
   }
 
   getMemberExpressionAst() {
-    let left = this.getIdentifierAst()
+    const methodName = 'getIdentifierAst'
+    let left = this[methodName]()
     let right = null;
-    while (this.nextTokenIs([TOKEN_TYPE.POINT, TOKEN_TYPE.OPTIONAL])) {
-      const restTokens = [this.eatToken()]
-      right = this.getIdentifierAst()
+    while (this.nextTokenIs([TOKEN_TYPE.POINT, TOKEN_TYPE.OPTIONAL, TOKEN_TYPE.LeftBracket])) {
+      let s = this.eatToken();
+      const restTokens = [s]
+      if (s.is(TOKEN_TYPE.OPTIONAL) && this.nextTokenIs(TOKEN_TYPE.LeftBracket)) {
+        s = this.eatToken()
+        restTokens.push(s)
+      }
+      right = this[methodName]()
+      if (!right) {
+        throw new Error(AST_TYPE.MemberExpression + '属性错误')
+      }
+
+      const computed = s.is(TOKEN_TYPE.LeftBracket)
+      if (computed) {
+        restTokens.push(this.expectToken(TOKEN_TYPE.RightBracket))
+      }
+
       left = new ASTItem({
-        type: 'MemberExpression',
+        type: AST_TYPE.MemberExpression,
         object: left,
         property: right,
-        computed: false,
+        computed,
         optional: restTokens[0].type === TOKEN_TYPE.OPTIONAL,
         restTokens,
       })
+
     }
     return left;
   }
 
-  getPrimaryAst() {
-    const token = this.nextTokenIs();
-    switch (token.type) {
-      case TOKEN_TYPE.STRING:
-      case TOKEN_TYPE.NUMBER: return this.getLiteralAst();
-      case TOKEN_TYPE.WORD: return this.getMemberExpressionAst();
+  getNewExpressionAst() {
+    const methodName = 'getExpAst'
+    const restTokens = [];
+    const args = [];
+    restTokens.push(this.eatToken());
+    const callee = this[methodName]();
+    if (this.nextTokenIs(TOKEN_TYPE.LeftParenthesis)) {
+      restTokens.push(this.eatToken());
+      if (this.nextTokenIs(TOKEN_TYPE.RightParenthesis)) {
+        restTokens.push(this.eatToken());
+        return new ASTItem({
+          type: AST_TYPE.NewExpression,
+          callee,
+          arguments: args,
+          restTokens,
+        })
+      }
+      // TODO
     }
-    throw new Error('未处理的语法');
+
+    return new ASTItem({
+      type: AST_TYPE.NewExpression,
+      callee,
+      arguments: args,
+      restTokens,
+    })
+  }
+
+  getArrayExpressionAst() {
+    const methodName = 'getExpAst';
+    const restTokens = [this.eatToken()];
+    const elements = [];
+    const left = this[methodName]();
+    if (left) {
+      elements.push(left)
+    }
+    while(this.nextTokenIs(TOKEN_TYPE.COMMA)) {
+      restTokens.push(this.eatToken()) 
+      const right = this[methodName]();
+      if (right) {
+        elements.push(right)
+      }
+    }
+    restTokens.push(this.expectToken(TOKEN_TYPE.RightBracket));
+    return new ASTItem({
+      type: AST_TYPE.ArrayExpression,
+      elements,
+      restTokens,
+    })
+
   }
 
   getPriorityAstFunc(attr, tokenType, astType) {
@@ -278,6 +420,9 @@ export default class AST {
         const operatorToken = this.eatToken();
         restTokens.push(operatorToken);
         let right = this[attr]()
+        if (!right) {
+          throw new Error('不匹配');
+        }
         left = new ASTItem({
           type: astType,
           left,
@@ -293,51 +438,164 @@ export default class AST {
     }
   }
 
-  getBinaryAst = this.getPriorityAstFunc('getPrimaryAst', TOKEN_TYPE.STRICT_EQUAL, 'BinaryExpression')
+  getPrimaryAst() {
+    const token = this.nextTokenIs();
+    switch (token.type) {
+      case TOKEN_TYPE.STRING:
+      case TOKEN_TYPE.NUMBER: return this.getLiteralAst();
+      case TOKEN_TYPE.NEW: return this.getNewExpressionAst();
+      case TOKEN_TYPE.LeftBracket: return this.getArrayExpressionAst();
+      case TOKEN_TYPE.LeftParenthesis: 
+             const restTokens = [ this.eatToken()];
+             const ast = this.getExpAst();
+             ast.restTokens = [...restTokens, ...ast.restTokens || [], this.expectToken(TOKEN_TYPE.RightParenthesis)];
+             return new ASTItem({
+              ...ast,
+             });
+      case TOKEN_TYPE.WORD: return this.getMemberExpressionAst();
+    }
+    throw new Error('未处理的语法');
+  }
+
+  getMulDivAst = this.getPriorityAstFunc('getPrimaryAst', [
+    TOKEN_TYPE.MUl,
+    TOKEN_TYPE.DIV,
+  ], AST_TYPE.BinaryExpression) 
+
+  getBinaryAst = this.getPriorityAstFunc('getMulDivAst', [
+    TOKEN_TYPE.STRICT_EQUAL,
+    TOKEN_TYPE.PLUS,
+    TOKEN_TYPE.SUBTRACT
+  ], AST_TYPE.BinaryExpression) 
+
 
   getAndAst = this.getPriorityAstFunc
-    ('getBinaryAst', TOKEN_TYPE.AND, 'LogicalExpression');
+    ('getBinaryAst', TOKEN_TYPE.AND, AST_TYPE.LogicalExpression);
+
+  getExpAst() {
+    const methodName = 'getAndAst'
+    const restTokens = [];
+    const test = this[methodName]();
+    if (this.nextTokenIs(TOKEN_TYPE.QUESTION)) {
+      restTokens.push(this.eatToken());
+      const consequent = this[methodName]();
+      if (!consequent) {
+        throw new Error('?:缺失表达式')
+      }
+      restTokens.push(this.expectToken(TOKEN_TYPE.COLON));
+      const alternate = this[methodName]();
+      if (!alternate) {
+        throw new Error('?:缺失表达式')
+      }
+      return new ASTItem({
+        type: AST_TYPE.ConditionalExpression,
+        test,
+        consequent,
+        alternate,
+        restTokens,
+      })
+    }
+
+    if (this.nextTokenIs([TOKEN_TYPE.LeftParenthesis, TOKEN_TYPE.OPTIONALCall])) {
+      
+      const restTokens = []
+      const optional = this.nextTokenIs(TOKEN_TYPE.OPTIONALCall);
+      restTokens.push(this.eatToken())
+      const args = [];
+      const exp = this.getExpAst();
+      if (exp) {
+        args.push(exp)
+      }
+      while(this.nextTokenIs(TOKEN_TYPE.COMMA)) {
+        restTokens.push(this.eatToken())
+        const exp = this.getExpAst();
+        if (exp) {
+          args.push(exp)
+        }
+      }
+      restTokens.push(this.expectToken(TOKEN_TYPE.RightParenthesis))
+      return new ASTItem({
+        type: AST_TYPE.CallExpression,
+        optional,
+        callee: test,
+        arguments: args,
+        restTokens,
+      })
+    }
+    return test;
+  }
 
   getExpressionStatementAst() {
-    const expression = this.getAndAst();
+    const expression = this.getExpAst();
+    const restTokens = [];
+    if (this.nextTokenIs(TOKEN_TYPE.SEMICOLON)) {
+      restTokens.push(this.eatToken())
+    }
     return new ASTItem({
-      type: 'ExpressionStatement',
+      type: AST_TYPE.ExpressionStatement,
       expression,
+      restTokens
     });
   }
 
-  nextTokenIs(type) {
-    const temp = [ 
-      this.row,
-      this.col,
-      this.index]
-    const token = this.eatToken();
-    if (!token) {
-      return null;
+  getVariableDeclaratorAst() {
+    const id = this.getIdentifierAst();
+    const restTokens = []
+    if (this.nextTokenIs([TOKEN_TYPE.EQUAL])) {
+      restTokens.push(this.eatToken());
+      const init = this.getExpAst();
+      return new ASTItem({
+        type: AST_TYPE.VariableDeclarator,
+        id,
+        init,
+        restTokens,
+      })
     }
-    this.sourceCode.unshift(..._.map(_.flatten(_.map(token.prefixTokens, 'chars'), 'char'), 'char'), ..._.map(token.chars, 'char'))
-    this.row = temp[0];
-    this.col = temp[1];
-    this.index = temp[2]
-    if (!type) {
-      return token
+    return new ASTItem({
+      type: AST_TYPE.VariableDeclarator,
+      id,
+      restTokens,
+    })
+  }
+
+  getVariableDeclarationAst() {
+    const restTokens = [this.eatToken()];
+    const declarations = [];
+    const vd = this.getVariableDeclaratorAst();
+    if (vd) {
+      declarations.push(vd)
     }
-    if (Array.isArray(type)) {
-      return type.some(t => this.nextTokenIs(t))
+    while(this.nextTokenIs(TOKEN_TYPE.COMMA)) {
+      restTokens.push(this.eatToken());
+      const vd = this.getVariableDeclaratorAst();
+      if (vd) {
+        declarations.push(vd)
+      }
     }
-    return token.type === type;
+    if (this.nextTokenIs(TOKEN_TYPE.SEMICOLON)) {
+      restTokens.push(this.eatToken());
+    }
+    return new ASTItem({
+      type: AST_TYPE.VariableDeclaration,
+      declarations,
+      kind: restTokens[0].value,
+      restTokens,
+    })
+    
   }
 
   getStatementAst() {
     const token = this.nextTokenIs();
-    console.log('语句开始', token, this.sourceCode.length)
+    // console.log('语句开始', token, this.sourceCode.length)
     switch (token.type) {
       case TOKEN_TYPE.NUMBER:
       case TOKEN_TYPE.STRING:
         return new ASTItem({
-          type: 'ExpressionStatement',
+          type: ASTItem.ExpressionStatement,
           expression: this.getPrimaryAst(),
         });
+      case TOKEN_TYPE.CONST: return this.getVariableDeclarationAst();
+      case TOKEN_TYPE.NEW: 
       case TOKEN_TYPE.WORD:
         return this.getExpressionStatementAst();
       case TOKEN_TYPE.EOF:
@@ -362,7 +620,7 @@ export default class AST {
       throw new Error(body,'解析出错');
     }
     return new ASTItem({
-      type: 'Program',
+      type: AST_TYPE.Program,
       body,
       sourceType: 'module',
     })

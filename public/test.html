@@ -3506,10 +3506,10 @@
         console.log('for -of', g, t) // 13, a | 13, 2
       }
 
-      for (g in [1, 2, 3]) {
+       a:for (g in [1, 2, 3]) {
         if (g === '2' && true) {
           console.log('enter in break')
-          break;
+          break a;
         }
         if (g === 1) {
           // g === '1'

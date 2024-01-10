@@ -34,14 +34,8 @@ b.fn(f);
 fn(2)
 */
 export const isProgram = `
-function a(x) {
- console.log(x)
- var x = 2
- console.log(x)
- var x = undefined
- console.log(x)
-}
-a(3)
+const a = 1;
+console.log(a)
 `
 
 export const isVariableDeclaration = `

@@ -12,7 +12,7 @@ export function getTotalToken(ast) {
   if (!(isInstanceOf(ast, ASTItem))) {
     return [];
   }
-  console.log('ast', ast);
+  // console.log('ast', ast);
   return flattenToken(ast.tokens)
 }
 
@@ -27,7 +27,7 @@ export default class ASTItem{
       const tokens = getTotalToken(value[x]);
       tokensList.push(...tokens)
     }
-    console.log('value', _.cloneDeep(value));
+    // console.log('value', _.cloneDeep(value));
     this.tokens = (_.uniqBy(_.flatten(tokensList), x => x.start + '#' + x.end)).sort(
       (a,b) => a.start - b.start
     );
