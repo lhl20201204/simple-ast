@@ -34,8 +34,10 @@ b.fn(f);
 fn(2)
 */
 export const isProgram = `
-const a = 1;
-console.log(a)
+
+console.log(
+  new window['Object']({...{}}) + 4 ? 1 : 2
+)
 `
 
 export const isVariableDeclaration = `

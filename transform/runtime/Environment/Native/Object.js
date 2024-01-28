@@ -1,5 +1,5 @@
 const code = `
-function Object(obj) {
+function Object(obj={}) {
   for(const attr in obj) {
       this[attr] = obj[attr]
   }
@@ -23,12 +23,12 @@ Reflect.defineProperty(Object, 'create', {
 
 export const _ObjectAst = {
   "type": "FunctionDeclaration",
-  "start": 1,
-  "end": 85,
+  "start": 38,
+  "end": 125,
   "id": {
     "type": "Identifier",
-    "start": 10,
-    "end": 16,
+    "start": 47,
+    "end": 53,
     "name": "Object"
   },
   "expression": false,
@@ -36,34 +36,45 @@ export const _ObjectAst = {
   "async": false,
   "params": [
     {
-      "type": "Identifier",
-      "start": 17,
-      "end": 20,
-      "name": "obj"
+      "type": "AssignmentPattern",
+      "start": 54,
+      "end": 60,
+      "left": {
+        "type": "Identifier",
+        "start": 54,
+        "end": 57,
+        "name": "obj"
+      },
+      "right": {
+        "type": "ObjectExpression",
+        "start": 58,
+        "end": 60,
+        "properties": []
+      }
     }
   ],
   "body": {
     "type": "BlockStatement",
-    "start": 22,
-    "end": 85,
+    "start": 62,
+    "end": 125,
     "body": [
       {
         "type": "ForInStatement",
-        "start": 26,
-        "end": 83,
+        "start": 66,
+        "end": 123,
         "left": {
           "type": "VariableDeclaration",
-          "start": 30,
-          "end": 40,
+          "start": 70,
+          "end": 80,
           "declarations": [
             {
               "type": "VariableDeclarator",
-              "start": 36,
-              "end": 40,
+              "start": 76,
+              "end": 80,
               "id": {
                 "type": "Identifier",
-                "start": 36,
-                "end": 40,
+                "start": 76,
+                "end": 80,
                 "name": "attr"
               },
               "init": null
@@ -73,37 +84,37 @@ export const _ObjectAst = {
         },
         "right": {
           "type": "Identifier",
-          "start": 44,
-          "end": 47,
+          "start": 84,
+          "end": 87,
           "name": "obj"
         },
         "body": {
           "type": "BlockStatement",
-          "start": 49,
-          "end": 83,
+          "start": 89,
+          "end": 123,
           "body": [
             {
               "type": "ExpressionStatement",
-              "start": 57,
-              "end": 79,
+              "start": 97,
+              "end": 119,
               "expression": {
                 "type": "AssignmentExpression",
-                "start": 57,
-                "end": 79,
+                "start": 97,
+                "end": 119,
                 "operator": "=",
                 "left": {
                   "type": "MemberExpression",
-                  "start": 57,
-                  "end": 67,
+                  "start": 97,
+                  "end": 107,
                   "object": {
                     "type": "ThisExpression",
-                    "start": 57,
-                    "end": 61
+                    "start": 97,
+                    "end": 101
                   },
                   "property": {
                     "type": "Identifier",
-                    "start": 62,
-                    "end": 66,
+                    "start": 102,
+                    "end": 106,
                     "name": "attr"
                   },
                   "computed": true,
@@ -111,18 +122,18 @@ export const _ObjectAst = {
                 },
                 "right": {
                   "type": "MemberExpression",
-                  "start": 70,
-                  "end": 79,
+                  "start": 110,
+                  "end": 119,
                   "object": {
                     "type": "Identifier",
-                    "start": 70,
-                    "end": 73,
+                    "start": 110,
+                    "end": 113,
                     "name": "obj"
                   },
                   "property": {
                     "type": "Identifier",
-                    "start": 74,
-                    "end": 78,
+                    "start": 114,
+                    "end": 118,
                     "name": "attr"
                   },
                   "computed": true,

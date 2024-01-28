@@ -160,7 +160,7 @@ export default function parseCallExpression(ast, env) {
     name = generateCode(callee.callee)
   }
 
-  if (!fnRv) {
+  if (!fnRv || isUndefinedRuntimeValue(fnRv)) {
     if (optional) {
       return getUndefinedValue()
     }

@@ -19,6 +19,7 @@ export function getTotalToken(ast) {
 export default class ASTItem{
   constructor(value) {
     Object.assign(this, value)
+    // console.log(this);
     const tokensList =  flattenToken(this.restTokens ?? []);
     for(const x in value) {
       if (['restTokens', 'prefixTokens'].includes(x)) {

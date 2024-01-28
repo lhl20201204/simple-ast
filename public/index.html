@@ -14,7 +14,9 @@
   </div>
   
    <div id="container">
-    <div id="source" contenteditable="true"></div>
+    <div id="source_copy" contenteditable="true"></div>
+    <div id="source" contenteditable="true">
+    </div>
     <textarea id="result"></textarea>
     <div id="excute"  contenteditable="true"></div>
    </div>
@@ -51,7 +53,23 @@
     overflow: auto;
   }
 
+  #source {
+    position: relative;
+  }
+
+  #source_copy {
+    color: transparent;
+    border: 1px solid #252525;
+    position: absolute;
+    width: 30%;
+    height: 100%;
+    left: 1%;
+    top: 1%;
+    overflow: auto;
+  }
+
   #container{
+    position: relative;
     height: 93vh;
     display: flex;
   }

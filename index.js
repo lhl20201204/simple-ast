@@ -9,15 +9,18 @@ import generateCode from "./transform/runtime/Generate";
 import writeJSON, { textReplace } from "./transform/util";
 import { DEBUGGER_DICTS } from "./transform/runtime/constant";
 import { createPromiseRvAndPromiseResolveCallback } from "./transform/runtime/Environment/utils";
+import { isInstanceOf } from "./transform/commonApi";
+import ASTItem from "./transform/runtime/ast/ASTITem";
 
-source.onscroll= _.throttle(() => {
-  const dom =  document.getElementById('currentDebuggerSpan');
+source.onscroll = _.throttle((x) => {
+  const dom = document.getElementById('currentDebuggerSpan');
   if (dom) {
     const { left, top, width } = dom.getBoundingClientRect()
     debuggerScene.style.left = `${left + width}px`;
-    debuggerScene.style.top =  `${top}px`;
+    debuggerScene.style.top = `${top}px`;
   }
-}, 50 , {
+  source_copy.scrollTop = source.scrollTop;
+}, 50, {
   leading: false,
   trailing: true
 })
@@ -29,7 +32,7 @@ debuggerBtn.onclick = () => {
   //   debuggerScene.parentNode.removeChild(debuggerScene)
   //   document.body.appendChild(debuggerScene);
   // }
-  
+
   debuggerScene.style.opacity = 0;
 }
 
@@ -48,9 +51,9 @@ const throttle = (fn, t) => {
 
 const writeAst = (ast) => {
   // console.clear();
-  result.value = "{\n" + writeJSON(ast, 2, { 
+  result.value = "{\n" + writeJSON(ast, 2, {
     [DEBUGGER_DICTS.isStringTypeUseQuotationMarks]: false,
-    [DEBUGGER_DICTS.isTextMode]: true 
+    [DEBUGGER_DICTS.isTextMode]: true
   }).join("") + "}";
 
   const win = getWindowEnv();
@@ -59,10 +62,11 @@ const writeAst = (ast) => {
 
   requestIdleCallback(() => {
     console.time('写操作花费时间')
-    excute.innerHTML = textReplace("{\n" + writeJSON(win.toWrite(), 2, { 
-      [DEBUGGER_DICTS.isStringTypeUseQuotationMarks]: true, 
-      [DEBUGGER_DICTS.isHTMLMode]: true, 
-      [DEBUGGER_DICTS.onlyShowEnvName]: false}).join("") + "}");
+    excute.innerHTML = textReplace("{\n" + writeJSON(win.toWrite(), 2, {
+      [DEBUGGER_DICTS.isStringTypeUseQuotationMarks]: true,
+      [DEBUGGER_DICTS.isHTMLMode]: true,
+      [DEBUGGER_DICTS.onlyShowEnvName]: false
+    }).join("") + "}");
     // console.log(win)
     console.timeEnd('写操作花费时间')
   })
@@ -71,19 +75,102 @@ const writeAst = (ast) => {
   // this.type === 'Literal'
   // && 1 === 1
   // && this.parent.left.operator === 'typeof'`)
-  
+
   // console.log(test.getAst())
 }
 
 const astInstance = new Ast()
 
+function innerChange(x) {
+  if (isInstanceOf(x, ASTItem)) {
+    const obj = {}
+    for (const t in x) {
+      if (t === 'tokens') {
+        continue;
+      }
+      obj[t] = innerChange(x[t])
+    }
+    return obj;
+  }
+  if (Array.isArray(x)) {
+    return _.map(x, innerChange)
+  }
+  return x;
+}
+
+function simpleChange(x) {
+  if (isInstanceOf(x, ASTItem)) {
+    const obj = { type: x.type }
+    if (x.type === 'Identifier') {
+      obj.name = x.name
+    }
+    for (const t in x) {
+      if (t === 'tokens') {
+        continue;
+      }
+      if (isInstanceOf(x[t], ASTItem)
+       || Array.isArray(x[t])) {
+
+        obj[t] = simpleChange(x[t])
+      }
+    }
+    return obj;
+  }
+  if (Array.isArray(x)) {
+    return _.map(x, simpleChange)
+  }
+}
+
 const write = (text) => {
   // const ast = transform(text);
+  // let newText = '';
+  // let cnt = 0;
+  // for(const c of text) {
+  //     if (c === '\n') {
+  //       cnt ++;
+  //     } else {
+  //       cnt = 0;
+  //     }
+  //     if (cnt === 0 || cnt % 2 === 1) {
+  //       newText +=c;
+  //     }
+  //   }
   astInstance.markSourceCode(text);
-  const ast = astInstance.getAst();
-  console.log(ast)
-  writeAst(ast);
+  try{
+    source_copy.innerHTML = '';
+    const ast = astInstance.getAst();
+    console.log(ast, simpleChange(ast))
+    writeAst(innerChange(ast));
+  }catch(err) {
+   const e = _.get(err, 'errorInfo', {});
+   if (Array.isArray(e.charList)) {
+    console.log(e)
+    // const prefixSpaceList = _.map(e.errorToken.prefixTokens,
+    //   'value'
+    //   );
+    // const textHtml = [..._.map(e.charList, 'char'),...prefixSpaceList].join('');
+    const { start, end } = e.errorToken;
+    const change = (str) => _.reverse(_.split(_.replace(_.replace(_.reverse((str).split('')).join(''), /\n\n/g, '>vid/<>/rb<>vid<'), /\n/g, '>/rb<'), '')).join('');
+
+    const html = change(_.slice(text, 0,  start).join('')) +  `<span style="border-bottom: 3px solid red;">${
+      e.errorToken.value
+    }</span>` + change(_.slice(text, end + 1).join(''));
+
+    source_copy.innerHTML = html;
+    // console.log(textHtml)
+    // requestAnimationFrame(() => {
+    //   source_copy.innerHTML += `<span style="border-bottom: 3px solid red;">${
+    //     e.errorToken.value
+    //   }</span>${_.slice(e.restSourceCode, _.size(prefixSpaceList) + _.size( e.errorToken.value), -1).join('')}`
+    //   // requestAnimationFrame(() => {
+    //   //   source_copy.innerText += 
+    //   // })
+    // })
+   }
+   console.error(err);
+  }
 }
+
 
 source.addEventListener(
   "input",
@@ -131,9 +218,9 @@ const change = (text) => {
 
 mode.addEventListener(
   'change',
-  (e)=>{
-   AST.selectMethod = e.target.value
-   change(textList.getText(e.target.value))
+  (e) => {
+    AST.selectMethod = e.target.value
+    change(textList.getText(e.target.value))
   }
 )
 
@@ -157,7 +244,7 @@ window.addEventListener("load", () => {
   }
   mode.appendChild(Fragment)
   if (localStorage.getItem('ast-temp')) {
-    if(selectedOptions) {
+    if (selectedOptions) {
       selectedOptions.selected = false;
       const option = document.createElement('option')
       const text = document.createElement('text')

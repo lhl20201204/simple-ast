@@ -21,7 +21,7 @@ export default function parseLiteral(ast) {
   const v = (valueType === 'number'
   || (+raw === +value)
   ) ? Number(value) : value;
-  const newType =JS_TO_RUNTIME_VALUE_TYPE( v)
+  const newType = JS_TO_RUNTIME_VALUE_TYPE( v)
 
   if (newType === RUNTIME_VALUE_TYPE.string) {
     return createString(v)
