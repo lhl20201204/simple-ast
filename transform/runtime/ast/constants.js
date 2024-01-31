@@ -135,6 +135,9 @@ export const AST_TYPE = {
   CallExpression: 'CallExpression',
   ExpressionStatement: 'ExpressionStatement',
   EmptyStatement: 'EmptyStatement',
+  ThisExpression: 'ThisExpression',
+  IfStatement: 'IfStatement',
+  BlockStatement: 'BlockStatement',
 }
 
 export const ReservedKeyList = [
@@ -218,6 +221,8 @@ export const METHOD_TYPE = {
   getVariableDeclaratorAst: 'getVariableDeclaratorAst',
   getVariableDeclarationStatementAst: 'getVariableDeclarationStatementAst',
   getStatementOrExpressionAst: 'getStatementOrExpressionAst',
+  getIfStatementAst: 'getIfStatementAst',
+  getBlockStatementAst: 'getBlockStatementAst',
 }
 
 export const AstConfigDicts = {

@@ -34,10 +34,25 @@ b.fn(f);
 fn(2)
 */
 export const isProgram = `
-
+2 + 9
+let a = 1 === 2 || 1;
+let b = 2;
 console.log(
-  new window['Object']({...{}}) + 4 ? 1 : 2
+a++ + ++ b
 )
+
+{
+console.log('block')
+}
+
+if (b === 3)
+if (a === 1) {
+console.log('if')
+} else if (++a === 3) {
+console.log('else if')
+} else {
+console.log('else')
+}
 `
 
 export const isVariableDeclaration = `
