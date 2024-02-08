@@ -34,15 +34,48 @@ b.fn(f);
 fn(2)
 */
 export const isProgram = `
+
+
+const x = 'xx'
+const obj = {
+x,
+b: x,
+[x]: x,
+f(){},
+async f(){},
+async ['f'](){},
+*f(){},
+async * f(){
+},
+[x](){},
+get g(){
+  console.log('get')
+  return 'f', this.innerG;
+},
+innerG: 4,
+set g(x){
+   console.log('set', x)
+  this.innerG = x;
+},
+set [x](f){
+},
+get [x]() {
+},
+...x ? {}: {}
+}
+
+console.log(obj)
+
 2 + 9
 let a = 1 === 2 || 1;
 let b = 2;
+const [yy = {...rest},{bjj = 'a', ['gfg']: afffy = 2, gff: hj=7,j, ...jn}, ...ffdf] = [{ }]
 console.log(
-a++ + ++ b
+a++ + ++ b, yy
 )
 
 {
-console.log('block')
+console.log('block', yy,bjj,afffy,hj,j,jn,ffdf)
 }
 
 if (b === 3)

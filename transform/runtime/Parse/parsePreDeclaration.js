@@ -13,8 +13,8 @@ function getObjectPatternKey(ast, config) {
   const { properties }= ast;
   const ret = []
   _.forEach(properties, p => {
-    const {  value } = p;
-    ret.push(...getDeclarationsKey(value, config))
+    const {  value, type, argument } = p;
+    ret.push(...getDeclarationsKey(type === 'RestElement' ? argument : value, config))
   })
   return ret;
 }

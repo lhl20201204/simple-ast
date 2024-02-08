@@ -633,3 +633,7 @@ export class RuntimePromiseInstanceValue extends RuntimeRefValue {
     return ret;
   }
 }
+
+export class RuntimeAwaitValue extends RuntimeValue {
+
+}

@@ -2,7 +2,7 @@ import { createRuntimeValueAst, isFunctionRuntimeValue, isUndefinedRuntimeValue 
 import generateCode from "../Generate";
 
 import { DEBUGGER_DICTS, RUNTIME_LITERAL, RUNTIME_VALUE_TYPE, getRuntimeValueCreateByClassName } from "../constant";
-import RuntimeValue, { RuntimeRefValue, RuntimeConfigValue } from "./RuntimeValue";
+import RuntimeValue, { RuntimeRefValue, RuntimeConfigValue, RuntimeAwaitValue } from "./RuntimeValue";
 import { SPAN_TAG_HTML, isInstanceOf } from "../../commonApi";
 import { getUndefinedValue } from "./RuntimeValueInstance";
 import PropertyDescriptor from "./PropertyDescriptor";
@@ -182,7 +182,7 @@ export default function parseRuntimeValue(rv, config = {}) {
     return rv;
   }
 
-  if (isInstanceOf(rv, RuntimeConfigValue)) {
+  if (isInstanceOf(rv, RuntimeConfigValue) || isInstanceOf(rv, RuntimeAwaitValue)) {
     return rv.value;
   }
 

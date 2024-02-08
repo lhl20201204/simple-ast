@@ -281,6 +281,14 @@ export class SourceCodeHandleApi {
     if (!_.includes(_.values(AST_TYPE),obj.type)) {
       throw new Error('type 必传')
     }
+    if (!_.has(obj, 'restTokens')) {
+      console.warn(obj);
+      throw new Error('restTokens 漏传')
+    }
     return this.astContext.pushAstItem(new ASTItem(obj))
+  }
+
+  copyAstItem(ast) {
+    return this.createAstItem({ ...ast, restTokens: ast.tokens });
   }
 }

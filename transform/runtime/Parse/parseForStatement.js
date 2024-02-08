@@ -10,7 +10,7 @@ export default function parseForStatement(ast, env) {
   const { init, test, update, body } = ast;
 
   // let bodyEnv = env;
-  const isInGenerator = env.isInGeneratorEnv()
+  const isInGenerator = env.canSleepAble() || env.isInGeneratorEnv()
   // const isInLetConst = init.type === 'VariableDeclaration' && ['const', 'let'].includes(init.kind);
   
   const  initEnv = createEnviroment('for let/const statement',env, {}, createEmptyEnviromentExtraConfig({ ast: body }))

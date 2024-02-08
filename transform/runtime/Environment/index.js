@@ -2,7 +2,7 @@ import { EnvJSON, isInstanceOf } from "../../commonApi";
 import { ENV_DICTS, RUNTIME_LITERAL } from "../constant";
 import EnvStackStore from "./EnvStackStore";
 import RuntimeValue from "./RuntimeValue";
-import { createObject } from "./RuntimeValueInstance";
+import { createObject, getUndefinedValue } from "./RuntimeValueInstance";
 import { getWindowObjectRv } from "./getWindow";
 import parseRuntimeValue from "./parseRuntimeValue";
 
@@ -34,6 +34,13 @@ export default class Environment {
     this.placeholderMap = new Map();
     this.switchPlaceHolderMap = new Map();
     this.envStackStore = new EnvStackStore(this);
+  }
+
+  setDirective(type) {
+    if (!_.size(this._config.innerDirectiveMap)) {
+      this._config.innerDirectiveMap = {};
+    }
+    this._config.innerDirectiveMap[type] = true;
   }
 
   copyFromParentEnv(parentEnv) {
@@ -356,6 +363,10 @@ export default class Environment {
     return env.unvisibleRuntimeValueStack[index]
   }
 
+  canSleepAble() {
+    return _.get(this._config, 'innerDirectiveMap.sleep');
+  }
+
   currentIsGeneratorFunctionEnv() {
     return this._config[ENV_DICTS.isGeneratorFunction]
   }
@@ -383,6 +394,9 @@ export default class Environment {
   }
 
   getRunningGenerateConfig() {
+    if (this.canSleepAble()) {
+      return null;
+    }
     let generatorEnv = this;
     while (generatorEnv && !generatorEnv.currentIsGeneratorFunctionEnv()) {
       generatorEnv = generatorEnv.parent;
@@ -399,7 +413,8 @@ export default class Environment {
   }
 
   getNextValue() {
-    return this.getRunningGenerateConfig().getNextValue()
+    const g = this.getRunningGenerateConfig();
+    return  g ? g.getNextValue() : getUndefinedValue()
   }
 
   setYieldValue(rv) {

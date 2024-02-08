@@ -38,6 +38,7 @@ import parseProgram from "./Parse/parseProgram";
 import parseReturnStatement from "./Parse/parseReturnStatement";
 import parseRuntimeValueExpression from "./Parse/parseRuntimeValueExpression";
 import parseSequenceExpression from "./Parse/parseSequenceExpression";
+import parseSleepStatement from "./Parse/parseSleepStatement";
 import parseSpreadElement from "./Parse/parseSpreadElement";
 import parseSuper from "./Parse/parseSuper";
 import parseSwitchStatement from "./Parse/parseSwitchStatement";
@@ -100,6 +101,7 @@ export function innerParseAst(ast, env) {
     case 'ReturnStatement': return parseReturnStatement(ast,env);
     case 'Super': return parseSuper(ast, env);
     case 'SequenceExpression': return parseSequenceExpression(ast, env);
+    case 'SleepStatement': return parseSleepStatement(ast, env);
     case 'SpreadElement': return parseSpreadElement(ast,env);
     case 'SwitchStatement': return parseSwitchStatement(ast, env);
     case 'ThrowStatement': return parseThrowStatement(ast, env);

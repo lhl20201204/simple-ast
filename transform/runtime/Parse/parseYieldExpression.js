@@ -26,11 +26,7 @@ export function setYieldEnv(e, env) {
   e[GENERATOR_DICTS.yieldInnerEnv] = env;
 }
 
-export default function parseYieldExpression(ast, env) {
-  if (!env.isInGeneratorEnv()) {
-    throw new Error('当前不在生成器函数定义范围内无法' + RUNTIME_LITERAL.yield)
-  }
-
+export function innerParseYieldExpression(ast, env) {
   if (ast.delegate) {
     ensureAstHadConfig(ast.argument);
     const argumentAstConfig = _.get(ast.argument, AST_DICTS._config)
@@ -95,4 +91,11 @@ export default function parseYieldExpression(ast, env) {
     astConfig.setNeedReceiveNextValue(true);
     throw e;
   }
+}
+
+export default function parseYieldExpression(ast, env) {
+  if (!env.isInGeneratorEnv()) {
+    throw new Error('当前不在生成器函数定义范围内无法' + RUNTIME_LITERAL.yield)
+  }
+  innerParseYieldExpression(ast, env);
 }

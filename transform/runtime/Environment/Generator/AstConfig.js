@@ -120,7 +120,7 @@ export function clearAstConfig(ast) {
 
 
 export function withRecordEnvStack(ast, env, cb) {
-  const isGeneratorEnv = env.isInGeneratorEnv();
+  const isGeneratorEnv = env.canSleepAble() || env.isInGeneratorEnv();
   if (isGeneratorEnv) {
     ensureAstHadConfig(ast);
     const astConfig= ast[AST_DICTS._config];

@@ -3,22 +3,23 @@ import { AstConfigDicts } from "./constants";
 export default class ASTContext {
   constructor() {
     this.config = {};
+    this.setConfig = {}
     this.configStack = [];
     this.tokens = []
     this.astItemList = [];
     this.charList = [];
-  }
-
-  isSpreadable() {
-    return this.config[AstConfigDicts.isSpreadable]
-  }
-
-  setSpreadable(bol) {
-    this.config[AstConfigDicts.isSpreadable] = bol;
-  }
-
-  canYieldable() {
-    return this.config[AstConfigDicts.canYieldable]
+    this.methodStore = {}
+    _.forEach(AstConfigDicts, attr => {
+      this.methodStore['is' + _.upperFirst(attr)] = () => this.config[attr] ?? false;
+      this.methodStore['set' +  _.upperFirst(attr)] = (bol) => {
+        if (!this.setConfig[attr]) {
+          this.setConfig[attr] = []
+        }
+        this.setConfig[attr].push(this.methodStore['is' + _.upperFirst(attr)]())
+        this.config[attr] = bol;
+      }
+      this.methodStore['reset' + _.upperFirst(attr)] = () =>  this.config[attr] =  this.setConfig[attr].pop();
+    })
   }
 
   pushToken(token) {

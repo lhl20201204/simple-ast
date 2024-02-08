@@ -219,6 +219,14 @@ export function getBlockDefinedLetConstClassKeyList(blockAst) {
 export default function parseProgram(ast) {
   const env = getWindowEnv()
   initEnviroment()
+  // console.log(ast.body[0], 'parseBlockStatement');
+  if (ast.body.length && _.startsWith(ast.body[0].directive, 'use ')) {
+    const type = _.slice(ast.body[0].directive, 4).join('')
+    if (_.size(type)) {
+      env.setDirective(type);
+    }
+    // console.warn(type, env.isInGeneratorEnv(), env.canSleepAble())
+  }
   const statements = getStatement(ast.body, env);
   try {
     for(const c of  statements) {

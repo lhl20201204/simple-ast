@@ -11,6 +11,9 @@ import { DEBUGGER_DICTS } from "./transform/runtime/constant";
 import { createPromiseRvAndPromiseResolveCallback } from "./transform/runtime/Environment/utils";
 import { isInstanceOf } from "./transform/commonApi";
 import ASTItem from "./transform/runtime/ast/ASTITem";
+import { getYieldValue, isYieldError } from "./transform/runtime/Parse/parseYieldExpression";
+import { RuntimeAwaitValue } from "./transform/runtime/Environment/RuntimeValue";
+import parseRuntimeValue from "./transform/runtime/Environment/parseRuntimeValue";
 
 source.onscroll = _.throttle((x) => {
   const dom = document.getElementById('currentDebuggerSpan');
@@ -57,7 +60,25 @@ const writeAst = (ast) => {
   }).join("") + "}";
 
   const win = getWindowEnv();
-  parseAst(ast, win);
+
+  const runCode = () => {
+    try {
+      parseAst(ast, win);
+    } catch (e) {
+      if (isYieldError(e)) {
+        const rv = getYieldValue(e);
+        if (isInstanceOf(rv, RuntimeAwaitValue)) {
+          setTimeout(runCode, parseRuntimeValue(rv))
+        } else {
+          runCode()
+        }
+      } else {
+        console.error(e)
+      }
+    }
+  }
+
+  runCode();
   excute.innerHTML = '正在写入环境中，请稍等';
 
   requestIdleCallback(() => {
@@ -139,7 +160,10 @@ const write = (text) => {
   try{
     source_copy.innerHTML = '';
     const ast = astInstance.getAst();
-    console.log(ast, simpleChange(ast))
+    if (text !== _.map(ast.tokens, 'value').join('')) {
+      throw new Error('token 漏了');
+    }
+    console.log([ ast, simpleChange(ast), _.omitAttr(ast)])
     writeAst(innerChange(ast));
   }catch(err) {
    const e = _.get(err, 'errorInfo', {});

@@ -7,7 +7,7 @@ import { ENV_DICTS } from "../constant";
 
 export default function parseWhileStatement(ast, env) {
   const { test, body } = ast;
-  const isGeneratorEnv = env.isInGeneratorEnv()
+  const isGeneratorEnv = env.canSleepAble() ||  env.isInGeneratorEnv()
 
   while(parseRuntimeValue(parseAst(test, env))) {
     const childEnv = createEnviroment('while_body', env, {

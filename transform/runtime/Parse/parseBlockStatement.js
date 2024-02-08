@@ -10,7 +10,7 @@ import { AST_DICTS } from "../constant";
 import { getStatement } from "./parseProgram";
 import { isYieldError } from "./parseYieldExpression";
 export default function parseBlockStatement(ast, env) {
-  const isGeneratorEnv = env.isInGeneratorEnv();
+  const isGeneratorEnv = env.canSleepAble() || env.isInGeneratorEnv();
   const run = () => {
     const stats = getStatement(ast.body, env)
     const astConfig = _.get(ast, AST_DICTS._config);

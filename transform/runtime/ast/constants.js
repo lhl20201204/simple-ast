@@ -103,16 +103,14 @@ export const TOKEN_TYPE = {
   catch: 'catch',
   finally: 'finally',
   arguments: 'arguments',
+  sleep: 'sleep',
   NaN: 'NaN',
   do: 'do',
 }
 
 export const EOFFlag = 'EOF';
-export const EndStatement = 'EndStatement';
-
 
 export const AST_TYPE = {
-  EndStatement,
   Program: 'Program',
   SequenceExpression: 'SequenceExpression',
   SpreadElement: 'SpreadElement',
@@ -138,6 +136,14 @@ export const AST_TYPE = {
   ThisExpression: 'ThisExpression',
   IfStatement: 'IfStatement',
   BlockStatement: 'BlockStatement',
+  SleepStatement: 'SleepStatement',
+  ArrayPattern: 'ArrayPattern',
+  ObjectPattern: 'ObjectPattern',
+  RestElement: 'RestElement',
+  AssignmentPattern: 'AssignmentPattern',
+  Property: 'Property',
+  FunctionExpression: 'FunctionExpression',
+  ReturnStatement: 'ReturnStatement',
 }
 
 export const ReservedKeyList = [
@@ -185,6 +191,7 @@ export const ReservedKeyList = [
   ['arguments', TOKEN_TYPE.arguments],
   ['NaN', TOKEN_TYPE.NaN],
   ['do', TOKEN_TYPE.do],
+  ['sleep', TOKEN_TYPE.sleep],
 ]
 
 export const METHOD_TYPE = {
@@ -213,19 +220,37 @@ export const METHOD_TYPE = {
   getIdentifierAst: 'getIdentifierAst',
   getPrimaryAst: 'getPrimaryAst',
   getLiteralAst: 'getLiteralAst',
+  getSleepStatement: 'getSleepStatement',
   getExpAst: 'getExpAst',
   getArrayExpressionAst: 'getArrayExpressionAst',
   getObjectExpressionAst: 'getObjectExpressionAst',
-  getObjectPropertyAstOrSpreadElement: 'getObjectPropertyAstOrSpreadElement',
   getExpressionStatementAst: 'getExpressionStatementAst',
   getVariableDeclaratorAst: 'getVariableDeclaratorAst',
   getVariableDeclarationStatementAst: 'getVariableDeclarationStatementAst',
   getStatementOrExpressionAst: 'getStatementOrExpressionAst',
   getIfStatementAst: 'getIfStatementAst',
   getBlockStatementAst: 'getBlockStatementAst',
+  getReturnStatementAst: 'getReturnStatementAst',
+
+  getPatternAst: 'getPatternAst',
+  getArrayPatternAst: 'getArrayPatternAst',
+  getObjectPatternAst: 'getObjectPatternAst',
+  getRestElementAst: 'getRestElementAst',
+  getAssignmentPatternAst: 'getAssignmentPatternAst',
+  getObjectPatternPropertyAst: 'getObjectPatternPropertyAst',
+  getObjectPatternPropertyOrRestElementAst: 'getObjectPatternPropertyOrRestElementAst', 
+  getAssignmentPatternOrIdentityAst: 'getAssignmentPatternOrIdentityAst',
+
+
+  getObjectExpressionPropertyAst: 'getObjectExpressionPropertyAst',
+  getObjectExpressionPropertyOrSpreadElementAst: 'getObjectExpressionPropertyOrSpreadElementAst',
+
+  getFunctionParams: 'getFunctionParams',
 }
 
 export const AstConfigDicts = {
-  isSpreadable: 'isSpreadable',
+  canSpreadable: 'canSpreadable',
   canYieldable: 'canYieldable',
+  canUseAssignmentPattern: 'canUseAssignmentPattern',
+  canRestAble: 'canRestAble',
 }

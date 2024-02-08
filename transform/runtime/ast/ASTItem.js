@@ -33,10 +33,15 @@ export default class ASTItem{
       (a,b) => a.start - b.start
     );
     if (!Array.isArray(this.tokens) || !_.size(this.tokens)) {
+      console.warn(this)
       throw new Error('必传token数组')
     }
     this.addStarEnd();
     ['type', 'start', 'end'].forEach(f => this.ensureHas(f))
+  }
+
+  is(type) {
+    return this.type === type;
   }
 
   addStarEnd() {
@@ -56,4 +61,5 @@ export default class ASTItem{
   set(attr, value) {
     this[attr] = value
   }
+
 }
