@@ -44,4 +44,54 @@ export function omitAttr(ast) {
   return ast
 }
 
-_.omitAttr = omitAttr;
+let tempSelfResult =  null;
+_.omitAttr = (xx, bol) => {
+  if (bol) {
+    tempSelfResult = omitAttr(xx)
+    return tempSelfResult;
+  } else {
+    const c = omitAttr(xx);
+    if (!_.isEqual(tempSelfResult, c)) {
+      console.error('不匹配')
+      return c;
+    } else {
+      return '跟正宗的一模一样'
+    }
+  }
+};
+
+export function checkThrowIfSameName(astArr) {
+  const set = new Set();
+  function dfsJudgeAstHadDeclaration(ast) {
+    switch(ast.type) {
+      case AST_TYPE.Identifier: 
+       if (set.has(ast.name)) {
+        throwError('参数重复声明',ast.tokens[0])
+       }
+       set.add(ast.name);
+         return
+      case AST_TYPE.RestElement:
+         return dfsJudgeAstHadDeclaration(ast.argument);
+      case AST_TYPE.AssignmentPattern:
+         return dfsJudgeAstHadDeclaration(ast.left);
+      case AST_TYPE.ObjectPattern: 
+        return _.map(ast.properties, x => dfsJudgeAstHadDeclaration(x.value));
+      case AST_TYPE.ArrayPattern: 
+        return _.map(ast.elements, dfsJudgeAstHadDeclaration)
+    }
+    throwError('未允许的参数声明类型' + ast.type, ast.tokens[0])
+  }
+  _.forEach(astArr, dfsJudgeAstHadDeclaration)
+}
+
+function _innerGetAvoidPureArrowFuncitonExpression(text, func) {
+  return function (ast) {
+    if (_.includes(AST_TYPE.ArrowFunctionExpression, ast.type)
+  && (!_.last(ast.tokens).is(TOKEN_TYPE.RightParenthesis))) {
+    throwError('箭头函数不加括号'+ text +'不能直接跟着语法符号', _[func](ast.tokens))
+  }
+  }
+}
+
+export const avoidPureArrowFuncitonExpressionNextTokenIsOperator = _innerGetAvoidPureArrowFuncitonExpression('后面', 'last')
+export const avoidPureArrowFuncitonExpressionPrefixTokenIsOperator = _innerGetAvoidPureArrowFuncitonExpression('前面', 'first')

@@ -163,7 +163,7 @@ const write = (text) => {
     if (text !== _.map(ast.tokens, 'value').join('')) {
       throw new Error('token 漏了');
     }
-    console.log([ ast, simpleChange(ast), _.omitAttr(ast)])
+    console.log([ ast, simpleChange(ast), _.omitAttr(ast, true)])
     writeAst(innerChange(ast));
   }catch(err) {
    const e = _.get(err, 'errorInfo', {});
@@ -211,6 +211,7 @@ const inputAst = function (e) {
   const ast = JSON.parse(e.target.value);
   source.innerHTML = textReplace(generateCode(ast, { [DEBUGGER_DICTS.isHTMLMode]: true }));
   AST.testingCode = '';
+  console.clear()
   writeAst(ast)
   localStorage.setItem('ast-temp', JSON.stringify(ast));
 }

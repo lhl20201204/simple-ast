@@ -1,4 +1,4 @@
-import { AstConfigDicts } from "./constants";
+import { AstFlagDicts, prefixDicts } from "./constants";
 
 export default class ASTContext {
   constructor() {
@@ -9,16 +9,16 @@ export default class ASTContext {
     this.astItemList = [];
     this.charList = [];
     this.methodStore = {}
-    _.forEach(AstConfigDicts, attr => {
-      this.methodStore['is' + _.upperFirst(attr)] = () => this.config[attr] ?? false;
-      this.methodStore['set' +  _.upperFirst(attr)] = (bol) => {
+    _.forEach(AstFlagDicts, attr => {
+      this.methodStore[prefixDicts.is + _.upperFirst(attr)] = () => this.config[attr] ?? false;
+      this.methodStore[prefixDicts.set +  _.upperFirst(attr)] = (bol) => {
         if (!this.setConfig[attr]) {
           this.setConfig[attr] = []
         }
-        this.setConfig[attr].push(this.methodStore['is' + _.upperFirst(attr)]())
+        this.setConfig[attr].push(this.methodStore[prefixDicts.is + _.upperFirst(attr)]())
         this.config[attr] = bol;
       }
-      this.methodStore['reset' + _.upperFirst(attr)] = () =>  this.config[attr] =  this.setConfig[attr].pop();
+      this.methodStore[prefixDicts.reset + _.upperFirst(attr)] = () =>  this.config[attr] =  this.setConfig[attr].pop();
     })
   }
 

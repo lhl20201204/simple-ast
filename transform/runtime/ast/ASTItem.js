@@ -29,9 +29,14 @@ export default class ASTItem{
       tokensList.push(...tokens)
     }
     // console.log('value', _.cloneDeep(value));
+    try {
     this.tokens = (_.uniqBy(_.flatten(tokensList), x => x.start + '#' + x.end)).sort(
       (a,b) => a.start - b.start
     );
+    } catch(e){
+      console.warn(new Error().stack, tokensList)
+      throw e;
+    }
     if (!Array.isArray(this.tokens) || !_.size(this.tokens)) {
       console.warn(this)
       throw new Error('必传token数组')

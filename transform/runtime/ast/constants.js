@@ -16,8 +16,6 @@ export const TOKEN_TYPE = {
   String: 'String',
   Number: 'Number',
   Optional: '?. Optional',
-  OptionalCall: '?.( OptionalCall',
-  OptionalComputedGet: '?.[ OptionalComputedGet',
   DoubleQuestion: '?? DoubleQuestion',
   SingleOr: '| SingleOr',
   SingleXor: '^ SingleXor',
@@ -59,6 +57,7 @@ export const TOKEN_TYPE = {
   LessEqual: '<= LessEqual',
   Great: '> Great',
   GreatEqual: '>= GreatEqual',
+  Arrow: '=> Arrow',
   Spread: '... Spread',
 
   undefined: 'undefined',
@@ -144,6 +143,9 @@ export const AST_TYPE = {
   Property: 'Property',
   FunctionExpression: 'FunctionExpression',
   ReturnStatement: 'ReturnStatement',
+  FunctionDeclaration: 'FunctionDeclaration',
+  WhileStatement: 'WhileStatement',
+  ArrowFunctionExpression: 'ArrowFunctionExpression',
 }
 
 export const ReservedKeyList = [
@@ -245,12 +247,27 @@ export const METHOD_TYPE = {
   getObjectExpressionPropertyAst: 'getObjectExpressionPropertyAst',
   getObjectExpressionPropertyOrSpreadElementAst: 'getObjectExpressionPropertyOrSpreadElementAst',
 
+  getFunctionDeclarationAst: 'getFunctionDeclarationAst',
+  getFunctionExpressionOrWithArrowAst: 'getFunctionExpressionOrWithArrowAst',
   getFunctionParams: 'getFunctionParams',
+  getWhileStatementAst: 'getWhileStatementAst',
+  getArrowFunctionExpressionAst: 'getArrowFunctionExpressionAst'
 }
 
-export const AstConfigDicts = {
+export const AstFlagDicts = {
   canSpreadable: 'canSpreadable',
   canYieldable: 'canYieldable',
   canUseAssignmentPattern: 'canUseAssignmentPattern',
-  canRestAble: 'canRestAble',
+  canRestable: 'canRestable',
+  cannotUsePureArrowExpression: 'cannotUsePureArrowExpression',
+}
+
+export const prefixDicts = {
+  is: 'is',
+  set: 'set',
+  reset: 'reset',
+}
+
+export const commonLiteral = {
+  init: 'init'
 }

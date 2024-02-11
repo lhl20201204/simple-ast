@@ -34,7 +34,30 @@ b.fn(f);
 fn(2)
 */
 export const isProgram = `
+const ff = 1,q2={},f ={}, ag = [], rest =[]; 
+const ay = (() => {}) + 'gjnoih' + (async (a=yuu, b, bh) => {});
 
+
+const expect =(ff,gwindow =5,{f: q2, ...f}, [ag, ...rest])
++ (async (ff,g =5, {f: q2, g2 = 'ff'}, [a, ...rest], ...rest2) => {})
+
+console.log(1,)
+
+
+const test2 = function a(...rest) {
+console.log('test', ...rest)
+}
+
+test2(1, 2, 3, 4, [{ test() {}}]);
+
+function * test() {
+let i = 0;
+while(i < 2) {
+yield i++;
+}
+}
+const g = test();
+console.log(g.next(), g.next(), g.next())
 
 const x = 'xx'
 const obj = {
@@ -49,13 +72,13 @@ async * f(){
 },
 [x](){},
 get g(){
-  console.log('get')
-  return 'f', this.innerG;
+console.log('get')
+return 'f', this.innerG;
 },
 innerG: 4,
 set g(x){
-   console.log('set', x)
-  this.innerG = x;
+console.log('set', x)
+this.innerG = x;
 },
 set [x](f){
 },

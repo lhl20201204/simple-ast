@@ -1,10 +1,13 @@
 import _ from 'lodash';
-import { AST_TYPE, EOFFlag, ReservedKeyList, TOKEN_TYPE } from './constants';
+import { AST_TYPE, AstFlagDicts, EOFFlag, ReservedKeyList, TOKEN_TYPE, prefixDicts } from './constants';
 import { Token, TokenChar } from './Token';
 import ASTContext from './AstContext';
 import ASTItem from './ASTITem';
-const TOKEN_TYPE_VALUE_LIST = _.values(TOKEN_TYPE)
+const TOKEN_TYPE_VALUE_LIST = _.values(TOKEN_TYPE);
+
+const storeAttr = ['astItemList', 'charList', 'config', 'configStack', 'setConfig', 'tokens'];
 export class SourceCodeHandleApi {
+
   nextCharIs(str) {
     if (_.isNil(str)) {
       return this.sourceCode[0]
@@ -59,14 +62,30 @@ export class SourceCodeHandleApi {
   }
 
   eatWord() {
+    // 字母，下划线开头
     const c = this.nextCharIs()
     if (!c || c === EOFFlag) {
       return []
     }
-    if (c.toLowerCase() !== c.toUpperCase()) {
-      return _.flatten([this.eat(), ...this.eatWord()])
+    const ret = []
+    const isAlpha = (c) => c.toLowerCase() !== c.toUpperCase();
+    let flag = false;
+    if (this.nextCharIs('_') || isAlpha(this.nextCharIs())) {
+      flag = true;
+      ret.push(...this.eat())
     }
-    return [];
+    if (flag) {
+      while (
+        this.nextCharIsNumber()
+       || isAlpha(this.nextCharIs())
+       || this.nextCharIs('_')
+       || this.nextCharIs('$')
+      ) {
+        ret.push(...this.eat())
+      }
+    }
+  
+    return ret;
   }
 
   getLastIsfunc = (ret) => (str) => {
@@ -110,7 +129,8 @@ export class SourceCodeHandleApi {
 
   eatToken(prefixTokens = []) {
     this.eatingChar = true;
-    const ret = this.astContext.pushToken(this.#eatToken(prefixTokens))
+    const token = this.#eatToken(prefixTokens);
+    const ret = this.astContext.pushToken(token)
     this.eatingChar = false;
     return ret;
   }
@@ -120,13 +140,12 @@ export class SourceCodeHandleApi {
     for (const item of [
       ['>>>=', TOKEN_TYPE.UnsignedShiftRightEqual],
       ['===', TOKEN_TYPE.StrictEqual],
-      ['?.[', TOKEN_TYPE.OptionalComputedGet],
-      ['?.(', TOKEN_TYPE.OptionalCall],
       ['<<=', TOKEN_TYPE.ShiftLeftEqual],
       ['>>=', TOKEN_TYPE.ShiftRightEqual],
       ['>>>', TOKEN_TYPE.UnsignedShiftRight],
       ['!==', TOKEN_TYPE.NoStrictEqual],
       ['...', TOKEN_TYPE.Spread],
+      ['=>', TOKEN_TYPE.Arrow],
       ['++', TOKEN_TYPE.SelfAdd],
       ['--', TOKEN_TYPE.SelfSub],
       ['**', TOKEN_TYPE.DoubleStar],
@@ -174,7 +193,6 @@ export class SourceCodeHandleApi {
       [',', TOKEN_TYPE.Comma],
       [';', TOKEN_TYPE.Semicolon],
       ['=', TOKEN_TYPE.Equal],
-      ['*', TOKEN_TYPE.Star],
       [String.fromCharCode(160), TOKEN_TYPE.Split],
       ['\n', TOKEN_TYPE.WrapLine],
     ]) {
@@ -220,6 +238,42 @@ export class SourceCodeHandleApi {
     }
   }
 
+  save() {
+    if (_.size(this.tempTokensStack)) {
+      throw new Error('save调用有误');
+    }
+    this.lastAstContextStack.push(this.lastAstContext)
+    this.lastRowColIndexStack.push(this.lastRowColIndex)
+    this.lastRowColIndex = [this.row, this.col, this.index];
+    this.lastAstContext = _.cloneDeep({
+      ..._.pick(this.astContext, storeAttr),
+      sourceCode: this.sourceCode,
+    })
+  }
+
+  restore() {
+    if (_.isNil(this.lastRowColIndex)) {
+      throw new Error('restore调用有误');
+    }
+    this.sourceCode = _.get(this.lastAstContext, 'sourceCode')
+    _.forEach(storeAttr, attr=> {
+      this.astContext[attr] = this.lastAstContext[attr];
+    })
+    this.lastAstContext =  this.lastAstContextStack.pop();
+    this.row = this.lastRowColIndex[0]
+    this.col =  this.lastRowColIndex[1];
+    this.index =  this.lastRowColIndex[2]
+    this.lastRowColIndex = this.lastRowColIndexStack.pop();
+  }
+
+  consume() {
+    if (_.isNil(this.lastRowColIndex)) {
+      throw new Error('consume调用有误');
+    }
+    this.lastRowColIndex = this.lastRowColIndexStack.pop()
+    this.lastAstContext = this.lastAstContextStack.pop();
+  }
+
   nextTokenIs(type) {
     const temp = [
       this.row,
@@ -256,6 +310,10 @@ export class SourceCodeHandleApi {
     this.row = 0;
     this.col = 0;
     this.index = 0;
+    this.lastAstContext = null;
+    this.lastRowColIndex = null;
+    this.lastAstContextStack = [];
+    this.lastRowColIndexStack = [];
     const c = sourceCode.split('')
     c.push(EOFFlag)
     this.sourceCode = c
@@ -290,5 +348,20 @@ export class SourceCodeHandleApi {
 
   copyAstItem(ast) {
     return this.createAstItem({ ...ast, restTokens: ast.tokens });
+  }
+
+  proxyMethod(prefix, type, ...params) {
+    if (
+      !_.includes(_.values(prefixDicts), prefix) ||
+      !_.includes(_.values(AstFlagDicts), type)) {
+      throw new Error('方法调用错误');
+    }
+    if ([prefixDicts.is, prefixDicts.reset].includes(prefix) && _.size(params)) {
+      throw new Error(prefix + '方法后面不应该有参数')
+    }
+    if (prefix === prefixDicts.set && !_.size(params)) {
+      throw new Error('set方法后面至少一个参数')
+    }
+    return this.astContext.methodStore[prefix + _.upperFirst(type)](...params);
   }
 }
