@@ -33,13 +33,40 @@ f.a = 3;
 b.fn(f);
 fn(2)
 */
-export const isProgram = `
-const ff = 1,q2={},f ={}, ag = [], rest =[]; 
-const ay = (() => {}) + 'gjnoih' + (async (a=yuu, b, bh) => {});
+const test1 = `
+function A(x) {
+return {
+x
+}
+}
+const q = new A(3)
+console.log(q)
+const xy = !window ? { ... { f: 'f' }} : console.log
+console.log(xy)
+function dfs(index) {
+console.log(index)
+if (index > 10) {
+return {
+ ... true ? {g: 144, ...{}, ... {q: 5}} : { h: 111}
+}
+}
+return dfs(index +1)
+}
+
+if (true) {
+console.log([true, undefined, false, null, NaN])
+} else if (false) {
+}
+
+
+console.log('dfs->',dfs(0))
+
+const ff = 1,q2={},f ={}, ag = [], rest =[];
+const ay = (() =>1) + 'gjnoih' + (async (a=yuu, b, bh) => {});
 
 
 const expect =(ff,gwindow =5,{f: q2, ...f}, [ag, ...rest])
-+ (async (ff,g =5, {f: q2, g2 = 'ff'}, [a, ...rest], ...rest2) => {})
++ (async (ff,g =5, {f: q2, gsgd,g2 = 'ff',...fsd}, [a, ...rest], ...rest2) => {})
 
 console.log(1,)
 
@@ -53,11 +80,13 @@ test2(1, 2, 3, 4, [{ test() {}}]);
 function * test() {
 let i = 0;
 while(i < 2) {
+yield * ['hello', 'world']
 yield i++;
 }
+return 'end';
 }
 const g = test();
-console.log(g.next(), g.next(), g.next())
+console.log(g.next(), g.next(), g.next(), g.next(), g.next(), g.next(), g.next())
 
 const x = 'xx'
 const obj = {
@@ -108,7 +137,86 @@ console.log('if')
 console.log('else if')
 } else {
 console.log('else')
+}`
+export const isProgram = `
+
+const z = {ff: 2 }
+const x = { async [new window.Promise(((r) =>setTimeout(() => { r(3)}, 4000))).then(console.log) ]() { console.log(await 1) }, z, g: z, ['hello' + 'world']: 'f', q() {
+console.log(this, arguments)
+}, async hh() {
+await new Promise((r) => {
+setTimeout(r, 2000)
+})
+return arguments[0] + this.z.ff * this.g.ff
+},
+async ['async' + 'func'] () {
+const x = await this.hh(78)
+console.log('async', x)
+},* gen() {
+yield * [...arguments[0]]
+},
+async * gen2() {
+  const x = await Promise.resolve(33)
+  yield x + 67
+  yield await new Promise((r) => setTimeout(() => {
+     r('----》')
+  }, 4000))
+},
+['ggg' + z.ff]() {
+},
+
+get gff(){
+
+  console.log('get')
+  
+  return 'f', this.innerG;
+}, 
+  
+  innerG: 4,
+  
+set gff(x){
+  
+  console.log('set', x)
+  
+  this.innerG = x;
+  
+},
+
+set [z.ff + '22'](f){
+  console.log('set ->')
+  this.innerFFF = f
+},
+innerFFF: 10,
+get [z.ff+  '22']() {
+  console.log('get')
+  return this.innerFFF
+},
+...{
+  ...{ fjff() {
+    return this
+  }}
 }
+}
+x.q(1,22)
+x.hh(45).then(console.log)
+
+x.z.ff = 10
+
+x.asyncfunc()
+
+const gen = x.gen(['f', 'g', 'hj'])
+
+console.log([gen.next(), gen.next(),gen.next(), gen.next()
+,gen[Symbol.iterator]() === gen]) 
+const gen2 = x.gen2()
+gen2.next().then(console.log)
+gen2.next().then(console.warn)
+
+console.log(x.gff)
+x.gff ++
+
+console.log(++x['222'], x.fjff())
+
 `
 
 export const isVariableDeclaration = `

@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+<body>
+   <script>
+    // ==UserScript==
+    // @name         New Userscript
+    // @namespace    http://tampermonkey.net/
+    // @version      2024-02-15
+    // @description  try to take over the world!
+    // @author       You
+    // @match        https://astexplorer.net/
+    // @icon         https://www.google.com/s2/favicons?sz=64&domain=astexplorer.net
+    // @grant        none
+    // ==/UserScript==
+
+    (function () {
+      'use strict';
+      if (location.href === 'https://astexplorer.net/' && window.opener) {
+        function run(dosomething) {
+          return new Promise(resolve => {
+            const ret = dosomething()
+            requestIdleCallback(() => {
+              if (ret instanceof Promise) {
+                ret.then(resolve)
+              } else {
+                resolve(ret)
+              }
+            })
+          })
+        }
+
+        function debounce(fn, time) {
+          let t = null;
+          return function () {
+            if (t) {
+              clearTimeout(t)
+            }
+            t = setTimeout(() => {
+              fn.apply(this, arguments);
+              t = null;
+            }, time)
+          }
+        }
+
+        function trim(str) {
+          let len = str.length;
+          let i = 0;
+          while (str[i++] === ' ') {
+          }
+          let start = i - 1;
+          i = len - 1;
+          while (str[i--] === ' ') {
+          }
+          return str.slice(start, i + 2)
+        }
+
+        async function setClipboardText(text) {
+          // 创建一个临时的textarea元素
+          var textarea = document.createElement("textarea");
+          textarea.value = text;
+
+          // 将textarea元素添加到页面中
+          document.body.appendChild(textarea);
+
+          // 选中textarea元素的内容
+          textarea.select();
+
+          // 执行复制操作
+          document.execCommand("copy");
+
+          // 移除临时的textarea元素
+          document.body.removeChild(textarea);
+        }
+
+        function sleep(t) {
+          return new Promise(r => setTimeout(r, t))
+        }
+
+        let selfAst = null;
+
+        let containerScrool = 0;
+
+        let running = false;
+
+        async function waitFor(cb, t = 1000) {
+          let container;
+          while (!container) {
+            try {
+              container = await run(cb);
+            } catch (e) {
+              console.error(e);
+              await sleep(t);
+            }
+          }
+          return container;
+        }
+
+        async function runTask() {
+          running = true;
+          console.log('模拟鼠标点击json按钮')
+          await waitFor(() => {
+            let x = document.getElementsByClassName('toolbar')[0].getElementsByTagName('button')[1]
+            x.click()
+            return x;
+          })
+          const container = await waitFor(() => document.getElementsByClassName('CodeMirror-scroll')[1])
+
+          function setContanerScrollTop(x) {
+            return run(() => container.scrollTop = x);
+          }
+          await setContanerScrollTop(0)
+          const result = [];
+          let len = 0;
+          let t = 0;
+          let errC = 0;
+          await run(() => document.body.style.pointerEvents = 'none');
+          console.log('模拟滚动')
+          while (t < container.scrollHeight) {
+            const arr = await run(() => document.getElementsByClassName('CodeMirror-code')[1].innerText.split('\n'));
+            let tl = arr.length;
+            let flag = false;
+            for (let i = 0; i < tl; i++) {
+              if (i % 2 === 1) {
+                const lI = Number(arr[i - 1]) - 1;
+                if (lI === len) {
+                  result[len] = trim(arr[i])
+                  len++
+                } else if (lI > len) {
+                  flag = true;
+                  break;
+                }
+              }
+            }
+            if (flag) {
+              if (errC++ > 20) {
+                break;
+              }
+              t = Math.max(0, t - 800);
+              await setContanerScrollTop(t)
+              console.error('回退')
+              continue;
+            }
+            if (arr.length) {
+              t += 500
+              await setContanerScrollTop(t)
+            } else {
+              if (errC++ > 20) {
+                break;
+              } else {
+                await sleep(500)
+              }
+            }
+          }
+          const t1 = result.join('');
+          selfAst = (JSON.parse(t1))
+          console.log(selfAst);
+          running = false;
+          containerScrool = 0;
+          await setContanerScrollTop(0)
+          await run(() => document.body.style.pointerEvents = 'initial');
+          //loop();
+        }
+        let totalC = -1;
+        const debouncRunTask = debounce(runTask, 3000);
+        let scrollDom = null
+        const loop = async () => {
+          if (running) {
+            return;
+          }
+          if (!scrollDom) {
+            scrollDom = await waitFor(() => document.getElementsByClassName('CodeMirror-code')[0]);
+          }
+          let currentC = await run(() => scrollDom.innerText);
+          if (!containerScrool && (currentC !== totalC)) {
+            await debouncRunTask();
+            totalC = currentC;
+          }
+
+        }
+
+        setTimeout(async () => {
+          if (!scrollDom) {
+            scrollDom = await waitFor(() => document.getElementsByClassName('CodeMirror-code')[0]);
+          }
+          const config = { attributes: false, childList: true, subtree: true };
+          const callback = debounce(async function (mutationsList, observer) {
+            for (let mutation of mutationsList) {
+              if (mutation.type === 'childList') {
+                loop()
+              }
+            }
+          }, 1000);
+          // 创建一个观察器实例并传入回调函数
+          const observer = new MutationObserver(callback);
+          observer.observe(scrollDom, config)
+        }, 2000);
+
+        loop()
+
+        window.onmessage = async (e) => {
+          if (e.data.type === 'localhost') {
+            console.log('模拟鼠标聚焦在dom元素上')
+            await run(() => {
+              document.getElementsByClassName('CodeMirror-code')[0].dispatchEvent(new MouseEvent('mousedown', { view: window, bubbles: true, cancelable: false, shiftKey: false }))
+            })
+
+            const textArea = await run(() => document.getElementsByTagName('textarea')[0]);
+
+
+            console.log('模拟键盘ctrl a')
+            await run(() => textArea.dispatchEvent(new KeyboardEvent('keydown', {
+              keyCode: 65,
+              ctrlKey: false,
+              metaKey: true,
+              shiftKey: false,
+            })))
+
+
+
+            console.log('模拟键盘delete')
+            await run(() => textArea.dispatchEvent(new KeyboardEvent('keydown', {
+              keyCode: 8,
+              ctrlKey: false,
+              metaKey: false,
+              shiftKey: false,
+            })))
+
+            console.log('模拟粘贴')
+            await run(() => {
+              const clipboardData = new DataTransfer()
+              clipboardData.setData('text', e.data.data);
+              textArea.dispatchEvent(new ClipboardEvent('paste', {
+                clipboardData,
+              }))
+
+            })
+            await sleep(500)
+            await runTask()
+          }
+        }
+
+
+        window.addEventListener('visibilitychange', () => {
+          if (document.hidden) {
+            window.opener.postMessage({
+              type: 'https://astexplorer.net/',
+              data: selfAst
+            }, '*')
+          } else {
+
+          }
+        })
+      }
+      // Your code here...
+    })();
+
+   </script>
+</body>
+</html>

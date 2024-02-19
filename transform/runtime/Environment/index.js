@@ -56,16 +56,6 @@ export default class Environment {
     return this.keyMap.has(key)
   }
 
-  allowConstLetDefineAgain(bool, cb) {
-    this._config[ENV_DICTS.allowConstLetDefineAgain] = bool;
-    cb()
-    this._config[ENV_DICTS.allowConstLetDefineAgain] = false;
-  }
-
-  getAllowConstLetDefineAgain() {
-    return  !!this._config[ENV_DICTS.allowConstLetDefineAgain];
-  }
-
   setCacheFromParentEnv(bool) {
     this._config[ENV_DICTS.isCacheFromParentEnv] = bool
   }
@@ -113,7 +103,8 @@ export default class Environment {
   }
 
   addConst(key, value) {
-    if (this.keyMap.has(key) && !this.getAllowConstLetDefineAgain()) {
+    if (this.keyMap.has(key) && !this.isCacheFromParentEnv()
+  ) {
       throw new Error(`${key} 已被定义`);
     }
     this.checkPlaceHolded(key)
@@ -146,7 +137,7 @@ export default class Environment {
   }
 
   addLet(key, value, resign) {
-    if ((!resign && this.keyMap.has(key)) && !this.getAllowConstLetDefineAgain()) {
+    if ((!resign && this.keyMap.has(key)) && !this.isCacheFromParentEnv()) {
       console.error(this.keyMap);
       throw new Error(`${key} 已经定义`);
     }

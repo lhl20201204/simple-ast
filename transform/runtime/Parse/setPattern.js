@@ -34,16 +34,8 @@ export function setIdentifierPattern(argsRv, paramsAst, env, restConfig) {
     // console.error('env-set', paramsAst.name, oldDescriptor)
     env[getType(restConfig, env, paramsAst.name)](paramsAst.name, argsRv, oldDescriptor);
   } else {
-    // if (paramsAst.name === 'x') {
-    //   console.log(restConfig, getType(restConfig, env, paramsAst.name), env)
-    // }
 
-    env.allowConstLetDefineAgain( 
-      restConfig.allowConstLetDefineAgain,
-      () => env[getType(restConfig, env)](paramsAst.name, argsRv))
-    // if (paramsAst.name === 'originLog') {
-    //     console.warn(argsRv, _.cloneDeep(env.get('console').get('log')))
-    // }
+    env[getType(restConfig, env)](paramsAst.name, argsRv)
   }
   // console.log(getType(restConfig, env), paramsAst.name)
  
@@ -107,7 +99,6 @@ export function setMemberExpression(v, ast, env, restConfig) {
   const { kind } = restConfig;
   const objectRV = parseAst(object, env);
   let k = getMemberPropertyKey(ast, env);
-  // console.error(k)
   // console.warn(object);
   objectRV.set(k, v, getObjectAttrOfPropertyDescriptor(objectRV, k, v, { kind, env }))
 }

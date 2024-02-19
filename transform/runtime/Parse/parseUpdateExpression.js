@@ -1,7 +1,7 @@
 import parseAst from "..";
 import RuntimeValue from "../Environment/RuntimeValue";
 import parseRuntimeValue from "../Environment/parseRuntimeValue";
-import { JS_TO_RUNTIME_VALUE_TYPE } from "../constant";
+import { JS_TO_RUNTIME_VALUE_TYPE, PROPERTY_DESCRIPTOR_DICTS } from "../constant";
 import setPattern from "./setPattern";
 
 function getUpdate(ast, env, step = 1) {
@@ -12,6 +12,7 @@ function getUpdate(ast, env, step = 1) {
   const updateRv = new RuntimeValue(JS_TO_RUNTIME_VALUE_TYPE(updateRvValue), updateRvValue)
   setPattern(updateRv, argument, env, {
     useSet: true,
+    kind: PROPERTY_DESCRIPTOR_DICTS.init
   });
   return prefix ? updateRv: rv;
 }

@@ -1,9 +1,10 @@
 import _ from 'lodash';
-import { AST_TYPE, AstFlagDicts, EOFFlag, ReservedKeyList, TOKEN_TYPE, prefixDicts } from './constants';
+import { AST_FLAG_VALUE_LIST, AST_TYPE, AST_TYPE_VALUE_LIST, AstFlagDicts, EOFFlag, METHOD_TYPE, METHOD_TYPE_VALUES_LIST, ReservedKeyList, TOKEN_TYPE, TOKEN_TYPE_VALUE_LIST, prefixDicts, directlyReturnFlag } from './constants';
 import { Token, TokenChar } from './Token';
 import ASTContext from './AstContext';
 import ASTItem from './ASTITem';
-const TOKEN_TYPE_VALUE_LIST = _.values(TOKEN_TYPE);
+import { avoidPureArrowFuncitonExpressionNextTokenIsOperator, ensureAllTypeInList, ensureCannotHadAttrsInSameTime } from './utils';
+import { isInstanceOf } from '../../commonApi';
 
 const storeAttr = ['astItemList', 'charList', 'config', 'configStack', 'setConfig', 'tokens'];
 export class SourceCodeHandleApi {
@@ -182,7 +183,7 @@ export class SourceCodeHandleApi {
       [':', TOKEN_TYPE.Colon],
       ['.', TOKEN_TYPE.Point],
       [' ', TOKEN_TYPE.Split],
-      ['*', TOKEN_TYPE.Mul],
+      ['*', TOKEN_TYPE.Star],
       ['/', TOKEN_TYPE.Div],
       ['+', TOKEN_TYPE.Plus],
       ['-', TOKEN_TYPE.Subtract],
@@ -363,5 +364,300 @@ export class SourceCodeHandleApi {
       throw new Error('set方法后面至少一个参数')
     }
     return this.astContext.methodStore[prefix + _.upperFirst(type)](...params);
+  }
+
+  getPriorityAstFunc(attr, tokenType, astType, config = {
+  }) {
+    const checkLeft = config.checkLeft ? (x) => {
+      avoidPureArrowFuncitonExpressionNextTokenIsOperator(x);
+      config.checkLeft(x);
+    } : avoidPureArrowFuncitonExpressionNextTokenIsOperator;
+    const checkRight = config.checkRight ?? ((x) => null);
+    return () => {
+      const restTokens = [];
+      let left = this[attr]()
+      while (this.nextTokenIs(tokenType)) {
+        const operatorToken = this.eatToken();
+        restTokens.push(operatorToken);
+        this.proxyMethod(prefixDicts.set, AstFlagDicts.cannotUsePureArrowExpression, true);
+
+        let right = this[attr]();
+
+        this.proxyMethod(prefixDicts.reset, AstFlagDicts.cannotUsePureArrowExpression)
+        checkLeft(left);
+        checkRight(right);
+        left = this.createAstItem({
+          type: astType,
+          left,
+          right,
+          operator: operatorToken.value,
+          restTokens,
+        })
+      }
+      if (!isInstanceOf(left, ASTItem)) {
+        throw new Error('类型错误')
+      }
+      return left;
+    }
+  }
+
+  getSingleOperatorFunc(method, tokenType, config = {}) {
+    const checkArgument = config.checkArgument ?? ((x) => x);
+    const injectConfig = config.injectConfig ?? ((restTokens) => ({
+      restTokens
+    }))
+    const ret = () => {
+
+      if (this.nextTokenIs(tokenType)) {
+        const restTokens = [this.eatToken()];
+        const obj = injectConfig.call(this, restTokens[0]);
+        if (!obj.restTokens) {
+          throw '获取ast错误restTokens 漏传'
+        }
+        const shouldJudgeIsCannotUsePureArrowFunciton = [METHOD_TYPE.getUnaryOrUpdateOrAwaitExpression].includes(method);
+        if (shouldJudgeIsCannotUsePureArrowFunciton) {
+          this.proxyMethod(prefixDicts.set, AstFlagDicts.cannotUsePureArrowExpression, true)
+        }
+       
+        let argument  = ret();
+        if (shouldJudgeIsCannotUsePureArrowFunciton) {
+          this.proxyMethod(prefixDicts.reset, AstFlagDicts.cannotUsePureArrowExpression)
+        }
+        return this.createAstItem({
+          ...obj,
+          argument: checkArgument(argument, this.createAstItem(obj)),
+        })
+      }
+      const temp = this[method]();
+      if (window.isDebuggering) {
+        console.log(method, temp)
+      }
+      return temp;
+    }
+    return ret;
+  }
+
+  getConfigableFunc([gConfig, list]) {
+    if (_.isString(gConfig)) {
+      gConfig = {
+        type: gConfig
+      }
+    }
+    if (!_.isObject(gConfig) || !_.has(gConfig, 'type') || !_.includes(AST_TYPE_VALUE_LIST, gConfig.type)) {
+      throw 'type不是ast类型'
+    }
+    const decoratorAttrs = _.filter(_.keys(gConfig), x => _.includes(AST_FLAG_VALUE_LIST, x))
+    const fn = () => {
+      const restTokens = [];
+      const flag = {};
+      let config = { type: gConfig.type, restTokens };
+      gConfig.before?.call?.(this, config);
+      let index = 0;
+      const taskList = [...list];
+      while(index < taskList.length) {
+        const item = taskList[index];
+        const beforeList = item.before ? [item.before]: [];
+        const afterList = item.after ? [item.after] : [];
+        ensureCannotHadAttrsInSameTime(item, ['type', 'ifType', 'expectType', 'dynamicType', 'hookType'])
+        const { type, ifType, expectType, dynamicType, hookType } = item;
+        if (hookType) {
+
+        }
+        if (!ifType && _.has(item, 'flagName')) {
+          throw new Error('flagName 只能在ifType使用')
+        }
+
+        if (!type && !ifType && _.has(item, 'mayBe')) {
+          throw new Error('mayBe 只能在type/ifType使用')
+        }
+        let hookRet = null;
+        const wrapInHook = (cb) => {
+          _.forEach(beforeList, hook => hook.call(this, config));
+          let ifResult = false;
+          ifResult = cb.call(this)
+         
+          _.forEach(afterList, hook => {
+            if (ifType && !ifResult) {
+              return
+            }
+            const t = hook.call(this, config, flag);
+            if (t) {
+              if (hookRet) {
+                throw new Error('已经有返回了')
+              }
+              hookRet = t;
+            }
+          })
+        }
+        let ifResult = false;
+        _.forEach(AST_FLAG_VALUE_LIST, q => {
+          if (_.has(item, q)) {
+            beforeList.unshift(() => this.proxyMethod(prefixDicts.set, q, _.get(item, q)));
+            afterList.push(() => this.proxyMethod(prefixDicts.reset, q))
+          }
+        })
+        if (type) {
+          ensureAllTypeInList(type, METHOD_TYPE_VALUES_LIST)
+          ensureCannotHadAttrsInSameTime(item, ['configName', 'groupName'])
+          const { configName, groupName, mayBe, getArguments } = item;
+          wrapInHook(() => {
+            try {
+              if (mayBe) {
+                this.save()
+              }
+              const args = _.isFunction(getArguments) ? getArguments(config) : undefined
+              if (configName) {
+                if (configName === directlyReturnFlag) {
+                  config = this[type](args)
+                } else {
+                  config[configName] = this[type](args)
+                }
+              } else {
+                if (!_.isArray(config[groupName])) {
+                  config[groupName] = []
+                }
+                config[groupName].push(this[type](args));
+              }
+              if (mayBe) {
+                this.consume();
+              }
+            } catch(e) {
+              if (!mayBe || !isInstanceOf(e.token, Token)) {
+                throw e;
+              }
+              if (mayBe) {
+                this.restore()
+              }
+            } 
+          })
+        
+        } else if (expectType) {
+          ensureAllTypeInList(expectType, TOKEN_TYPE_VALUE_LIST)
+          wrapInHook(() => {
+            const token = this.expectToken(expectType);
+            restTokens.push(token)
+            if (item.configName) {
+              const cb = item.after ?? ((config) => _.get(_.last(config.restTokens), 'value'))
+              const ret = cb(config);
+              if (!_.isString(ret)) {
+                throw 'expectType 配置了configName， after函数返回应该为string'
+              }
+              config[item.configName] = ret;
+            };
+          })
+        } else if (ifType) {
+          ensureAllTypeInList(ifType, TOKEN_TYPE_VALUE_LIST)
+          wrapInHook(() => {
+            ifResult = this.nextTokenIs(ifType);
+          
+            taskList.splice(index + 1, 0, ...(ifResult ? item.consequent : item.alternate) || []);
+            if (ifResult) {
+              if (item.flagName) {
+                flag[item.flagName] = true;
+              }
+              if (!item.noEat) {
+                restTokens.push(this.eatToken())
+              }
+              if (item.ifTrueInjectConfig) {
+                if (!_.isObject(item.ifTrueInjectConfig)) {
+                  throw 'ifTrueInjectConfig 应该为对象'
+                }
+                _.forEach(item.ifTrueInjectConfig, (v, k) => {
+                  _.set(config, k, v);
+                })
+              }
+            }
+            if (item.configName) {
+              config[item.configName] = ifResult
+            }
+            return ifResult;
+          })
+        } else if (dynamicType) {
+          if (!_.isFunction(dynamicType)) {
+            throw new Error('配置dynamicType错误')
+          }
+          wrapInHook(() => {
+            const methodName = dynamicType.call(this, this.nextTokenIs());
+            if (!item.configName ) {
+              throw new Error('配置dynamicType必须配置configName')
+            }
+            if (item.configName === directlyReturnFlag) {
+              config = this[methodName]();
+            } else {
+              config[item.configName] = this[methodName]()
+            }
+            
+          })
+        } else if (hookType) {
+          wrapInHook(() => {
+            if (!_.isFunction(hookType)) {
+              throw 'hookType只能为函数'
+            }
+            config = hookType.call(this, config) ?? config;
+          })
+        }
+
+        if (item.configName === directlyReturnFlag) {
+          // 调了一下午，仅仅是因为没有break......
+          break;
+        }
+
+        const hasJump = ((!ifType || ifResult) && _.has(item, 'jump'));
+        if ((hookRet && (_.has(hookRet, 'jump')))) {
+          if (hasJump) {
+            throw '跳转冲突'
+          }
+          index = _.get(hookRet, 'jump');
+        } else if (hasJump) {
+          index = _.get(item, 'jump')
+        } else {
+          index++
+        }
+      }
+
+      const temp = gConfig.after?.call?.(this, config, flag) ?? config;
+      if (isInstanceOf(temp, ASTItem)) {
+        return temp
+      }
+
+      if (!_.includes(AST_TYPE_VALUE_LIST, temp.type)) {
+        throw 'after 函数返回有误';
+      }
+      return this.createAstItem(temp);
+    }
+    return _.size(decoratorAttrs) ? this.decorator(decoratorAttrs, fn) : fn;
+  }
+
+  decorator(attrs, fn, bol = true) {
+    return () => {
+      if (arguments.length < 2) {
+        throw new Error('方法调用至少要2个参数以上')
+      }
+      if (!_.isFunction(fn)) {
+        throw new Error('第2个参数必须是函数')
+      }
+      let list = attrs;
+      if (_.isString(attrs)) {
+        list = [[attrs, bol]];
+      }
+      list = _.map(list, (item) => {
+        if (_.isString(item)) {
+          return [item, bol]
+        }
+        if (_.size(item) !== 2 || !_.isArray(item)) {
+          console.log(attrs, fn);
+          throw new Error('方法调用错误')
+        }
+        return item;
+      })
+      _.forEach(list, ([attr, bool]) => {
+        this.proxyMethod(prefixDicts.set, attr, bool)
+      })
+      const ret = fn.call(this)
+      _.forEach(list, ([attr]) => {
+        this.proxyMethod(prefixDicts.reset, attr)
+      })
+      return ret;
+    };
   }
 }

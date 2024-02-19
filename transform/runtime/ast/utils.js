@@ -1,7 +1,7 @@
 import { isInstanceOf } from "../../commonApi";
 import ASTItem from "./ASTITem";
 import { Token } from "./Token";
-import { AST_TYPE, TOKEN_TYPE } from "./constants";
+import { AST_TYPE, TOKEN_TYPE, literalAstToValue } from "./constants";
 
 export function valueToRaw({ value, type}) {
   if (type === TOKEN_TYPE.String) {
@@ -45,7 +45,7 @@ export function omitAttr(ast) {
 }
 
 let tempSelfResult =  null;
-_.omitAttr = (xx, bol) => {
+_.T = (xx, bol) => {
   if (bol) {
     tempSelfResult = omitAttr(xx)
     return tempSelfResult;
@@ -62,26 +62,32 @@ _.omitAttr = (xx, bol) => {
 
 export function checkThrowIfSameName(astArr) {
   const set = new Set();
-  function dfsJudgeAstHadDeclaration(ast) {
+  function dfsJudgeAstHadDeclaration(ast, stack = []) {
+    if (!isInstanceOf(ast, ASTItem)) {
+      console.error(astArr, stack);
+    }
     switch(ast.type) {
       case AST_TYPE.Identifier: 
        if (set.has(ast.name)) {
-        throwError('参数重复声明',ast.tokens[0])
+        console.warn(ast.tokens, ast, set)
+        throwError('参数重复声明',_.last(ast.tokens))
        }
        set.add(ast.name);
          return
       case AST_TYPE.RestElement:
-         return dfsJudgeAstHadDeclaration(ast.argument);
+         return dfsJudgeAstHadDeclaration(ast.argument, [...stack, ast]);
       case AST_TYPE.AssignmentPattern:
-         return dfsJudgeAstHadDeclaration(ast.left);
+         return dfsJudgeAstHadDeclaration(ast.left, [...stack, ast]);
       case AST_TYPE.ObjectPattern: 
-        return _.map(ast.properties, x => dfsJudgeAstHadDeclaration(x.value));
+        return _.map(ast.properties, x => dfsJudgeAstHadDeclaration(x, [...stack, ast]));
+      case AST_TYPE.Property:
+        return dfsJudgeAstHadDeclaration(ast.value, [...stack, ast])
       case AST_TYPE.ArrayPattern: 
-        return _.map(ast.elements, dfsJudgeAstHadDeclaration)
+        return _.map(ast.elements, c => dfsJudgeAstHadDeclaration(c, [...stack, ast]))
     }
     throwError('未允许的参数声明类型' + ast.type, ast.tokens[0])
   }
-  _.forEach(astArr, dfsJudgeAstHadDeclaration)
+  _.forEach(astArr, c => dfsJudgeAstHadDeclaration(c))
 }
 
 function _innerGetAvoidPureArrowFuncitonExpression(text, func) {
@@ -95,3 +101,30 @@ function _innerGetAvoidPureArrowFuncitonExpression(text, func) {
 
 export const avoidPureArrowFuncitonExpressionNextTokenIsOperator = _innerGetAvoidPureArrowFuncitonExpression('后面', 'last')
 export const avoidPureArrowFuncitonExpressionPrefixTokenIsOperator = _innerGetAvoidPureArrowFuncitonExpression('前面', 'first')
+
+export function ensureCannotHadAttrsInSameTime(item, attrs){
+   if (!_.isObject(item) || !_.isArray(attrs) || _.size(_.filter(_.keys(item), x => _.includes(attrs, x))) !== 1) {
+    throw new Error('方法使用错误，不能同时拥有' + attrs.join('/') + '，并且至多只能拥有一个')
+   }
+}
+
+export function getValueOfLiteralToken(token) {
+  if (token.is(TOKEN_TYPE.String)) {
+    return _.slice(token.value, 1, -1).join('') 
+  } 
+  if (token.is(TOKEN_TYPE.Number)) {
+    return Number(token.value)
+  }
+  if (!_.has(literalAstToValue, token.type)) {
+    console.warn(token)
+    throw '未处理的类型'
+  }
+  return _.get(literalAstToValue, token.type)
+}
+
+export function ensureAllTypeInList(type, list) {
+  if (!(_.includes(list, type)
+        || (_.isArray(type) && _.every(type, et => _.includes(list, et))))) {
+            throw new Error('配置错误')
+   }
+}

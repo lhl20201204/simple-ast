@@ -9,11 +9,12 @@ import generateCode from "./transform/runtime/Generate";
 import writeJSON, { textReplace } from "./transform/util";
 import { DEBUGGER_DICTS } from "./transform/runtime/constant";
 import { createPromiseRvAndPromiseResolveCallback } from "./transform/runtime/Environment/utils";
-import { isInstanceOf } from "./transform/commonApi";
+import { copyToClipboard, debounceCopyToClipboard, diffStr, isInstanceOf } from "./transform/commonApi";
 import ASTItem from "./transform/runtime/ast/ASTITem";
 import { getYieldValue, isYieldError } from "./transform/runtime/Parse/parseYieldExpression";
 import { RuntimeAwaitValue } from "./transform/runtime/Environment/RuntimeValue";
 import parseRuntimeValue from "./transform/runtime/Environment/parseRuntimeValue";
+import { innerParseProgram } from "./transform/runtime/Parse/parseProgram";
 
 source.onscroll = _.throttle((x) => {
   const dom = document.getElementById('currentDebuggerSpan');
@@ -61,23 +62,22 @@ const writeAst = (ast) => {
 
   const win = getWindowEnv();
 
-  const runCode = () => {
+  const runCode = (index = 0) => {
     try {
-      parseAst(ast, win);
+      innerParseProgram(ast, index > 0);
     } catch (e) {
       if (isYieldError(e)) {
         const rv = getYieldValue(e);
         if (isInstanceOf(rv, RuntimeAwaitValue)) {
-          setTimeout(runCode, parseRuntimeValue(rv))
+          setTimeout(() => runCode(index + 1), parseRuntimeValue(rv))
         } else {
-          runCode()
+          runCode(index + 1)
         }
       } else {
         console.error(e)
       }
     }
   }
-
   runCode();
   excute.innerHTML = '正在写入环境中，请稍等';
 
@@ -130,7 +130,7 @@ function simpleChange(x) {
         continue;
       }
       if (isInstanceOf(x[t], ASTItem)
-       || Array.isArray(x[t])) {
+        || Array.isArray(x[t])) {
 
         obj[t] = simpleChange(x[t])
       }
@@ -142,6 +142,7 @@ function simpleChange(x) {
   }
 }
 
+let innerSimpleAstSourcecode = ""
 const write = (text) => {
   // const ast = transform(text);
   // let newText = '';
@@ -157,41 +158,44 @@ const write = (text) => {
   //     }
   //   }
   astInstance.markSourceCode(text);
-  try{
+  try {
     source_copy.innerHTML = '';
     const ast = astInstance.getAst();
-    if (text !== _.map(ast.tokens, 'value').join('')) {
+    const generateText = _.map(ast.tokens, 'value').join('')
+    if (text !== generateText) {
+      console.warn(astInstance.astContext, ast,text.length, generateText.length, [text, generateText], diffStr(text, generateText))
       throw new Error('token 漏了');
     }
-    console.log([ ast, simpleChange(ast), _.omitAttr(ast, true)])
+    const simpleAst = _.T(ast, true)
+    innerSimpleAstSourcecode = (text);
+    console.log([ast, simpleChange(ast), simpleAst])
     writeAst(innerChange(ast));
-  }catch(err) {
-   const e = _.get(err, 'errorInfo', {});
-   if (Array.isArray(e.charList)) {
-    console.log(e)
-    // const prefixSpaceList = _.map(e.errorToken.prefixTokens,
-    //   'value'
-    //   );
-    // const textHtml = [..._.map(e.charList, 'char'),...prefixSpaceList].join('');
-    const { start, end } = e.errorToken;
-    const change = (str) => _.reverse(_.split(_.replace(_.replace(_.reverse((str).split('')).join(''), /\n\n/g, '>vid/<>/rb<>vid<'), /\n/g, '>/rb<'), '')).join('');
+  } catch (err) {
+    const e = _.get(err, 'errorInfo', {});
+    if (Array.isArray(e.charList)) {
+      console.log(e)
+      // const prefixSpaceList = _.map(e.errorToken.prefixTokens,
+      //   'value'
+      //   );
+      // const textHtml = [..._.map(e.charList, 'char'),...prefixSpaceList].join('');
+      const { start, end } = e.errorToken;
+      const change = (str) => _.reverse(_.split(_.replace(_.replace(_.reverse((str).split('')).join(''), /\n\n/g, '>vid/<>/rb<>vid<'), /\n/g, '>/rb<'), '')).join('');
 
-    const html = change(_.slice(text, 0,  start).join('')) +  `<span style="border-bottom: 3px solid red;">${
-      e.errorToken.value
-    }</span>` + change(_.slice(text, end + 1).join(''));
+      const html = change(_.slice(text, 0, start).join('')) + `<span style="border-bottom: 3px solid red;">${e.errorToken.value
+        }</span>` + change(_.slice(text, end + 1).join(''));
 
-    source_copy.innerHTML = html;
-    // console.log(textHtml)
-    // requestAnimationFrame(() => {
-    //   source_copy.innerHTML += `<span style="border-bottom: 3px solid red;">${
-    //     e.errorToken.value
-    //   }</span>${_.slice(e.restSourceCode, _.size(prefixSpaceList) + _.size( e.errorToken.value), -1).join('')}`
-    //   // requestAnimationFrame(() => {
-    //   //   source_copy.innerText += 
-    //   // })
-    // })
-   }
-   console.error(err);
+      source_copy.innerHTML = html;
+      // console.log(textHtml)
+      // requestAnimationFrame(() => {
+      //   source_copy.innerHTML += `<span style="border-bottom: 3px solid red;">${
+      //     e.errorToken.value
+      //   }</span>${_.slice(e.restSourceCode, _.size(prefixSpaceList) + _.size( e.errorToken.value), -1).join('')}`
+      //   // requestAnimationFrame(() => {
+      //   //   source_copy.innerText += 
+      //   // })
+      // })
+    }
+    console.error(err);
   }
 }
 
@@ -205,6 +209,61 @@ source.addEventListener(
     });
   }, 1000)
 );
+
+const openText = '当前关闭，点击打开';
+const closeText = '当前开启, 点击关闭';
+const stateOfCloseOrOpenDiffJson = 'stateOfCloseOrOpenDiffJson'
+
+closeOrOpenDiffJson.innerText = process.env.mode !== 'development' ? openText : localStorage.getItem(stateOfCloseOrOpenDiffJson) ?? closeText;
+
+closeOrOpenDiffJson.addEventListener('click', () => {
+  if (process.env.mode !== 'development') {
+    return console.warn('npm run dev 开启才能自动获取json对比')
+  }
+  const origin = closeOrOpenDiffJson.innerText;
+  const newText =  origin === openText ? closeText :openText;
+  localStorage.setItem(stateOfCloseOrOpenDiffJson, newText)
+  closeOrOpenDiffJson.innerText = newText;
+  location.reload();
+})
+
+if (process.env.mode === 'development' && closeOrOpenDiffJson.innerText === closeText) {
+  const targetUrl = 'https://astexplorer.net/';
+  let testWindow
+  setTimeout(() => {
+    testWindow = window.open(targetUrl);
+    setTimeout(() => {
+      testWindow?.postMessage?.({
+        type: 'localhost',
+        data: innerSimpleAstSourcecode,
+      }, '*');
+    }, 2000)
+  }, 4000)
+  window.onmessage = (x) => {
+    if (x.data.type === targetUrl) {
+      console.log('%c%o', 'color: red', _.T(x.data.data))
+    }
+  }
+
+  document.addEventListener("visibilitychange", function () {
+    if (document.hidden) {
+      // 页面被隐藏时的操作
+      //  channel.postMessage(innerSimpleAstSourcecode)
+      testWindow?.postMessage?.({
+        type: 'localhost',
+        data: innerSimpleAstSourcecode,
+      }, '*');
+    }
+  });
+
+  window.addEventListener('beforeunload', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    e.returnValue = '';
+    testWindow?.close?.()
+  })
+}
+
 
 const inputAst = function (e) {
   // console.log(e.target.value)

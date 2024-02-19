@@ -124,7 +124,6 @@ export default function parseForOfStatement(ast, env) {
     setPattern(leftValueRv, left, paramsEnv, {
       kind: left.kind,
       useSet: left.kind === 'var',
-      allowConstLetDefineAgain: paramsEnv.isCacheFromParentEnv(),
     });
     parseAst(body, childEnv);
     if (isInGenerator) {

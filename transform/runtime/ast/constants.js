@@ -8,7 +8,7 @@ export const TOKEN_TYPE = {
   NoCompare: '!= NoCompare',
   And: '&& And',
   OR: '|| OR',
-  Mul: '* Mul',
+  Star: '* Star',
   Div: '/ Div',
   Plus: '+ Plus',
   Subtract: '- Subtract',
@@ -32,10 +32,9 @@ export const TOKEN_TYPE = {
   Comma: ', Comma',
   Semicolon: '; Semicolon',
   Equal: '= Equal',
-  Star: '* Star',
   PlusEqual: '+= PlusEqual',
   SubEqual: '-= SubEqual',
-  MulEqual: '*= MulEqual',
+  StarEqual: '*= StarEqual',
   DivEqual: '/= DivEqual',
   ModEqual: '%= ModEqual',
   ShiftLeftEqual: '<<= ShiftLeftEqual',
@@ -251,16 +250,29 @@ export const METHOD_TYPE = {
   getFunctionExpressionOrWithArrowAst: 'getFunctionExpressionOrWithArrowAst',
   getFunctionParams: 'getFunctionParams',
   getWhileStatementAst: 'getWhileStatementAst',
-  getArrowFunctionExpressionAst: 'getArrowFunctionExpressionAst'
+  getArrowFunctionExpressionAst: 'getArrowFunctionExpressionAst',
+  getThisExpressionAst: 'getThisExpressionAst',
+
+  getObjectProperties: 'getObjectProperties',
+  getObjectPropertyMethod: 'getObjectPropertyMethod',
 }
 
 export const AstFlagDicts = {
+  canAwaitable: 'canAwaitable',
   canSpreadable: 'canSpreadable',
   canYieldable: 'canYieldable',
   canUseAssignmentPattern: 'canUseAssignmentPattern',
   canRestable: 'canRestable',
   cannotUsePureArrowExpression: 'cannotUsePureArrowExpression',
 }
+
+export const METHOD_TYPE_VALUES_LIST = _.values(METHOD_TYPE);
+
+export const TOKEN_TYPE_VALUE_LIST = _.values(TOKEN_TYPE);
+
+export const AST_FLAG_VALUE_LIST = _.values(AstFlagDicts);
+
+export const AST_TYPE_VALUE_LIST = _.values(AST_TYPE);
 
 export const prefixDicts = {
   is: 'is',
@@ -271,3 +283,112 @@ export const prefixDicts = {
 export const commonLiteral = {
   init: 'init'
 }
+
+export const literalAstToValue = {
+  [TOKEN_TYPE.false]: false,
+  [TOKEN_TYPE.true]: true,
+  [TOKEN_TYPE.null]: null,
+}
+
+export const directlyReturnFlag = '_self';
+
+
+export const definePriorityConfig = [
+  [
+    METHOD_TYPE.getDoubleStarExpression,
+    'getPriorityAstFunc',
+    [
+      TOKEN_TYPE.DoubleStar
+    ],
+    AST_TYPE.BinaryExpression
+  ],
+  [
+    METHOD_TYPE.getMulOrDivOrModExpression,
+    'getPriorityAstFunc',
+    [
+      TOKEN_TYPE.Star,
+      TOKEN_TYPE.Div,
+      TOKEN_TYPE.Mod
+    ],
+    AST_TYPE.BinaryExpression
+  ],
+  [
+    METHOD_TYPE.getSubOrPlusExpression,
+    'getPriorityAstFunc',
+    [
+      TOKEN_TYPE.Plus,
+      TOKEN_TYPE.Subtract,
+    ],
+    AST_TYPE.BinaryExpression
+  ],
+  [
+    METHOD_TYPE.getShiftExpression,
+    'getPriorityAstFunc',
+    [
+      TOKEN_TYPE.ShiftLeft,
+      TOKEN_TYPE.ShiftRight,
+      TOKEN_TYPE.UnsignedShiftRight
+    ],
+    AST_TYPE.BinaryExpression
+  ],
+  [
+    METHOD_TYPE.getCompareExpression,
+    'getPriorityAstFunc',
+    [
+      TOKEN_TYPE.Less,
+      TOKEN_TYPE.LessEqual,
+      TOKEN_TYPE.Great,
+      TOKEN_TYPE.GreatEqual,
+      TOKEN_TYPE.in,
+      TOKEN_TYPE.instanceof
+    ],
+    AST_TYPE.BinaryExpression
+  ],
+  [
+    METHOD_TYPE.getEqualOrNoExpression,
+    'getPriorityAstFunc',
+    [
+      TOKEN_TYPE.NoCompare,
+      TOKEN_TYPE.Compare,
+      TOKEN_TYPE.NoStrictEqual,
+      TOKEN_TYPE.StrictEqual,
+    ],
+    AST_TYPE.BinaryExpression
+  ],
+  [
+    METHOD_TYPE.getSingelAndExpression,
+    'getPriorityAstFunc',
+    TOKEN_TYPE.SingelAnd,
+    AST_TYPE.BinaryExpression
+  ],
+  [
+    METHOD_TYPE.getSingleXorExpression,
+    'getPriorityAstFunc',
+    TOKEN_TYPE.SingleXor,
+    AST_TYPE.BinaryExpression
+  ],
+  [
+    METHOD_TYPE.getSingleOrExpression,
+    'getPriorityAstFunc',
+    TOKEN_TYPE.SingleOr,
+    AST_TYPE.BinaryExpression
+  ],
+  [
+    METHOD_TYPE.getAndExpression,
+    'getPriorityAstFunc',
+    TOKEN_TYPE.And,
+    AST_TYPE.LogicalExpression
+  ],
+  [
+    METHOD_TYPE.getDoubleQuestionExpression,
+    'getPriorityAstFunc',
+    TOKEN_TYPE.DoubleQuestion,
+    AST_TYPE.LogicalExpression,
+  ],
+  [
+    METHOD_TYPE.getOrExpression,
+    'getPriorityAstFunc',
+    TOKEN_TYPE.OR,
+    AST_TYPE.LogicalExpression,
+  ]
+]

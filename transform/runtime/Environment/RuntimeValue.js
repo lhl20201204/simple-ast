@@ -251,7 +251,6 @@ export class RuntimeRefValue extends RuntimeValue {
     if (Reflect.has(descriptor, RUNTIME_LITERAL.get)) {
       if (isFunctionRuntimeValue(descriptor.get)) {
         const fnRv = descriptor.get;
-        // console.log('begin---call')
         return parseFunctionCallRuntimeValue(
           fnRv.getDefinedEnv(),
           createRuntimeValueAst(fnRv, `${attr}_getter`),

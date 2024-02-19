@@ -45,6 +45,8 @@ export default class AstConfig{
 
   getForOfAwaitInitAstConfig = this.getOrNew(AST_DICTS.forOfAwaitInitAstConfig)
 
+  getPreDeclarationAstConfig = this.getOrNew(AST_DICTS.preDeclarationAstConfig);
+
   resetForOfAwaitInitAstConfig = () => {
     this.map.set(AST_DICTS.forOfAwaitInitAstConfig, new AstConfig())
   }

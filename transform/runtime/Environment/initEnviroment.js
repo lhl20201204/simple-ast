@@ -52,8 +52,7 @@ export function initEnviroment() {
   })
   // globalEnv.addLet('Object', ObjectClassV);
   globalEnv.addFunction('Function', FunctionClassV);
-
-  parseAst(_ObjectAst, globalEnv);
+  parseAst(_.cloneDeep(_ObjectAst), globalEnv);
   const objectRv = windowRv.get('Object')
   objectRv.setProtoType(ObjectPrototypeV);
   ObjectPrototypeV.set('constructor', objectRv, createSimplePropertyDescriptor({
@@ -69,7 +68,7 @@ export function initEnviroment() {
 
   globalEnv.addLet('window', windowRv);
 
-  setWrapGeneratorFunctionToAsyncFunctionRv(parseAst(_wrapGeneratorFunctionToAsyncFunctionAst, globalEnv))
+  setWrapGeneratorFunctionToAsyncFunctionRv(parseAst(_.cloneDeep(_wrapGeneratorFunctionToAsyncFunctionAst), globalEnv))
 
   globalEnv.addFunction('setTimeout', generateFn('setTimeout', ([fnRv, tR]) => {
     if (!isFunctionRuntimeValue(fnRv)) {
@@ -112,7 +111,7 @@ export function initEnviroment() {
     _arrayIndexOfAst,
     _arraySliceAst,
     _arrayIncludesAst,
-  ].forEach((x) => parseAst(x, globalEnv))
+  ].forEach((x) => parseAst(_.cloneDeep(x), globalEnv))
   globalEnv.addClass('Promise', getPromiseRv());
   globalEnv.addFunction('Number', getNumberFunctionV());
   globalEnv.addFunction('String', getStringFunctionV());
@@ -122,7 +121,7 @@ export function initEnviroment() {
 
   // console.error( '开始')
 
-  const runInnerAst = (arr) => _.map(arr, ast => transformInnerAst(ast, {
+  const runInnerAst = (arr) => _.map(arr, ast => transformInnerAst(_.cloneDeep(ast), {
     wrapRuntimeValue: false,
     transformConfig: defalultTransformConfig,
     parent: null
@@ -138,7 +137,7 @@ export function initEnviroment() {
     // _FunctionBindAst,
   ])
   windowRv.get('Reflect').setWithDescriptor('defineProperty', getReflectDefinedPropertyV())
-  parseAst(_SetClassAst, globalEnv)
+  parseAst(_.cloneDeep(_SetClassAst), globalEnv)
   const arrProtov = getArrayProtoTypeV()
   arrProtov.propertyDescriptors.delete('length');
   parseAst({
@@ -298,7 +297,7 @@ export function initEnviroment() {
 
     return oldDescripor ? oldDescripor.toRuntimeValue() : getUndefinedValue()
   }))
-  parseAst(_ObjectCreateAst, globalEnv);
+  parseAst(_.cloneDeep(_ObjectCreateAst), globalEnv);
   runInnerAst([
     _ErrorAst,
   ])

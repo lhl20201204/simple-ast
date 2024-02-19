@@ -18,7 +18,9 @@ export default class ASTContext {
         this.setConfig[attr].push(this.methodStore[prefixDicts.is + _.upperFirst(attr)]())
         this.config[attr] = bol;
       }
-      this.methodStore[prefixDicts.reset + _.upperFirst(attr)] = () =>  this.config[attr] =  this.setConfig[attr].pop();
+      this.methodStore[prefixDicts.reset + _.upperFirst(attr)] = () => { 
+        this.config[attr] =  this.setConfig[attr].pop()
+      };
     })
   }
 

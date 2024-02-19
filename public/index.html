@@ -11,6 +11,7 @@
     <button id="paste">粘贴ast到中间的框</button>
     <select id="mode">
    </select>
+   <button id="closeOrOpenDiffJson"></button>
   </div>
   
    <div id="container">
@@ -26,6 +27,7 @@
     </div>
     <div id="debuggerText" contenteditable="true"></div>
   </div>
+  <button id="focuableButton"></button>
 </body>
 <style>
   *{
@@ -35,6 +37,21 @@
   
   #paste{
     cursor: pointer;
+  }
+
+  #closeOrOpenDiffJson {
+    padding: 0 16px;
+    margin-left: 100px;
+    position: relative;
+  }
+
+  #closeOrOpenDiffJson::before{
+    content: '自动JSON对比:';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    white-space: nowrap;
+    transform: translate(calc(-100% - 8px), -50%);
   }
   
   #selectWrap{

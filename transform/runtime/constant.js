@@ -78,7 +78,6 @@ export const ENV_DICTS = {
   isYieldBlockEnv: 'isYieldBlockEnv',
   runningGenerateConfig: 'runningGenerateConfig',
   isCacheFromParentEnv: 'isCacheFromParentEnv',
-  allowConstLetDefineAgain: 'allowConstLetDefineAgain',
 }
 
 export const AST_DICTS = {
@@ -104,6 +103,7 @@ export const AST_DICTS = {
   yieldStarToForOfRightAstConfig: 'yieldStarToForOfRightAstConfig',
   yieldStarToForOfBodyAstConfig: 'yieldStarToForOfBodyAstConfig',
   forOfAwaitInitAstConfig: 'forOfAwaitInitAstConfig',
+  preDeclarationAstConfig: 'preDeclarationAstConfig',
 }
 
 export const GENERATOR_DICTS = {

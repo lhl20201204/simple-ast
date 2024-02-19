@@ -1,6 +1,10 @@
 const { resolve } = require('path');
-const HtmlWebpackPlugin = require('html-webpack-plugin')
-module.exports = {
+const HtmlWebpackPlugin = require('html-webpack-plugin');
+const webpack = require("webpack")
+module.exports = (env) => {
+  const mode = env.mode;
+  console.log(mode)
+  return ({
   mode: 'development',
   entry: resolve(__dirname, 'index.js'),
   output: {
@@ -27,8 +31,16 @@ module.exports = {
     new HtmlWebpackPlugin({
       template: resolve(__dirname, '/public/index.html'),
     }),
+    new webpack.DefinePlugin({
+      "process.env.mode": JSON.stringify(mode),
+  })
   ],
   devServer: {
     port: 4444,
-  }
-}
+  },
+  // resolve: {
+  //   alias: {
+  //     appConfig: resolve(__dirname, `/GlobalConfigs/${mode}.config.js`),
+  //   }
+  // }
+})}

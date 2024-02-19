@@ -64,7 +64,7 @@ export function getStatement(statements, env) {
         throw new Error('未处理的预提升')
       }
       const name = c.id.name;
-      if (getTotalDefineKeyList(config.stack).includes(name)) {
+      if (getTotalDefineKeyList(config.stack).includes(name) || env.isCacheFromParentEnv()) {
         // console.log(getTotalDefineKeyList(config.stack))
         return;
       }
@@ -216,9 +216,14 @@ export function getBlockDefinedLetConstClassKeyList(blockAst) {
   return keyList;
 }
 
-export default function parseProgram(ast) {
+export function innerParseProgram(ast, jumpInitEnv = false) {
   const env = getWindowEnv()
-  initEnviroment()
+  if (!jumpInitEnv) {
+    env.setCacheFromParentEnv(false)
+    initEnviroment();
+  } else {
+    env.setCacheFromParentEnv(true)
+  }
   // console.log(ast.body[0], 'parseBlockStatement');
   if (ast.body.length && _.startsWith(ast.body[0].directive, 'use ')) {
     const type = _.slice(ast.body[0].directive, 4).join('')
@@ -236,4 +241,8 @@ export default function parseProgram(ast) {
     e = ifErrorIsRuntimeValueWillParse(e)
     throw e;
   }
+}
+
+export default function parseProgram(ast) {
+  return innerParseProgram(ast);
 }
