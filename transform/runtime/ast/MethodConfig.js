@@ -153,6 +153,18 @@ export const MethodConfig = {
     [
       {
         ifType: TOKEN_TYPE.async,
+        before() {
+          this.save()
+        },
+        after(config) {
+          if (config.async &&
+            this.nextTokenIs([TOKEN_TYPE.Colon, TOKEN_TYPE.LeftParenthesis])) {
+            config.async = false;
+            this.restore()
+          } else {
+            this.consume()
+          }
+        },
         configName: 'async',
         consequent: [
           {
@@ -168,10 +180,12 @@ export const MethodConfig = {
             after(config) {
               const { 
                 method,
-                restTokens
+                restTokens,
               } = config.tempRet;
               if (!method) {
-                throwError('async /* 后面必须是函数', _.last(restTokens));
+                if (config.async) {
+                  throwError('async /* 后面必须是函数', _.last(restTokens));
+                }
               }
               handleObjectProperty.call(this, config, {
                 kind: commonLiteral.init,
@@ -183,10 +197,21 @@ export const MethodConfig = {
         ],
         alternate: [
           {
+            before() {
+              this.consume()
+              this.save()
+            },
             ifType: [TOKEN_TYPE.set, TOKEN_TYPE.get],
             configName: 'kind',
-            after(config){
-              config.kind = _.last(config.restTokens).value;
+            after(config) {
+              if (config.kind &&
+                this.nextTokenIs([TOKEN_TYPE.Colon, TOKEN_TYPE.LeftParenthesis])) {
+                config.kind = commonLiteral.init
+                this.restore()
+              } else {
+                config.kind = _.last(config.restTokens).value;
+                this.consume()
+              }
             },
             consequent: [
               {
@@ -201,18 +226,26 @@ export const MethodConfig = {
                     restTokens
                   } = config.tempRet;
                   if (!method) {
-                    throwError('setter/getter必须是函数', _.last(restTokens));
+                    if (config.kind !== commonLiteral.init) {
+                      throwError('setter/getter必须是函数', _.last(restTokens));
+                    }
                   }
                   handleObjectProperty.call(this, config, {
                     kind: config.kind,
                     generator: false
                   })
-                  config.method = false
+                  if (config.kind !== commonLiteral.init) {
+                    config.method = false;
+                    // TODO setter 参数=1
+                  }
                 }
               }
             ],
             alternate: [
               {
+                before() {
+                  this.consume()
+                },
                 ifType: TOKEN_TYPE.Star,
                 configName: 'generator',
                 consequent: [
@@ -430,6 +463,10 @@ export const MethodConfig = {
       TOKEN_TYPE.String,
       TOKEN_TYPE.null,
       TOKEN_TYPE.Number,
+    ],
+    [METHOD_TYPE.getTemplateLiteralAst]: [
+      TOKEN_TYPE.TemplateLiteralStart,
+      TOKEN_TYPE.WholeTemplateLiteral,
     ],
     [METHOD_TYPE.getObjectExpressionAst]: TOKEN_TYPE.LeftBrace,
     [METHOD_TYPE.getArrayExpressionAst]: TOKEN_TYPE.LeftBracket,
@@ -799,6 +836,24 @@ export const MethodConfig = {
         type: METHOD_TYPE.getExpAst,
         configName: 'argument',
         mayBe: true,
+      },
+      {
+        ifType: TOKEN_TYPE.Semicolon
+      }
+    ]
+  ],
+  [METHOD_TYPE.getThrowStatementAst]: [
+    {
+      type: AST_TYPE.ThrowStatement,
+      after: completeAttribute('argument', null)
+    },
+    [
+      {
+        expectType: TOKEN_TYPE.throw,
+      },
+      {
+        type: METHOD_TYPE.getExpAst,
+        configName: 'argument',
       },
       {
         ifType: TOKEN_TYPE.Semicolon

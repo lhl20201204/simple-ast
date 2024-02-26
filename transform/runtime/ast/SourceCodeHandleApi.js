@@ -4,9 +4,10 @@ import { Token, TokenChar } from './Token';
 import ASTContext from './AstContext';
 import ASTItem from './ASTITem';
 import { avoidPureArrowFuncitonExpressionNextTokenIsOperator, ensureAllTypeInList, ensureCannotHadAttrsInSameTime } from './utils';
-import { isInstanceOf } from '../../commonApi';
+import { isInstanceOf, log } from '../../commonApi';
 
-const storeAttr = ['astItemList', 'charList', 'config', 'configStack', 'setConfig', 'tokens'];
+// TODO 以后扩展属性记得处理这里的拷贝
+const storeAttr = ['astItemList', 'charList', 'tokens', 'config', 'configStack', 'setConfig'];
 export class SourceCodeHandleApi {
 
   nextCharIs(str) {
@@ -96,6 +97,25 @@ export class SourceCodeHandleApi {
     return _.last(ret)?.char === str
   }
 
+  eatTemplateLiteralString(fc) {
+    if (!this.nextCharIs(fc)) {
+      return []
+    }
+    const ret = [...this.eat()]
+    const lastIsNot = (c) => _.last(ret)?.char !== c;
+    while(this.sourceCode.length && 
+      !(
+           (this.nextCharIs('`') && lastIsNot('\\'))
+        || (this.nextCharIs('${') && lastIsNot('\\') )
+      )) {
+      ret.push(...this.eat())
+    }
+    const isNotEnd = (this.nextCharIs('${') && lastIsNot('\\') );
+    ret.push(...this.expectChar(isNotEnd ? '${' : '`'))
+    return ret;
+  }
+
+
   eatString() {
     const c = this.nextCharIs()
     if (!c || !['\'', '\"'].includes(c)) {
@@ -137,6 +157,16 @@ export class SourceCodeHandleApi {
   }
 
   #eatToken(prefixTokens = []) {
+
+    if (this.proxyMethod(prefixDicts.is, AstFlagDicts.canUseTemplateLiteralMiddleString)) {
+      const templateStringEnd = this.eatTemplateLiteralString('}');
+      if (templateStringEnd.length) {
+          return Token.createToken(
+            _.last(templateStringEnd).char === '`' ? 
+            TOKEN_TYPE.TemplateLiteralEnd
+            : TOKEN_TYPE.TemplateLiteralMiddle, templateStringEnd, prefixTokens)
+      }
+    }
     // 字符
     for (const item of [
       ['>>>=', TOKEN_TYPE.UnsignedShiftRightEqual],
@@ -169,6 +199,8 @@ export class SourceCodeHandleApi {
       ['|=', TOKEN_TYPE.SingleOrEqual],
       ['^=', TOKEN_TYPE.XorEqual],
       ['??', TOKEN_TYPE.DoubleQuestion],
+      ['//', TOKEN_TYPE.SingleLineRemark],
+      ['/*', TOKEN_TYPE.MultipleLineRemark],
       ['{', TOKEN_TYPE.LeftBrace],
       ['}', TOKEN_TYPE.RightBrace],
       ['<', TOKEN_TYPE.Less],
@@ -199,8 +231,28 @@ export class SourceCodeHandleApi {
     ]) {
       const c = item[0]
       if (this.nextCharIs(c)) {
-        const token = Token.createToken(item[1], this.eat(c), prefixTokens)
-        if ([TOKEN_TYPE.Split, TOKEN_TYPE.WrapLine].includes(token.type)) {
+        let token;
+        if (c === '//'){
+          const remark = [...this.eat(c)];
+          while (this.sourceCode.length && !this.nextCharIs('\n')) {
+            remark.push(...this.eat())
+          }
+          token = Token.createToken(TOKEN_TYPE.SingleLineRemark, remark, prefixTokens)
+        } else if (c === '/*') {
+          const remark = [...this.eat(c)];
+          while (this.sourceCode.length && !(this.nextCharIs('*/') && _.last(remark)?.char !== '\\')) {
+            remark.push(...this.eat())
+          }
+          remark.push(...this.expectChar('*/'))
+          token = Token.createToken(TOKEN_TYPE.MultipleLineRemark, remark, prefixTokens)
+        } else {
+          token = Token.createToken(item[1], this.eat(c), prefixTokens)
+        }
+        if ([
+           TOKEN_TYPE.MultipleLineRemark,
+           TOKEN_TYPE.SingleLineRemark,
+           TOKEN_TYPE.Split,
+           TOKEN_TYPE.WrapLine].includes(token.type)) {
           return this.#eatToken([...prefixTokens, token]);
         }
         return token;
@@ -215,9 +267,11 @@ export class SourceCodeHandleApi {
     const word = this.eatWord()
     if (word.length) {
       const wordStr = _.map(word, 'char').join('');
-      for (const x of ReservedKeyList) {
-        if (x[0] === wordStr) {
-          return Token.createToken(x[1], word, prefixTokens)
+      if (!this.proxyMethod(prefixDicts.is, AstFlagDicts.canUseKeyWordAsKey)) {
+        for (const x of ReservedKeyList) {
+          if (x[0] === wordStr) {
+            return Token.createToken(x[1], word, prefixTokens)
+          }
         }
       }
       return Token.createToken(TOKEN_TYPE.Word, word, prefixTokens)
@@ -226,6 +280,14 @@ export class SourceCodeHandleApi {
     const str = this.eatString()
     if (str.length) {
       return Token.createToken(TOKEN_TYPE.String, str, prefixTokens)
+    }
+
+    const templateStringStart = this.eatTemplateLiteralString('`');
+    if (templateStringStart.length) {
+        return Token.createToken(
+          _.last(templateStringStart).char === '`' ? 
+          TOKEN_TYPE.WholeTemplateLiteral
+          : TOKEN_TYPE.TemplateLiteralStart, templateStringStart, prefixTokens)
     }
 
     const len = this.sourceCode.length
@@ -246,10 +308,17 @@ export class SourceCodeHandleApi {
     this.lastAstContextStack.push(this.lastAstContext)
     this.lastRowColIndexStack.push(this.lastRowColIndex)
     this.lastRowColIndex = [this.row, this.col, this.index];
-    this.lastAstContext = _.cloneDeep({
-      ..._.pick(this.astContext, storeAttr),
-      sourceCode: this.sourceCode,
-    })
+    this.lastAstContext ={ 
+      ..._.cloneDeep({
+      ..._.pick(this.astContext, storeAttr.slice(3)),
+       sourceCode: this.sourceCode,
+      }),
+      ..._.reduce(storeAttr.slice(0, 3), (obj, attr) => {
+        return Object.assign(obj, {
+          [attr]: [...this.astContext[attr]]
+        })
+      }, {})
+   }
   }
 
   restore() {
@@ -304,6 +373,15 @@ export class SourceCodeHandleApi {
     return token.type === type;
   }
 
+  getTokenByIndex(index) {
+    this.save()
+    let tokens 
+    for(let i = 0; i < index; i++) {
+      tokens = this.eatToken()
+    }
+    this.restore();
+    return tokens;
+  }
 
   markSourceCode(sourceCode) {
     console.log(_.split(sourceCode, ''), 'sourceCode');
@@ -355,6 +433,7 @@ export class SourceCodeHandleApi {
     if (
       !_.includes(_.values(prefixDicts), prefix) ||
       !_.includes(_.values(AstFlagDicts), type)) {
+        console.warn(prefix, type)
       throw new Error('方法调用错误');
     }
     if ([prefixDicts.is, prefixDicts.reset].includes(prefix) && _.size(params)) {
@@ -379,11 +458,8 @@ export class SourceCodeHandleApi {
       while (this.nextTokenIs(tokenType)) {
         const operatorToken = this.eatToken();
         restTokens.push(operatorToken);
-        this.proxyMethod(prefixDicts.set, AstFlagDicts.cannotUsePureArrowExpression, true);
 
-        let right = this[attr]();
-
-        this.proxyMethod(prefixDicts.reset, AstFlagDicts.cannotUsePureArrowExpression)
+        let right =this.wrapInDecorator(AstFlagDicts.cannotUsePureArrowExpression ,() =>this[attr]());
         checkLeft(left);
         checkRight(right);
         left = this.createAstItem({
@@ -659,5 +735,18 @@ export class SourceCodeHandleApi {
       })
       return ret;
     };
+  }
+
+  wrapInDecorator(flag, cb, bool = true) {
+    ensureAllTypeInList(flag, AST_FLAG_VALUE_LIST)
+    let attrs = _.flatten([flag])
+    _.forEach(attrs, (x) => {
+      this.proxyMethod(prefixDicts.set, x, bool)
+    })
+    const ret = cb()
+    _.forEach(attrs, (x) => {
+      this.proxyMethod(prefixDicts.reset, x)
+    })
+    return ret;
   }
 }

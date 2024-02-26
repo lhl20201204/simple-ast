@@ -139,8 +139,81 @@ console.log('else if')
 console.log('else')
 }`
 export const isProgram = `
+const fn = () => {
+  return window.Object;
+}
 
+const ff = 'hello'
+class A extends fn() {
+  ;;;;
+  [ff];g;
+  static {}
+  static g = 'f';
+  static ['sgf'] = this.g
+  static sq() {}
+  static ['run'] () {
+  }  static set f( f) {
+  }
+  static get ['f']() {}
+  async = 1
+  async async() {}
+  async
+  set;
+get
+set(){}
+get() {}
+set get(f){}
+get set(){} 
+set async(f){}
+async set(f){}
+
+g = A.g;;;;;;;
+['gg'] = this.g;
+['gf']() {}
+async * q() {
+  yield [this, ... arguments]
+}
+set f(x) {
+}
+get ['f']() {}
+}
+const x = {
+  async: '1',
+  async async(){console.log(2)},
+  async(x){ console.log(1)},
+  set set(x){},
+  set(yyy){},
+  set: 'set',
+  
+  }
+  
+  x.async()
+
+  const g = new A()
+  g.q('this is arguments').next().then(console.log)
+
+/*const x = {
+  async: '1',
+  async async(){console.log(2)},
+  async(x){ console.log(1)},
+  set set(x){},
+  set(){},
+  set: 'set',
+  
+  }
+  
+  x.async()
+
+const f = 'hello world';
 const z = {ff: 2 }
+let str = \`abc\` + \`ghj\\\${
+f + \\\`fds\\fdf\${'ff'}kn\\\\\\bv\`
++\` 
+iop\${  
+f 
+ 
+}er\`
+console.log(str)
 const x = { async [new window.Promise(((r) =>setTimeout(() => { r(3)}, 4000))).then(console.log) ]() { console.log(await 1) }, z, g: z, ['hello' + 'world']: 'f', q() {
 console.log(this, arguments)
 }, async hh() {
@@ -215,7 +288,7 @@ gen2.next().then(console.warn)
 console.log(x.gff)
 x.gff ++
 
-console.log(++x['222'], x.fjff())
+console.log(++x['222'], x.fjff())*/
 
 `
 

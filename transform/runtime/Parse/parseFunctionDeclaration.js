@@ -29,8 +29,9 @@ export function innerParseFunction (ast, env, add) {
   //   instanceOfRuntimeValue(value, FunctionRv)
   // )
   if (add) {
+    value.setMergeCtor(value)
     env.addFunction(key, value);
-  }
+  } 
   // console.error(value)
   return value;
 }

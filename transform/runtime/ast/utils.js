@@ -1,3 +1,4 @@
+import AST from ".";
 import { isInstanceOf } from "../../commonApi";
 import ASTItem from "./ASTITem";
 import { Token } from "./Token";
@@ -128,3 +129,52 @@ export function ensureAllTypeInList(type, list) {
             throw new Error('配置错误')
    }
 }
+
+export function tokenHadWrapLine(token) {
+  return  _.find(token.prefixTokens, ['type', TOKEN_TYPE.WrapLine])
+}
+
+export function checkShouldWrapLine(body, token) {
+  const lastAst = _.last(body);
+  if (
+    isInstanceOf(token, Token) &&
+    !_.last(_.get(lastAst, 'tokens')).is?.(TOKEN_TYPE.Semicolon) &&
+    !tokenHadWrapLine(token) &&
+    !lastAst.is?.(AST_TYPE.MethodDefinition) &&
+    !lastAst.is?.(AST_TYPE.IfStatement) && 
+    !lastAst.is?.(AST_TYPE.WhileStatement)
+  ) {
+    // console.warn(this.astContext.tokens, _.last(this.astContext.tokens).is?.(TOKEN_TYPE.Semicolon))
+    throwError('前面可能缺少运算符', token)
+  }
+}
+
+export function rawToCooked(raw) {
+  let ret = [];
+  let i = 0;
+  while(i < raw.length) {
+    const c = raw[i]
+    // 应该是一个 \ 直接省略。。。
+    if (['$', '\`', '\\', 'f', 't', 'n', 'r', 'b'].includes(c) 
+    && _.get(_.last(ret), 0) === '\\'
+    && !_.get(_.last(ret), 1) 
+       ) {
+      ret.pop()
+      const config = {
+        f: '\f',
+        t: '\t',
+        n: '\n',
+        r: '\r',
+        b: '\b'
+      }
+      ret.push([config[c] || c, true])
+    } else {
+      ret.push([c, false])
+    }
+    i++
+  }
+  console.log(raw.split(''), ret);
+  return _.map(ret, 0).join('')
+}
+
+_.rawToCooked = rawToCooked

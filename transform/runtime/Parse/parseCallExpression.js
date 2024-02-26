@@ -164,7 +164,7 @@ export default function parseCallExpression(ast, env) {
     if (optional) {
       return getUndefinedValue()
     }
-    console.log(callee, name, env, optional)
+    console.log(callee, name, fnRv, env, optional)
     throw new Error(`${name} 不是可执行函数`)
   }
 

@@ -5,7 +5,7 @@ import { AST_DICTS, DEBUGGER_DICTS, ENV_DICTS, PROPERTY_DESCRIPTOR_DICTS, RUNTIM
 import parseRuntimeValue from "../Environment/parseRuntimeValue";
 import generateCode, { getAstCode } from "../Generate";
 import setPattern from "./setPattern";
-import { createLiteralAst, createRuntimeValueAst, createSimplePropertyDescriptor, createStringLiteralAst, getPropertyDesctiptorConfigAst, getReflectDefinePropertyAst } from "../Environment/utils";
+import { createLiteralAst, createRuntimeValueAst, createSimplePropertyDescriptor, createStringLiteralAst, getPropertyDesctiptorConfigAst, getReflectDefinePropertyAst, isFunctionRuntimeValue } from "../Environment/utils";
 import PropertyDescriptor from "../Environment/PropertyDescriptor";
 import { getWrapAst, transformInnerAst } from "../Environment/WrapAst";
 import { isInstanceOf, isJsSymbolType, stringFormat } from "../../commonApi";
@@ -13,6 +13,7 @@ import { getObjectAttrOfPropertyDescriptor } from "./parseObjectExpression";
 import { createObject, createObjectExtends, getFalseV, getFunctionClassRv, getFunctionPrototypeRv, getUndefinedValue } from "../Environment/RuntimeValueInstance";
 import { _classConstructorSuperAst } from "../Environment/Native/ClassSuper";
 import createEnviroment, { createEmptyEnviromentExtraConfig } from "../Environment/createEnviroment";
+import { getWindowEnv } from "../Environment/getWindow";
 
 function IdentifierToLiteral(ast) {
   if (ast.type !== 'Identifier') {
@@ -397,6 +398,10 @@ export function innerParseClass(ast, env, isExpression) {
     weakMap.set(c, parseAst(c.key, env));
   });
   const superClassRv = superClass ? parseAst(superClass, env) : null;
+  if (superClassRv && !isFunctionRuntimeValue(superClassRv)) {
+    console.warn(superClass, superClassRv)
+    throw new Error('superClass 不是函数')
+  }
   const prototypeRv = superClass ? createObjectExtends(superClassRv) : createObject({});
   
 
@@ -433,11 +438,12 @@ export function innerParseClass(ast, env, isExpression) {
     }, {
       [RUNTIME_VALUE_DICTS.proto]: superClassRv,
     }))
+
     classPrototypeDefinedEnv.addConst(RUNTIME_LITERAL.super, new RuntimeRefValue(RUNTIME_VALUE_TYPE.super, {
     }, {
       [RUNTIME_VALUE_DICTS.proto]: superClassRv.getProtoType(),
       [RUNTIME_VALUE_DICTS.symbolMergeNewCtor]: superClassRv.getMergeCtor(),
-    }))
+    })) 
   } else {
     classDefinedEnv.addConst(RUNTIME_LITERAL.super, new RuntimeRefValue(RUNTIME_VALUE_TYPE.super, {
     }, {

@@ -52,6 +52,12 @@ export const TOKEN_TYPE = {
   ShiftRight: '>> ShiftRight',
   ShiftLeft: '<< ShiftLeft',
   XorEqual: '^= XorEqual',
+  SingleLineRemark: '// SingleLineRemark',
+  MultipleLineRemark: '/* MultipleLineRemark',
+  TemplateLiteralStart: '` ${ TemplateLiteralStart',
+  TemplateLiteralMiddle: '} ${ TemplateLiteralMiddle',
+  TemplateLiteralEnd: '} ` TemplateLiteralEnd',
+  WholeTemplateLiteral: '` ` WholeTemplateLiteral',
   Less: '< Less',
   LessEqual: '<= LessEqual',
   Great: '> Great',
@@ -145,6 +151,14 @@ export const AST_TYPE = {
   FunctionDeclaration: 'FunctionDeclaration',
   WhileStatement: 'WhileStatement',
   ArrowFunctionExpression: 'ArrowFunctionExpression',
+  TemplateLiteral: 'TemplateLiteral',
+  TemplateElement: 'TemplateElement',
+  ThrowStatement: 'ThrowStatement',
+  ClassDeclaration: 'ClassDeclaration',
+  StaticBlock: 'StaticBlock',
+  ClassBody: 'ClassBody',
+  PropertyDefinition: 'PropertyDefinition',
+  MethodDefinition: 'MethodDefinition',
 }
 
 export const ReservedKeyList = [
@@ -255,6 +269,13 @@ export const METHOD_TYPE = {
 
   getObjectProperties: 'getObjectProperties',
   getObjectPropertyMethod: 'getObjectPropertyMethod',
+  getTemplateLiteralAst: 'getTemplateLiteralAst',
+  getThrowStatementAst: 'getThrowStatementAst',
+  getClassDeclarationAst: 'getClassDeclarationAst',
+  getMethodDefinitionOrPropertyDefinitionOrStaticBlockAst: 'getMethodDefinitionOrPropertyDefinitionOrStaticBlockAst',
+  getMethodDefinitionOrPropertyDefinition: 'getMethodDefinitionOrPropertyDefinition',
+  getClassBodyAst: 'getClassBodyAst',
+  getClassPropertyOrMethod: 'getClassPropertyOrMethod',
 }
 
 export const AstFlagDicts = {
@@ -264,6 +285,8 @@ export const AstFlagDicts = {
   canUseAssignmentPattern: 'canUseAssignmentPattern',
   canRestable: 'canRestable',
   cannotUsePureArrowExpression: 'cannotUsePureArrowExpression',
+  canUseTemplateLiteralMiddleString: 'canUseTemplateLiteralMiddleString',
+  canUseKeyWordAsKey: 'canUseKeyWordAsKey',
 }
 
 export const METHOD_TYPE_VALUES_LIST = _.values(METHOD_TYPE);
@@ -281,7 +304,10 @@ export const prefixDicts = {
 }
 
 export const commonLiteral = {
-  init: 'init'
+  init: 'init',
+  method: 'method',
+  set: 'set',
+  get: 'get'
 }
 
 export const literalAstToValue = {

@@ -27,6 +27,11 @@ export class Token {
     return this.type === type;
   }
 
+  change(type) {
+    this.type = type;
+    return this;
+  }
+
   static createToken(...args) {
     return new Token(...args);
   }

@@ -2,6 +2,6 @@ import { createString } from "../Environment/RuntimeValueInstance";
 
 
 export default function parseTemplateElement(ast, env) {
-
-  return createString(ast.value.raw);
+  // console.warn(ast.value.cooked);
+  return createString(ast.value.cooked);
 }
