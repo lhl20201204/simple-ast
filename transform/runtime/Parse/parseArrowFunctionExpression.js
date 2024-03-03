@@ -2,7 +2,7 @@ import _ from "lodash";
 import RuntimeValue, { RuntimeRefValue } from "../Environment/RuntimeValue";
 import Environment from "../Environment";
 import { RUNTIME_VALUE_DICTS, RUNTIME_VALUE_TYPE } from "../constant";
-import { getFunctionPrototypeRv } from "../Environment/RuntimeValueInstance";
+import { createArrowFunction, getFunctionPrototypeRv } from "../Environment/RuntimeValueInstance";
 
 export default function parseArrowFunctionExpression(ast, env) {
   const { params, key } = ast;
@@ -13,12 +13,7 @@ export default function parseArrowFunctionExpression(ast, env) {
     }
   }
   
-  const value = new RuntimeRefValue(RUNTIME_VALUE_TYPE.arrow_func, {
-  }, {
-    [RUNTIME_VALUE_DICTS.proto]: getFunctionPrototypeRv(),
-    [RUNTIME_VALUE_DICTS.symbolAst]: ast,
-    [RUNTIME_VALUE_DICTS.symbolEnv]: env
-  });
+  const value = createArrowFunction(ast, env);
 
   if (key) {
     env.addFunction(key, value);

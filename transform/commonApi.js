@@ -56,6 +56,13 @@ export class EnvJSON {
   }
 }
 
+// 加快速率不继承了
+export class AstJSON {
+  constructor(x) {
+    Object.assign(this, x)
+  }
+}
+
 export function copyToClipboard(text) {
   requestIdleCallback(() => {
     console.time('复制json花费时间')

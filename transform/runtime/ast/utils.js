@@ -22,9 +22,19 @@ export function throwError(errorInfo, token) {
    if (!isInstanceOf(token, Token)) {
     throw 'throwError方法token 漏传'
    }
+   let isUnhandleError = false;
+   if (errorInfo.slice(0, 2) === '{{' && errorInfo.slice(-2) === '}}') {
+     errorInfo = errorInfo.slice(2, -2);
+     isUnhandleError = true;
+   }
    const e = new Error(`${token.startRow}行:${token.startCol}列-${token.endRow}行:${token.endCol}列  ${token.value} ${errorInfo}`);
+   e.isUnhandleError= isUnhandleError;
    e.token = token
   throw e;
+}
+
+export function isUnhandleError(e) {
+  return e.isUnhandleError
 }
 
 export function omitAttr(ast) {
@@ -173,7 +183,6 @@ export function rawToCooked(raw) {
     }
     i++
   }
-  console.log(raw.split(''), ret);
   return _.map(ret, 0).join('')
 }
 

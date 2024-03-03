@@ -196,17 +196,24 @@ export const ReservedKeyList = [
   ['set', TOKEN_TYPE.set],
   ['get', TOKEN_TYPE.get],
   ['debugger', TOKEN_TYPE.debugger],
-  ['constructor', TOKEN_TYPE.constructor],
   ['switch', TOKEN_TYPE.switch],
   ['case', TOKEN_TYPE.case],
   ['default', TOKEN_TYPE.default],
   ['try', TOKEN_TYPE.try],
   ['catch', TOKEN_TYPE.catch],
   ['finally', TOKEN_TYPE.finally],
-  ['arguments', TOKEN_TYPE.arguments],
   ['NaN', TOKEN_TYPE.NaN],
   ['do', TOKEN_TYPE.do],
   ['sleep', TOKEN_TYPE.sleep],
+]
+
+export const canUseVariableNameKeyList = [
+'set',
+'async',
+'get',
+'sleep',
+'of',
+'NaN',
 ]
 
 export const METHOD_TYPE = {
@@ -233,6 +240,7 @@ export const METHOD_TYPE = {
   getMemberOrCallExpression: 'getMemberOrCallExpression',
 
   getIdentifierAst: 'getIdentifierAst',
+  getIdentifierOrArrowFunctionAst: 'getIdentifierOrArrowFunctionAst',
   getPrimaryAst: 'getPrimaryAst',
   getLiteralAst: 'getLiteralAst',
   getSleepStatement: 'getSleepStatement',
@@ -287,6 +295,8 @@ export const AstFlagDicts = {
   cannotUsePureArrowExpression: 'cannotUsePureArrowExpression',
   canUseTemplateLiteralMiddleString: 'canUseTemplateLiteralMiddleString',
   canUseKeyWordAsKey: 'canUseKeyWordAsKey',
+  canReturnable: 'canReturnable',
+  canUseKeyWordAsVariableName: 'canUseKeyWordAsVariableName',
 }
 
 export const METHOD_TYPE_VALUES_LIST = _.values(METHOD_TYPE);

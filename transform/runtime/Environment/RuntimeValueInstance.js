@@ -1,5 +1,6 @@
 import Environment from ".";
 import parseAst from "..";
+import { resetDebugging, setDebugging } from "../../../debugger";
 import { RuntimeValueAst, isInstanceOf } from "../../commonApi";
 import { DEBUGGER_DICTS, ENV_DICTS, JS_TO_RUNTIME_VALUE_TYPE, PROPERTY_DESCRIPTOR_DICTS, RUNTIME_LITERAL, RUNTIME_VALUE_DICTS, RUNTIME_VALUE_TYPE } from "../constant";
 import GeneratorConfig from "./Generator/GeneratorConfig";
@@ -67,17 +68,23 @@ export function ensureInitRoot() {
     if (!isFunctionRuntimeValue(fnRv)) {
       throw new Error('call 函数不能调用在非函数上')
     }
+
+    // console.warn('call', newThisRv, fnRv)
+
     // console.error(env)
     const middleEnv = createEnviroment(env.name + '_call', env, {
       [ENV_DICTS.$hideInHTML]: true,
     }, createEmptyEnviromentExtraConfig())
     middleEnv.addConst(RUNTIME_LITERAL.this, newThisRv);
-    return parseAst({
+
+   const ret = parseAst({
       type: "CallExpression",
       callee: createRuntimeValueAst(fnRv, fnRv.getDefinedName() + '.call'),
       arguments: _.map(argsRv, (c, i) => createRuntimeValueAst(c, 'args' + i)),
       optional: false
     }, middleEnv)
+
+  return ret;
   });
 
   FunctionPrototypeV.setWithDescriptor('call', callRv, createSimplePropertyDescriptor({
@@ -256,6 +263,71 @@ export function runFunctionRuntimeValueInGlobalThis(fnRvAst, windowEnv, ...args)
 
 }
 
+export function asyncArrowFunctionToAsyncGeneratorFunction(ast) {
+    if (ast.type !== 'ArrowFunctionExpression') {
+      throw 'ast 类型传入有误'
+    }
+
+    return {
+      "type": "CallExpression",
+      "callee": {
+        "type": "MemberExpression",
+        "object": {
+          "type": "FunctionExpression",
+          "id": null,
+          "expression": false,
+          "generator": true,
+          "async": true,
+          "params": ast.params,
+          "body": ast.expression ? {
+            "type": "BlockStatement",
+            "body": [
+              {
+                type: 'ReturnStatement',
+                argument: ast.body
+              }
+            ]
+          } : ast.body,
+        },
+        "property": {
+          "type": "Identifier",
+          "name": "bind"
+        },
+        "computed": false,
+        "optional": false
+      },
+      "arguments": [
+        {
+          "type": "ThisExpression",
+        }
+      ],
+      "optional": false
+    }
+}
+
+export function createArrowFunction(ast, env) {
+  if (ast.async) {
+    const fnRv = getWrapGeneratorFunctionToAsyncFunctionRv();
+    const retRv = parseAst({
+     type: 'CallExpression',
+     callee: createRuntimeValueAst(fnRv, 'WrapGeneratorFunctionToAsyncFunction', fnRv.getDefinedAst()),
+     arguments: [
+      asyncArrowFunctionToAsyncGeneratorFunction(ast),
+     ]
+    }, env)
+    // TODO 可能会出问题
+    retRv.restConfig[RUNTIME_VALUE_DICTS.symbolAsyncFunctionAst] = ast;
+    console.log(retRv, 'retRv');
+    return retRv;
+  }
+  return new RuntimeRefValue(RUNTIME_VALUE_TYPE.arrow_func, {
+  }, {
+    [RUNTIME_VALUE_DICTS.proto]: getFunctionPrototypeRv(),
+    [RUNTIME_VALUE_DICTS.symbolAst]: ast,
+    [RUNTIME_VALUE_DICTS.symbolEnv]: env
+  })
+}
+
 export function createFunction(config) {
   const ast = config[RUNTIME_VALUE_DICTS.symbolAst];
   const isGenerator = _.get(ast, 'generator');
@@ -264,7 +336,7 @@ export function createFunction(config) {
   _.set(config, RUNTIME_VALUE_DICTS.proto, getFunctionPrototypeRv())
   if (!isGenerator && isAsync) {
    const fnRv = getWrapGeneratorFunctionToAsyncFunctionRv();
-   return parseAst({
+   const retRv = parseAst({
     type: 'CallExpression',
     callee: createRuntimeValueAst(fnRv, 'WrapGeneratorFunctionToAsyncFunction', fnRv.getDefinedAst()),
     arguments: [
@@ -274,6 +346,9 @@ export function createFunction(config) {
       }
     ]
    }, config[RUNTIME_VALUE_DICTS.symbolEnv])
+   // TODO 可能会出问题
+   retRv.restConfig[RUNTIME_VALUE_DICTS.symbolAsyncFunctionAst] = ast;
+   return retRv;
   }
   let FunctionCtor = RuntimeRefValue;
   if (isGenerator && !isAsync) {

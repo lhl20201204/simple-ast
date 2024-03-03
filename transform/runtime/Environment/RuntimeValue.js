@@ -14,7 +14,7 @@ import { createArrowFunctionCallExpressionAst, createRuntimeValueAst, createSimp
 
 const {
   symbolOriginClassAst,
-  proto, _prototype, symbolAst, symbolEnv, symbolName, symbolMergeNewCtor, symbolOriginGeneratorAst } = RUNTIME_VALUE_DICTS;
+  proto, _prototype, symbolAsyncFunctionAst, symbolAst, symbolEnv, symbolName, symbolMergeNewCtor, symbolOriginGeneratorAst } = RUNTIME_VALUE_DICTS;
 
 
 
@@ -461,7 +461,8 @@ export class RuntimeRefValue extends RuntimeValue {
   }
 
   getDefinedAst() {
-    return this.restConfig[symbolOriginGeneratorAst] 
+    return this.restConfig[symbolAsyncFunctionAst]
+    ?? this.restConfig[symbolOriginGeneratorAst] 
     ?? this.restConfig[symbolOriginClassAst] 
     ?? this.restConfig[symbolAst] 
   }
@@ -538,46 +539,45 @@ export class RuntimeGeneratorFunctionValue extends RuntimeRefValue {
     
     const defineEnv = this.getDefinedEnv();
 
+    const tempAst = {
+      "type": "ReturnStatement",
+      "argument": {
+        "type": "NewExpression",
+        "callee": createRuntimeValueAst(getGeneratorRv(), 'Generator'),
+        "arguments": [
+          createRuntimeValueAst((env) => {
+            const ret = createConfigRuntimeValue(createGenerateConfig({
+              ast: _.cloneDeep(originAst),
+              name: originName,
+              contextEnv: env,
+              contextThis: env.getRuntimeValueByStackIndex(0),
+              contextArguments: env.getRuntimeValueByStackIndex(1),
+              GeneratorFunctionRv: this,
+            }))
+            return ret;
+          }, originAst )
+        ]
+      }
+    };
    
-    // console.log('开始定义', originName);
     // console.error(defineEnv);
-    this.setRunAst({
+    const newAst = {
       ..._.cloneDeep(originAst),
       body: {
         ..._.cloneDeep(originAst.body),
         body: [
-          {
+           {
             type: "ReturnStatement",
             argument: createArrowFunctionCallExpressionAst([
               createUseRuntimeValueAst(0, { type: 'ThisExpression' }),
               createUseRuntimeValueAst(1, { type: 'Identifier', name: 'arguments' }),
-              {
-                "type": "ReturnStatement",
-                "argument": {
-                  "type": "NewExpression",
-                  "callee": createRuntimeValueAst(getGeneratorRv(), 'Generator'),
-                  "arguments": [
-                    createRuntimeValueAst((env) => {
-                      const ret = createConfigRuntimeValue(createGenerateConfig({
-                        ast: _.cloneDeep(originAst),
-                        name: originName,
-                        contextEnv: env,
-                        contextThis: env.getRuntimeValueByStackIndex(0),
-                        contextArguments: env.getRuntimeValueByStackIndex(1),
-                        GeneratorFunctionRv: this,
-                      }))
-                      // console.error('生成实例对象', ret);
-                      return ret;
-                    }, originAst )
-                  ]
-                }
-              }
+              tempAst
             ])
           }
         ]
       }
-    }) 
-    
+    };
+    this.setRunAst(newAst) 
     // console.error('声明一个生成器函数', generateCode(originAst), generateCode(this.restConfig[symbolAst]))
   }
 

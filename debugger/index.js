@@ -1,11 +1,14 @@
 export const debuggerConfig = {
-   debugging: false,
+   debugging: [],
 }
 
 export function setDebugging(bool) {
-   debuggerConfig.debugging = bool
+   debuggerConfig.debugging.push(bool)
 }
 
+export function resetDebugging() {
+   debuggerConfig.debugging.pop()
+}
 export function getDebugging() {
-   return debuggerConfig.debugging
+   return _.last(debuggerConfig.debugging)
 }

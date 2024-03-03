@@ -1,4 +1,4 @@
-import writeJSON, { textReplace } from "../../util";
+import writeJSON, { relaceTextToHtml } from "../../util";
 import { DEBUGGER_DICTS } from "../constant";
 
 export default function parseDebuggerStatement(ast, env) {
@@ -9,7 +9,7 @@ export default function parseDebuggerStatement(ast, env) {
     const newEnvJSON = env.toWrite(false, true);
     
     requestAnimationFrame(() => {
-      const text = textReplace("{\n" + writeJSON(newEnvJSON, 2, {
+      const text = relaceTextToHtml("{\n" + writeJSON(newEnvJSON, 2, {
         [DEBUGGER_DICTS.isDebuggering]: true,
         [DEBUGGER_DICTS.isStringTypeUseQuotationMarks]: true, 
         [DEBUGGER_DICTS.isHTMLMode]: true, 

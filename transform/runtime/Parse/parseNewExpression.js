@@ -2,7 +2,7 @@ import _ from "lodash";
 import parseAst from "..";
 import RuntimeValue from "../Environment/RuntimeValue";
 import Environment from "../Environment";
-import { getAstCode } from "../Generate";
+import generateCode, { getAstCode } from "../Generate";
 import { RUNTIME_LITERAL, RUNTIME_VALUE_DICTS, RUNTIME_VALUE_TYPE } from "../constant";
 import { createRuntimeValueAst, isObjectRuntimeValue, getBindRuntimeValue } from "../Environment/utils";
 import { createObject } from "../Environment/RuntimeValueInstance";
@@ -32,9 +32,14 @@ export default function parseNewExpression(ast, env) {
         CtorRv,
         `(_ref/* =${ctorName}.bind(this) */)`
       ),
-      arguments: args,
+      arguments: args.map((x, i) => {
+        return createRuntimeValueAst(
+          parseAst(x, env),
+          generateCode(x),
+        ) 
+      }),
       optional: false,
-    }, classNewEnv)
+    }, classNewEnv) // 就是这一步出问题了。
 
 
 

@@ -6,28 +6,34 @@ import parseAst, { setLoop } from "./transform/runtime";
 import Environment from "./transform/runtime/Environment";
 import { getWindowEnv } from "./transform/runtime/Environment/getWindow";
 import generateCode from "./transform/runtime/Generate";
-import writeJSON, { textReplace } from "./transform/util";
+import writeJSON, { getRowColBySourceCodeIndex, relaceTextToHtml, selectStartEnd } from "./transform/util";
 import { DEBUGGER_DICTS } from "./transform/runtime/constant";
 import { createPromiseRvAndPromiseResolveCallback } from "./transform/runtime/Environment/utils";
-import { copyToClipboard, debounceCopyToClipboard, diffStr, isInstanceOf } from "./transform/commonApi";
+import { AstJSON, copyToClipboard, debounceCopyToClipboard, diffStr, isInstanceOf } from "./transform/commonApi";
 import ASTItem from "./transform/runtime/ast/ASTITem";
 import { getYieldValue, isYieldError } from "./transform/runtime/Parse/parseYieldExpression";
 import { RuntimeAwaitValue } from "./transform/runtime/Environment/RuntimeValue";
 import parseRuntimeValue from "./transform/runtime/Environment/parseRuntimeValue";
 import { innerParseProgram } from "./transform/runtime/Parse/parseProgram";
 
-source.onscroll = _.throttle((x) => {
+const source = document.getElementById('source');
+const astJsonContainer = document.getElementById('astJsonContainer');
+const envJsonContainer = document.getElementById('envJsonContainer');
+
+source.addEventListener('scroll', _.throttle((x) => {
   const dom = document.getElementById('currentDebuggerSpan');
   if (dom) {
     const { left, top, width } = dom.getBoundingClientRect()
     debuggerScene.style.left = `${left + width}px`;
     debuggerScene.style.top = `${top}px`;
   }
-  source_copy.scrollTop = source.scrollTop;
+  source_copy.style.top = `-${source.scrollTop}px`;
 }, 50, {
   leading: false,
   trailing: true
-})
+}))
+
+window.tokenIndexToDomMap = new Map();
 
 debuggerBtn.onclick = () => {
   // console.log('点击');
@@ -40,25 +46,14 @@ debuggerBtn.onclick = () => {
   debuggerScene.style.opacity = 0;
 }
 
-const throttle = (fn, t) => {
-  let timer = null;
-  return function (...args) {
-    if (timer) {
-      return;
-    }
-    timer = setTimeout(() => {
-      fn.call(this, ...args);
-      timer = null;
-    }, t);
-  };
-};
-
-const writeAst = (ast) => {
+const writeAstAndRun = (ast, noRun) => {
   // console.clear();
-  result.value = "{\n" + writeJSON(ast, 2, {
+  // console.warn(new Error().stack);
+  astJsonContainer.innerHTML = relaceTextToHtml("{\n" + writeJSON(ast, 2, {
     [DEBUGGER_DICTS.isStringTypeUseQuotationMarks]: false,
-    [DEBUGGER_DICTS.isTextMode]: true
-  }).join("") + "}";
+    [DEBUGGER_DICTS.isHTMLMode]: true,
+    [DEBUGGER_DICTS.onlyShowAstItemName]: false
+  }).join("") + "}");
 
   const win = getWindowEnv();
 
@@ -78,48 +73,41 @@ const writeAst = (ast) => {
       }
     }
   }
-  runCode();
-  excute.innerHTML = '正在写入环境中，请稍等';
-
-  requestIdleCallback(() => {
-    console.time('写操作花费时间')
-    excute.innerHTML = textReplace("{\n" + writeJSON(win.toWrite(), 2, {
-      [DEBUGGER_DICTS.isStringTypeUseQuotationMarks]: true,
-      [DEBUGGER_DICTS.isHTMLMode]: true,
-      [DEBUGGER_DICTS.onlyShowEnvName]: false
-    }).join("") + "}");
-    // console.log(win)
-    console.timeEnd('写操作花费时间')
-  })
-  // const test = new Ast()
-  // test.setSourceCode(`
-  // this.type === 'Literal'
-  // && 1 === 1
-  // && this.parent.left.operator === 'typeof'`)
-
-  // console.log(test.getAst())
+  if (!noRun) {
+    runCode();
+    envJsonContainer.innerHTML = '正在写入环境中，请稍等';
+    requestIdleCallback(() => {
+      console.time('写环境上下文操作花费时间')
+      envJsonContainer.innerHTML = relaceTextToHtml("{\n" + writeJSON(win.toWrite(), 2, {
+        [DEBUGGER_DICTS.isStringTypeUseQuotationMarks]: true,
+        [DEBUGGER_DICTS.isHTMLMode]: true,
+        [DEBUGGER_DICTS.onlyShowEnvName]: false
+      }).join("") + "}");
+      console.timeEnd('写环境上下文操作花费时间')
+    })
+  }
 }
 
 const astInstance = new Ast()
 
-function innerChange(x) {
+function omitAttrsDfs(x, attrs) {
   if (isInstanceOf(x, ASTItem)) {
     const obj = {}
     for (const t in x) {
-      if (t === 'tokens') {
+      if (attrs.includes(t)) {
         continue;
       }
-      obj[t] = innerChange(x[t])
+      obj[t] = omitAttrsDfs(x[t], attrs)
     }
-    return obj;
+    return new AstJSON(obj);
   }
   if (Array.isArray(x)) {
-    return _.map(x, innerChange)
+    return _.map(x, c => (omitAttrsDfs(c, attrs)))
   }
   return x;
 }
 
-function simpleChange(x) {
+function onlyPickIndentifyDfs(x) {
   if (isInstanceOf(x, ASTItem)) {
     const obj = { type: x.type }
     if (x.type === 'Identifier') {
@@ -132,82 +120,172 @@ function simpleChange(x) {
       if (isInstanceOf(x[t], ASTItem)
         || Array.isArray(x[t])) {
 
-        obj[t] = simpleChange(x[t])
+        obj[t] = onlyPickIndentifyDfs(x[t])
       }
     }
     return obj;
   }
   if (Array.isArray(x)) {
-    return _.map(x, simpleChange)
+    return _.map(x, onlyPickIndentifyDfs)
   }
 }
 
-let innerSimpleAstSourcecode = ""
-const write = (text) => {
-  // const ast = transform(text);
-  // let newText = '';
-  // let cnt = 0;
-  // for(const c of text) {
-  //     if (c === '\n') {
-  //       cnt ++;
-  //     } else {
-  //       cnt = 0;
-  //     }
-  //     if (cnt === 0 || cnt % 2 === 1) {
-  //       newText +=c;
-  //     }
-  //   }
+
+function getErrorInfoPrefixContent(index) {
+  const [sRow, sCol] = getRowColBySourceCodeIndex(index);
+  const totalArr = [...window.tokenIndexToDomMap];
+  const arr = _.slice(totalArr, 0, sRow);
+  const ret = []
+  for(const [, [, nodesStr]] of arr) {
+    if (nodesStr !== '\n') {
+      ret.push('<span>&nbsp;</span>');
+    } else {
+      ret.push('<br/>');
+    }
+  }
+  const currentLineItem = totalArr[sRow]
+  const  [,lineStr] = currentLineItem[1];
+  console.error({currentLineItem, totalArr, index, str: currentLineItem[1]});
+  return ret.join('') + lineStr.slice(0, sCol)
+}
+
+let currentSourceCodeStr = ""
+let currentAstWithoutStartEnd = {}
+
+const debounceThrowError = _.debounce((err) => {
+  requestIdleCallback(() => {
+    const e = _.get(err, 'errorInfo', {});
+    if (Array.isArray(e.charList)) {
+      const { start, end } = e.errorToken;
+      Reflect.defineProperty(e, '点击跳转到错误的token', {
+        get () {
+          selectStartEnd(start, end)
+        }
+      })
+      console.log(e)
+      const html =`<div>${
+        getErrorInfoPrefixContent(start) + `<span style="border-bottom: 3px solid red;">${e.errorToken.value
+        }</span>` 
+      }</div>`
+      
+  
+      source_copy.innerHTML = html;
+    }
+    console.error(err);
+  })
+}, 500);
+
+const writeSourceCodeAndRun = (text, shouldNoRun) => {
   astInstance.markSourceCode(text);
   try {
     source_copy.innerHTML = '';
     const ast = astInstance.getAst();
+    let nextAstWithoutStartEnd =  omitAttrsDfs(ast, ['tokens', 'start', 'end']);
+    const noRun = shouldNoRun || _.isEqual(
+      currentAstWithoutStartEnd,
+      nextAstWithoutStartEnd
+    );
+    if (!noRun) {
+      currentAstWithoutStartEnd = nextAstWithoutStartEnd;
+    }
     const generateText = _.map(ast.tokens, 'value').join('')
     if (text !== generateText) {
-      console.warn(astInstance.astContext, ast,text.length, generateText.length, [text, generateText], diffStr(text, generateText))
+      console.warn(astInstance.astContext, ast, text.length, generateText.length, [text, generateText], diffStr(text, generateText))
       throw new Error('token 漏了');
     }
-    const simpleAst = _.T(ast, true)
-    innerSimpleAstSourcecode = (text);
-    console.log([ast, simpleChange(ast), simpleAst])
-    writeAst(innerChange(ast));
-  } catch (err) {
-    const e = _.get(err, 'errorInfo', {});
-    if (Array.isArray(e.charList)) {
-      console.log(e)
-      // const prefixSpaceList = _.map(e.errorToken.prefixTokens,
-      //   'value'
-      //   );
-      // const textHtml = [..._.map(e.charList, 'char'),...prefixSpaceList].join('');
-      const { start, end } = e.errorToken;
-      const change = (str) => _.reverse(_.split(_.replace(_.replace(_.reverse((str).split('')).join(''), /\n\n/g, '>vid/<>/rb<>vid<'), /\n/g, '>/rb<'), '')).join('');
-
-      const html = change(_.slice(text, 0, start).join('')) + `<span style="border-bottom: 3px solid red;">${e.errorToken.value
-        }</span>` + change(_.slice(text, end + 1).join(''));
-
-      source_copy.innerHTML = html;
-      // console.log(textHtml)
-      // requestAnimationFrame(() => {
-      //   source_copy.innerHTML += `<span style="border-bottom: 3px solid red;">${
-      //     e.errorToken.value
-      //   }</span>${_.slice(e.restSourceCode, _.size(prefixSpaceList) + _.size( e.errorToken.value), -1).join('')}`
-      //   // requestAnimationFrame(() => {
-      //   //   source_copy.innerText += 
-      //   // })
-      // })
+    if (!noRun || currentSourceCodeStr !== text) {
+      const simpleAst = _.T(ast, true)
+      console.log([ast, onlyPickIndentifyDfs(ast), simpleAst])
+      writeAstAndRun(omitAttrsDfs(ast, ['tokens']), noRun);
     }
-    console.error(err);
+    currentSourceCodeStr = text;
+  } catch (err) {
+    currentSourceCodeStr = text;
+    debounceSaveTokensLineMessage('errorToken')
+    debounceThrowError(err);
   }
 }
 
+function saveTokensLineMessage(type) {
+  (() => {
+    let len = currentSourceCodeStr.length;
+    let childNodeIndex = 0;
+    const map = window.tokenIndexToDomMap;
+    map.clear()
+    map.set(childNodeIndex, [0, '']);
+    for (let i = 0; i < len; i++) {
+      const c = currentSourceCodeStr[i];
+      let tempString = map.get(childNodeIndex)[1];
+      if (c === '\n') {
+        map.set(_.size(tempString) === 0 ? childNodeIndex : ++childNodeIndex, [i, c]);
+        map.set(++childNodeIndex, [i + 1, ''])
+      } else {
+        map.get(childNodeIndex)[1] = tempString + c;
+      }
+    }
+    // console.warn('保存',type);
+    if(_.map([...map], '1.1').join('') !== currentSourceCodeStr) {
+      throw '保存出错'
+    }
+  })()
+}
+
+const debounceSaveTokensLineMessage = _.debounce(saveTokensLineMessage,
+  200, {
+    leading: true,
+    trailing: false,
+  })
+
+let shouldHandleWrapLine = false;
+
+source.addEventListener('keypress', function(e) {
+  if (e.code === 'Enter') {
+      e.preventDefault();
+      const selection = window.getSelection();
+      if (selection) {
+        const t =  selection.getRangeAt(0);
+        if (isInstanceOf(t.endContainer, Text) && t.endOffset === _.size(t.endContainer)) {
+          document.execCommand('insertHTML', false, '<br/><br/>');
+          return;
+        }
+      }
+      document.execCommand('insertHTML', false, '<br/>');
+     return;
+  }
+})
 
 source.addEventListener(
-  "input",
-  throttle(function (e) {
+  'input',
+  _.throttle((e) => {
+    let str = getSourceTextCodeFromHtml()
+    writeSourceCodeAndRun(str, true)
+    debounceSaveTokensLineMessage('oninput.debounce')
+    shouldHandleWrapLine = true;
+  }, 200)
+)
+
+function getSourceTextCodeFromHtml(bol) {
+  let str = source.innerText
+  if ( bol) {
+    str = str.replace(/\n{2,2}/g, '\n');
+  }
+  return str;
+}
+
+source.addEventListener(
+  "blur",
+  _.debounce(function (e) {
     setTimeout(() => {
       localStorage.removeItem('ast-temp');
-      write(source.innerText)
+      let str = getSourceTextCodeFromHtml()
+      if (shouldHandleWrapLine) {
+        shouldHandleWrapLine = false;
+        writeSourceCodeAndRun(str)
+        source.innerHTML = relaceTextToHtml(str)
+        debounceSaveTokensLineMessage('onblur');
+      }
     });
-  }, 1000)
+  }, 200)
 );
 
 const openText = '当前关闭，点击打开';
@@ -221,7 +299,7 @@ closeOrOpenDiffJson.addEventListener('click', () => {
     return console.warn('npm run dev 开启才能自动获取json对比')
   }
   const origin = closeOrOpenDiffJson.innerText;
-  const newText =  origin === openText ? closeText :openText;
+  const newText = origin === openText ? closeText : openText;
   localStorage.setItem(stateOfCloseOrOpenDiffJson, newText)
   closeOrOpenDiffJson.innerText = newText;
   location.reload();
@@ -235,7 +313,7 @@ if (process.env.mode === 'development' && closeOrOpenDiffJson.innerText === clos
     setTimeout(() => {
       testWindow?.postMessage?.({
         type: 'localhost',
-        data: innerSimpleAstSourcecode,
+        data: currentSourceCodeStr,
       }, '*');
     }, 2000)
   }, 4000)
@@ -248,10 +326,10 @@ if (process.env.mode === 'development' && closeOrOpenDiffJson.innerText === clos
   document.addEventListener("visibilitychange", function () {
     if (document.hidden) {
       // 页面被隐藏时的操作
-      //  channel.postMessage(innerSimpleAstSourcecode)
+      //  channel.postMessage(currentSourceCodeStr)
       testWindow?.postMessage?.({
         type: 'localhost',
-        data: innerSimpleAstSourcecode,
+        data: currentSourceCodeStr,
       }, '*');
     }
   });
@@ -268,16 +346,16 @@ if (process.env.mode === 'development' && closeOrOpenDiffJson.innerText === clos
 const inputAst = function (e) {
   // console.log(e.target.value)
   const ast = JSON.parse(e.target.value);
-  source.innerHTML = textReplace(generateCode(ast, { [DEBUGGER_DICTS.isHTMLMode]: true }));
+  source.innerHTML = relaceTextToHtml(generateCode(ast, { [DEBUGGER_DICTS.isHTMLMode]: true }));
   AST.testingCode = '';
   console.clear()
-  writeAst(ast)
+  writeAstAndRun(ast)
   localStorage.setItem('ast-temp', JSON.stringify(ast));
 }
 
 paste.onclick = async (e) => {
   const value = await navigator.clipboard.readText();
-  result.innerHTML = value;
+  astJsonContainer.innerHTML = value;
   setLoop(0)
   console.clear();
   Environment.envId = 1;
@@ -288,15 +366,18 @@ paste.onclick = async (e) => {
   })
 }
 
-result.addEventListener(
+astJsonContainer.addEventListener(
   "input",
   inputAst,
 );
 
 const change = (text) => {
-  source.innerHTML = textReplace(text);
+  source.innerHTML = relaceTextToHtml(text);
   source.focus();
-  write(text)
+  let str = getSourceTextCodeFromHtml(true)
+  writeSourceCodeAndRun(str)
+  source.innerHTML = relaceTextToHtml(str)
+  saveTokensLineMessage('window.load')
 }
 
 
@@ -337,12 +418,13 @@ window.addEventListener("load", () => {
       option.appendChild(text)
       mode.appendChild(option)
     }
-    result.value = localStorage.getItem('ast-temp')
-    // console.log(typeof result.value)
-    result.focus()
+    const text = localStorage.getItem('ast-temp')
+    astJsonContainer.innerHTML = text;
+    // console.log(typeof astJsonContainer.value)
+    astJsonContainer.focus()
     inputAst({
       target: {
-        value: result.value,
+        value: text,
       }
     })
   } else {

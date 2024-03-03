@@ -139,6 +139,12 @@ console.log('else if')
 console.log('else')
 }`
 export const isProgram = `
+async function fff( gg) { 
+  console.log(this, 'this')
+  return this.ff + gg + 2;
+  }
+  const fffff = fff.call({ff: 555}, 80)
+  fffff.then(console.log) 
 const fn = () => {
   return window.Object;
 }
@@ -177,7 +183,7 @@ set f(x) {
 }
 get ['f']() {}
 }
-const x = {
+const x3 = {
   async: '1',
   async async(){console.log(2)},
   async(x){ console.log(1)},
@@ -187,22 +193,22 @@ const x = {
   
   }
   
-  x.async()
-
+  x3.async()
+/*
   const g = new A()
   g.q('this is arguments').next().then(console.log)
-
-/*const x = {
+const set = 'set_ffff'
+const x2 = {
   async: '1',
   async async(){console.log(2)},
   async(x){ console.log(1)},
   set set(x){},
   set(){},
   set: 'set',
-  
+  set a(hhh){},
   }
   
-  x.async()
+  x2.async()
 
 const f = 'hello world';
 const z = {ff: 2 }
@@ -288,8 +294,8 @@ gen2.next().then(console.warn)
 console.log(x.gff)
 x.gff ++
 
-console.log(++x['222'], x.fjff())*/
-
+console.log(++x['222'], x.fjff())
+*/
 `
 
 export const isVariableDeclaration = `

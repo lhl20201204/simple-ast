@@ -1,13 +1,14 @@
 import _ from 'lodash';
-import { AST_FLAG_VALUE_LIST, AST_TYPE, AST_TYPE_VALUE_LIST, AstFlagDicts, EOFFlag, METHOD_TYPE, METHOD_TYPE_VALUES_LIST, ReservedKeyList, TOKEN_TYPE, TOKEN_TYPE_VALUE_LIST, prefixDicts, directlyReturnFlag } from './constants';
+import { AST_FLAG_VALUE_LIST, AST_TYPE, AST_TYPE_VALUE_LIST, AstFlagDicts, EOFFlag, METHOD_TYPE, METHOD_TYPE_VALUES_LIST, ReservedKeyList, TOKEN_TYPE, TOKEN_TYPE_VALUE_LIST, prefixDicts, directlyReturnFlag, canUseVariableNameKeyList } from './constants';
 import { Token, TokenChar } from './Token';
 import ASTContext from './AstContext';
 import ASTItem from './ASTITem';
-import { avoidPureArrowFuncitonExpressionNextTokenIsOperator, ensureAllTypeInList, ensureCannotHadAttrsInSameTime } from './utils';
+import { avoidPureArrowFuncitonExpressionNextTokenIsOperator, ensureAllTypeInList, ensureCannotHadAttrsInSameTime, isUnhandleError } from './utils';
 import { isInstanceOf, log } from '../../commonApi';
 
 // TODO 以后扩展属性记得处理这里的拷贝
 const storeAttr = ['astItemList', 'charList', 'tokens', 'config', 'configStack', 'setConfig'];
+const splitIndex = 3;
 export class SourceCodeHandleApi {
 
   nextCharIs(str) {
@@ -267,7 +268,10 @@ export class SourceCodeHandleApi {
     const word = this.eatWord()
     if (word.length) {
       const wordStr = _.map(word, 'char').join('');
-      if (!this.proxyMethod(prefixDicts.is, AstFlagDicts.canUseKeyWordAsKey)) {
+      if (!(this.proxyMethod(prefixDicts.is, AstFlagDicts.canUseKeyWordAsKey)
+      || (this.proxyMethod(prefixDicts.is, AstFlagDicts.canUseKeyWordAsVariableName) &&
+      canUseVariableNameKeyList.includes(wordStr)
+      ))) {
         for (const x of ReservedKeyList) {
           if (x[0] === wordStr) {
             return Token.createToken(x[1], word, prefixTokens)
@@ -305,43 +309,52 @@ export class SourceCodeHandleApi {
     if (_.size(this.tempTokensStack)) {
       throw new Error('save调用有误');
     }
-    this.lastAstContextStack.push(this.lastAstContext)
-    this.lastRowColIndexStack.push(this.lastRowColIndex)
     this.lastRowColIndex = [this.row, this.col, this.index];
     this.lastAstContext ={ 
       ..._.cloneDeep({
-      ..._.pick(this.astContext, storeAttr.slice(3)),
+      ..._.pick(this.astContext, storeAttr.slice(splitIndex)),
        sourceCode: this.sourceCode,
       }),
-      ..._.reduce(storeAttr.slice(0, 3), (obj, attr) => {
+      ..._.reduce(storeAttr.slice(0, splitIndex), (obj, attr) => {
         return Object.assign(obj, {
-          [attr]: [...this.astContext[attr]]
+          [attr]: _.size(this.astContext[attr])
         })
       }, {})
-   }
+    }
+    this.lastAstContextStack.push(this.lastAstContext)
+    this.lastRowColIndexStack.push(this.lastRowColIndex)
   }
 
   restore() {
     if (_.isNil(this.lastRowColIndex)) {
       throw new Error('restore调用有误');
     }
+    this.lastAstContext =  this.lastAstContextStack.pop();
+    this.lastRowColIndex = this.lastRowColIndexStack.pop();
     this.sourceCode = _.get(this.lastAstContext, 'sourceCode')
-    _.forEach(storeAttr, attr=> {
+    _.forEach(storeAttr.slice(0, splitIndex), attr=> {
+      const origin =  this.astContext[attr];
+      const oldLen = this.lastAstContext[attr];
+      this.astContext[attr] = origin.splice( oldLen, _.size(origin) - oldLen);
+    })
+    _.forEach(storeAttr.slice(splitIndex), attr=> {
       this.astContext[attr] = this.lastAstContext[attr];
     })
-    this.lastAstContext =  this.lastAstContextStack.pop();
     this.row = this.lastRowColIndex[0]
     this.col =  this.lastRowColIndex[1];
     this.index =  this.lastRowColIndex[2]
-    this.lastRowColIndex = this.lastRowColIndexStack.pop();
+    this.lastAstContext = _.last(this.lastAstContextStack)
+    this.lastRowColIndex = _.last(this.lastRowColIndexStack)
   }
 
   consume() {
     if (_.isNil(this.lastRowColIndex)) {
       throw new Error('consume调用有误');
     }
-    this.lastRowColIndex = this.lastRowColIndexStack.pop()
-    this.lastAstContext = this.lastAstContextStack.pop();
+    this.lastRowColIndexStack.pop()
+    this.lastAstContextStack.pop();
+    this.lastAstContext = _.last(this.lastAstContextStack)
+    this.lastRowColIndex = _.last(this.lastRowColIndexStack)
   }
 
   nextTokenIs(type) {
@@ -373,11 +386,15 @@ export class SourceCodeHandleApi {
     return token.type === type;
   }
 
-  getTokenByIndex(index) {
+  getTokenByCallback(index) {
     this.save()
     let tokens 
-    for(let i = 0; i < index; i++) {
-      tokens = this.eatToken()
+    if (_.isNumber(index)) {
+      for(let i = 0; i < index; i++) {
+        tokens = this.eatToken()
+      }
+    } else if (_.isFunction(index)){
+      tokens = index()
     }
     this.restore();
     return tokens;
@@ -391,8 +408,8 @@ export class SourceCodeHandleApi {
     this.index = 0;
     this.lastAstContext = null;
     this.lastRowColIndex = null;
-    this.lastAstContextStack = [];
-    this.lastRowColIndexStack = [];
+    this.lastAstContextStack = [{}];
+    this.lastRowColIndexStack = [[]];
     const c = sourceCode.split('')
     c.push(EOFFlag)
     this.sourceCode = c
@@ -577,9 +594,11 @@ export class SourceCodeHandleApi {
           ensureCannotHadAttrsInSameTime(item, ['configName', 'groupName'])
           const { configName, groupName, mayBe, getArguments } = item;
           wrapInHook(() => {
+            let expectMayBeToken 
             try {
               if (mayBe) {
                 this.save()
+                expectMayBeToken = this.nextTokenIs();
               }
               const args = _.isFunction(getArguments) ? getArguments(config) : undefined
               if (configName) {
@@ -598,7 +617,7 @@ export class SourceCodeHandleApi {
                 this.consume();
               }
             } catch(e) {
-              if (!mayBe || !isInstanceOf(e.token, Token)) {
+              if (!mayBe || !isUnhandleError(e) || !_.isEqual(e.token, expectMayBeToken)) {
                 throw e;
               }
               if (mayBe) {

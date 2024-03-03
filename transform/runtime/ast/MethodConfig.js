@@ -114,186 +114,7 @@ function switchConfig(config, errText, rest = {}) {
   ])
 }
 
-function handleObjectProperty(config, { kind, generator}) {
-  const { 
-    shorthand,
-    method,
-    key,
-    value,
-    computed,
-    restTokens
-  } = config.tempRet;
-  config.shorthand = shorthand;
-  config.method = method;
-  config.computed = computed;
-  config.key = key;
-  config.value = method ? this.createAstItem({
-    type: AST_TYPE.FunctionExpression,
-    id: null,
-    expression: false,
-    generator,
-    async: config.async,
-    params: value.params,
-    body: value.body,
-    restTokens
-  }) : value
-  config.kind = kind;
-  if (!isInstanceOf(config.value, ASTItem)) {
-    throw '返回必须是astItem'
-  }
-  config.restTokens.push(...restTokens, ...method ? value.restTokens : [])
-  Reflect.deleteProperty(config, 'tempRet')
-  Reflect.deleteProperty(config, 'generator')
-  Reflect.deleteProperty(config, 'async')
-}
-
 export const MethodConfig = {
-  [METHOD_TYPE.getObjectExpressionPropertyAst]: [
-    (AST_TYPE.Property),
-    [
-      {
-        ifType: TOKEN_TYPE.async,
-        before() {
-          this.save()
-        },
-        after(config) {
-          if (config.async &&
-            this.nextTokenIs([TOKEN_TYPE.Colon, TOKEN_TYPE.LeftParenthesis])) {
-            config.async = false;
-            this.restore()
-          } else {
-            this.consume()
-          }
-        },
-        configName: 'async',
-        consequent: [
-          {
-            ifType: TOKEN_TYPE.Star,
-            configName: 'generator',
-          },
-          {
-            type: METHOD_TYPE.getObjectProperties,
-            getArguments(config) {
-              return config
-            },
-            configName: 'tempRet',
-            after(config) {
-              const { 
-                method,
-                restTokens,
-              } = config.tempRet;
-              if (!method) {
-                if (config.async) {
-                  throwError('async /* 后面必须是函数', _.last(restTokens));
-                }
-              }
-              handleObjectProperty.call(this, config, {
-                kind: commonLiteral.init,
-                generator: config.generator
-              })
-            
-            }
-          }
-        ],
-        alternate: [
-          {
-            before() {
-              this.consume()
-              this.save()
-            },
-            ifType: [TOKEN_TYPE.set, TOKEN_TYPE.get],
-            configName: 'kind',
-            after(config) {
-              if (config.kind &&
-                this.nextTokenIs([TOKEN_TYPE.Colon, TOKEN_TYPE.LeftParenthesis])) {
-                config.kind = commonLiteral.init
-                this.restore()
-              } else {
-                config.kind = _.last(config.restTokens).value;
-                this.consume()
-              }
-            },
-            consequent: [
-              {
-                type: METHOD_TYPE.getObjectProperties,
-                getArguments(config) {
-                  return config
-                },
-                configName: 'tempRet',
-                after(config) {
-                  const { 
-                    method,
-                    restTokens
-                  } = config.tempRet;
-                  if (!method) {
-                    if (config.kind !== commonLiteral.init) {
-                      throwError('setter/getter必须是函数', _.last(restTokens));
-                    }
-                  }
-                  handleObjectProperty.call(this, config, {
-                    kind: config.kind,
-                    generator: false
-                  })
-                  if (config.kind !== commonLiteral.init) {
-                    config.method = false;
-                    // TODO setter 参数=1
-                  }
-                }
-              }
-            ],
-            alternate: [
-              {
-                before() {
-                  this.consume()
-                },
-                ifType: TOKEN_TYPE.Star,
-                configName: 'generator',
-                consequent: [
-                  {
-                    type: METHOD_TYPE.getObjectProperties,
-                    getArguments(config) {
-                      return config
-                    },
-                    configName: 'tempRet',
-                    after(config) {
-                      const { 
-                        method,
-                        restTokens
-                      } = config.tempRet;
-                      if (!method) {
-                        throwError('async /* 后面必须是函数', _.last(restTokens));
-                      }
-                      handleObjectProperty.call(this, config, {
-                        kind: commonLiteral.init,
-                        generator: config.generator
-                      })
-                    
-                    }
-                  }
-                ],
-                alternate: [
-                  {
-                    type: METHOD_TYPE.getObjectProperties,
-                    getArguments(config) {
-                      return config
-                    },
-                    configName: 'tempRet',
-                    after(config) {
-                      handleObjectProperty.call(this, config, {
-                        kind: commonLiteral.init,
-                        generator: false,
-                      })
-                    }
-                  }
-                ]
-              },
-             
-            ]
-          },
-        ],
-      },
-    ]
-  ],
   [METHOD_TYPE.getObjectExpressionPropertyOrSpreadElementAst]: [
     canBeAnyType,
     [
@@ -472,14 +293,14 @@ export const MethodConfig = {
     [METHOD_TYPE.getArrayExpressionAst]: TOKEN_TYPE.LeftBracket,
     [METHOD_TYPE.getArrowFunctionExpressionAst]: TOKEN_TYPE.LeftParenthesis,
     [METHOD_TYPE.getFunctionExpressionOrWithArrowAst]: [TOKEN_TYPE.async, TOKEN_TYPE.function],
-    [METHOD_TYPE.getIdentifierAst]: [
+    [METHOD_TYPE.getIdentifierOrArrowFunctionAst]: [
       TOKEN_TYPE.Word, 
       TOKEN_TYPE.NaN,
       TOKEN_TYPE.arguments,
-       TOKEN_TYPE.undefined
+      TOKEN_TYPE.undefined
     ],
     [METHOD_TYPE.getThisExpressionAst]: TOKEN_TYPE.this,
-  }, 'getPrimaryAst未处理的语法', {
+  }, '{{getPrimaryAst未处理的语法}}', {
   }
   ),
   [METHOD_TYPE.getPatternAst]: switchConfig({
@@ -637,7 +458,8 @@ export const MethodConfig = {
     [
       {
         type: METHOD_TYPE.getPatternAst,
-        configName: 'id'
+        configName: 'id',
+        [AstFlagDicts.canUseKeyWordAsVariableName]: true,
       },
       {
         ifType: TOKEN_TYPE.Equal,
@@ -772,6 +594,7 @@ export const MethodConfig = {
             type: METHOD_TYPE.getYieldExpression,
             before(config) {
               if (!this.proxyMethod(prefixDicts.is, AstFlagDicts.canSpreadable)) {
+                console.error(new Error().stack)
                 throwError('未允许使用', config.restTokens[0])
               }
             },
@@ -831,6 +654,11 @@ export const MethodConfig = {
     [
       {
         expectType: TOKEN_TYPE.return,
+        after(config) {
+          if (!this.proxyMethod(prefixDicts.is, AstFlagDicts.canReturnable)) {
+            throwError('不能在非函数内', _.last(config.restTokens))
+          }
+        }
       },
       {
         type: METHOD_TYPE.getExpAst,
