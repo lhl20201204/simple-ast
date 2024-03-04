@@ -25,6 +25,7 @@ export default function parseBlockStatement(ast, env) {
         // }
         break;
       }
+
       if (env.hadBreak() || env.hadContinue()) {
         break;
       }

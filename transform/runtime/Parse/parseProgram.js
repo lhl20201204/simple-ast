@@ -85,7 +85,7 @@ export function getStatement(statements, env) {
     if (ast.type === 'BlockStatement') {
       _.forEach(ast.body, t => lookUpVarFunctionInBlock(t, mergeConfig))
     } else if (ast.type === 'ForStatement') {
-      lookUpVarFunctionBeUndefined(ast.init, mergeConfig)
+      ast.init && lookUpVarFunctionBeUndefined(ast.init, mergeConfig)
       lookUpVarFunctionInBlock(ast.body, mergeConfig);
     } else if (['ForOfStatement', 'ForInStatement'].includes(ast.type)) {
       lookUpVarFunctionBeUndefined(ast.left, mergeConfig);

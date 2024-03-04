@@ -9,7 +9,7 @@ import createEnviroment, { createEmptyEnviromentExtraConfig } from "../Environme
 import parseRuntimeValue from "../Environment/parseRuntimeValue";
 import { PromiseRvThen, createRuntimeValueAst, isGeneratorFunctionRuntimeValue } from "../Environment/utils";
 import generateCode from "../Generate";
-import { AST_DICTS, ENV_DICTS, RUNTIME_VALUE_TYPE } from "../constant";
+import { AST_DICTS, ENV_DICTS, RUNTIME_LITERAL, RUNTIME_VALUE_TYPE } from "../constant";
 import setPattern from "./setPattern";
 
 export default function parseForOfStatement(ast, env) {

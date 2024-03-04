@@ -20,6 +20,7 @@ colorMap.set('ExpressionStatement', '#B33232');
 colorMap.set('VariableDeclaration', '#6A9955');
 colorMap.set('FunctionDeclaration', '#0055AA');
 colorMap.set('ClassDeclaration', '#770088');
+colorMap.set('LabeledStatement', 'black');
 function randomColor(c) {
   if (colorMap.has(c)) {
     return colorMap.get(c)

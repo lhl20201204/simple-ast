@@ -78,7 +78,7 @@ export default class Environment {
 
   addToWindow(key, value) {
     if (this === Environment.window) {
-      getWindowObjectRv().setWithDescriptor(key, value)
+      getWindowObjectRv().setWithDescriptor(key, value);
     }
   }
 
@@ -115,6 +115,7 @@ export default class Environment {
 
   addVar(key, value) {
     if (this.keyMap.get(key) === 'params') {
+      console.log(this)
       return;
     }
     if (this.keyMap.has(key)
@@ -302,6 +303,7 @@ export default class Environment {
   isWhileEnv() {
     return this._config[ENV_DICTS.isWhileEnv]
       || this._config[ENV_DICTS.isDoWhileEnv]
+      || this._config[ENV_DICTS.isLabelEnv]
       || (this.parent && this.parent.isWhileEnv());
   }
 
@@ -321,7 +323,12 @@ export default class Environment {
   }
 
   hadBreak() {
-    return this._config[ENV_DICTS.breakFlag];
+    if (this.hadContinue() && this.getNearBreakContinueableEnv() !== this) {
+      // console.warn('continue跨级break')
+      // this.setContinueFlag(false)
+      return true
+    }
+    return this._config[ENV_DICTS.breakFlag]
   }
 
   hadContinue() {
@@ -419,37 +426,49 @@ export default class Environment {
     return this._config[ENV_DICTS.yieldValue];
   }
 
-  getNearBreakContinueable() {
-    if (this._config[ENV_DICTS.isForEnv]
+  getNearBreakContinueableEnv() {
+    if ((this._config[ENV_DICTS.isForEnv]
       || this._config[ENV_DICTS.isWhileEnv]
+      || this._config[ENV_DICTS.isLabelEnv]
       || this._config[ENV_DICTS.isDoWhileEnv]
-      || this._config[ENV_DICTS.isSwitchEnv]) {
+      || this._config[ENV_DICTS.isSwitchEnv])
+       && (_.isNil(this._config[ENV_DICTS.currentBreakContinueValue]) || (
+        this._config[ENV_DICTS.isLabelEnv] &&
+        this._config[ENV_DICTS.currentEnvLabelValue] === this._config[ENV_DICTS.currentBreakContinueValue]))) {
       return this;
     }
-    return this.parent && this.parent.getNearBreakContinueable()
+    return this.parent && this.parent.getNearBreakContinueableEnv()
   }
 
   isNoBreackableEnv() {
     return !this.isForEnv() && !this.isWhileEnv() && !this.isSwitchEnv()
   }
 
-  setBreakFlag(flag) {
+  ensureInBreakEnv() {
     if (this.isNoBreackableEnv()) {
-      throw new Error('不在for/forof/forin/while/dowhile/switch循环中无法 break')
+      throw new Error('不在for/forof/forin/while/dowhile/switch/labeledStatement循环中无法 break')
     }
+  }
+
+  setBreakFlag(flag, name) {
+    this.ensureInBreakEnv()
     this._config[ENV_DICTS.breakFlag] = flag;
-    if (this !== this.getNearBreakContinueable()) {
-      this.parent.setBreakFlag(flag)
+    if (this !== this.getNearBreakContinueableEnv()) {
+      this.parent.setBreakFlag(flag, name)
     }
   }
 
   setContinueFlag(flag) {
-    if (this.isNoBreackableEnv()) {
-      throw new Error('不在for 或者while 或者switch循环中无法 continue')
-    }
+    this.ensureInBreakEnv()
     this._config[ENV_DICTS.continueFlag] = flag;
-    if (this !== this.getNearBreakContinueable()) {
-      this.parent.setContinueFlag(flag)
+  }
+
+  setContinueFlagDfs(flag, name) {
+    this.ensureInBreakEnv()
+    this._config[ENV_DICTS.continueFlag] = flag;
+    this._config[ENV_DICTS.currentBreakContinueValue] = name;
+    if (this !== this.getNearBreakContinueableEnv()) {
+      this.parent.setContinueFlagDfs(flag, name)
     }
   }
 

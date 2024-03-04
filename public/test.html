@@ -29,31 +29,14 @@
 
     // rrrr
     // rrrr
-    const set = 1;
-      const async = 2;
-      const get = 3;
-      const static = 4;
-      const sleep =5;
-      const of = 6;
-      const yield = 7;
-      const await = 7;
-      const constructor = 8;
-      const arguments = 9;
-      const NaN =10;
-      console.log(
-set,
-async,
-get,
-static,
-sleep,
-of,
-yield,
-await,
-constructor,
-arguments,
-NaN,
-)
     function test() {
+      for({...rest} of [1, 2]) {
+        
+      }
+    }
+
+
+    function test54() {
       const fff = async function (gg) {
         console.log(this, 'this')
         return this.ff + gg + 2;
@@ -62,7 +45,6 @@ NaN,
       fffff.then(console.log)
      
     }
-    test()
     function test53() {
       async function* foo() {
         yield await Promise.resolve('a')

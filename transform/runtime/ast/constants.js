@@ -159,6 +159,14 @@ export const AST_TYPE = {
   ClassBody: 'ClassBody',
   PropertyDefinition: 'PropertyDefinition',
   MethodDefinition: 'MethodDefinition',
+  BreakStatement: 'BreakStatement',
+  ContinueStatement: 'ContinueStatement',
+  LabeledStatement: 'LabeledStatement',
+  ForOfStatement: 'ForOfStatement',
+  ForInStatement: 'ForInStatement',
+  ForStatement: 'ForStatement',
+  SwitchStatement: 'SwitchStatement',
+  SwitchCase: 'SwitchCase'
 }
 
 export const ReservedKeyList = [
@@ -284,6 +292,13 @@ export const METHOD_TYPE = {
   getMethodDefinitionOrPropertyDefinition: 'getMethodDefinitionOrPropertyDefinition',
   getClassBodyAst: 'getClassBodyAst',
   getClassPropertyOrMethod: 'getClassPropertyOrMethod',
+  getBreakStatementAst: 'getBreakStatementAst',
+  getContinueStatementAst: 'getContinueStatementAst',
+  getExpressionStatementOrLabelStatementAst: 'getExpressionStatementOrLabelStatementAst',
+  getForOfInStatementAst: 'getForOfInStatementAst',
+
+  getSwitchStatementAst: 'getSwitchStatementAst',
+  getSwitchCaseAst: 'getSwitchCaseAst',
 }
 
 export const AstFlagDicts = {
@@ -297,6 +312,9 @@ export const AstFlagDicts = {
   canUseKeyWordAsKey: 'canUseKeyWordAsKey',
   canReturnable: 'canReturnable',
   canUseKeyWordAsVariableName: 'canUseKeyWordAsVariableName',
+  canBreakable: 'canBreakable',
+  canContinueable: 'canContinueable',
+  pushLabelAddToContext: 'pushLabelAddToContext'
 }
 
 export const METHOD_TYPE_VALUES_LIST = _.values(METHOD_TYPE);
@@ -308,6 +326,8 @@ export const AST_FLAG_VALUE_LIST = _.values(AstFlagDicts);
 export const AST_TYPE_VALUE_LIST = _.values(AST_TYPE);
 
 export const prefixDicts = {
+  push: 'push',
+  get: 'get',
   is: 'is',
   set: 'set',
   reset: 'reset',
@@ -325,6 +345,13 @@ export const literalAstToValue = {
   [TOKEN_TYPE.true]: true,
   [TOKEN_TYPE.null]: null,
 }
+
+export const IdentifierAstTokenTypeList = [
+  TOKEN_TYPE.Word,
+  TOKEN_TYPE.undefined,
+  TOKEN_TYPE.NaN,
+  TOKEN_TYPE.arguments
+];
 
 export const directlyReturnFlag = '_self';
 

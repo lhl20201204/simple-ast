@@ -139,6 +139,99 @@ console.log('else if')
 console.log('else')
 }`
 export const isProgram = `
+let f = 4;
+switch(f) {
+ case 4 : console.log('1');
+
+
+   console.log(222) ;break;
+   case 3333: 
+   console.log(333)
+   default: console.log('default')
+}
+async function a() {
+
+  await 3333
+}
+
+const t =  { a: 1, b: 4 }
+for(const attr in t) {
+  console.log(attr, t[attr])
+}
+
+const obj = {
+  i: 0,
+  *[Symbol.iterator]() {
+    while(this.i < 7) {
+      yield * [\`
+      \${this.i + 'iiii'}
+      \`, this.i++]
+    }
+  }
+}
+
+for(const x of obj) {
+
+  console.log('symbol.iterator', x)
+}
+
+for(const x of [5,6]) {
+
+  console.log(x)
+}
+
+let i =0;
+for(;i < 4; i++) 
+ for(let j = 0;j < 4; j++)  
+   console.log(j, i * 2)
+
+;(async () => {
+  let x
+  for await( x of [1, 2, 3, 4, 5]) {
+    if (x === 2) {
+      continue;
+    }
+    if (x > 3) {
+      break;
+    }
+    console.log(x * 100)
+  }
+  
+  for await(const x of [4, 5, 6]) console.log(x)
+
+})(
+
+)
+
+/*function a(a) { console.log(a)
+
+  if (false) {
+
+  var a = 1; 
+
+ }
+
+console.log(a);
+
+} a(null);
+let i = 0;
+yyyyy: while(i < 60) {
+  console.log('>', i)
+  let t = i
+hhhh: while(i < 50) {
+  console.log('>>', i)
+ i++;
+ if (i> t + 10) break yyyyy;
+ if(i< t + 5) continue yyyyy;
+ console.log('inner', i)
+}
+ i++
+ if (i > 50)
+ break yyyyy;
+
+ if (i < 40) continue
+ console.log('outer', i)
+}
 async function fff( gg) { 
   console.log(this, 'this')
   return this.ff + gg + 2;
@@ -194,7 +287,7 @@ const x3 = {
   }
   
   x3.async()
-/*
+
   const g = new A()
   g.q('this is arguments').next().then(console.log)
 const set = 'set_ffff'

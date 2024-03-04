@@ -1,3 +1,4 @@
+import { after } from "lodash";
 import { isInstanceOf, log } from "../../commonApi";
 import ASTItem from "./ASTITem";
 import { AST_TYPE, AstFlagDicts, METHOD_TYPE, METHOD_TYPE_VALUES_LIST, TOKEN_TYPE, commonLiteral, prefixDicts, directlyReturnFlag } from "./constants";
@@ -642,7 +643,9 @@ export const MethodConfig = {
       },
       {
         type: METHOD_TYPE.getBlockStatementAst,
-        configName: 'body'
+        configName: 'body',
+        [AstFlagDicts.canBreakable]: true,
+        [AstFlagDicts.canContinueable]: true,
       }
     ]
   ],

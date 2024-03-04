@@ -150,9 +150,12 @@ export function checkShouldWrapLine(body, token) {
     isInstanceOf(token, Token) &&
     !_.last(_.get(lastAst, 'tokens')).is?.(TOKEN_TYPE.Semicolon) &&
     !tokenHadWrapLine(token) &&
-    !lastAst.is?.(AST_TYPE.MethodDefinition) &&
-    !lastAst.is?.(AST_TYPE.IfStatement) && 
-    !lastAst.is?.(AST_TYPE.WhileStatement)
+    _.every([
+      AST_TYPE.MethodDefinition,
+      AST_TYPE.IfStatement,
+      AST_TYPE.WhileStatement,
+      AST_TYPE.FunctionDeclaration,
+    ], t =>  !lastAst.is?.(t))
   ) {
     // console.warn(this.astContext.tokens, _.last(this.astContext.tokens).is?.(TOKEN_TYPE.Semicolon))
     throwError('前面可能缺少运算符', token)

@@ -418,3 +418,7 @@ export function getUseRuntimeValueCode(ast, config) {
 export function getGetRuntimeValueCode(ast, config) {
   return remark(`${ast.ast ?? '_ref' + ast.index} // getRuntimeValue(${ast.index})`, config)
 }
+
+export function getLabeledStatementCode(ast, config) {
+  return `${getAstCode(ast.label, config)}:${getAstCode(ast.body, config)}`
+}

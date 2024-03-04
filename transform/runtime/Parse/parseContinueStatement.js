@@ -1,3 +1,4 @@
 export default function parseContinueStatement(ast, env) {
-  env.setContinueFlag(true);
+  let name = ast.label ? ast.label.name : null
+  env.setContinueFlagDfs(true, name);
 }

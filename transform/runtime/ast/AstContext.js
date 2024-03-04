@@ -10,13 +10,28 @@ export default class ASTContext {
     this.charList = [];
     this.methodStore = {}
     _.forEach(AstFlagDicts, attr => {
-      this.methodStore[prefixDicts.is + _.upperFirst(attr)] = () => this.config[attr] ?? false;
-      this.methodStore[prefixDicts.set +  _.upperFirst(attr)] = (bol) => {
-        if (!this.setConfig[attr]) {
-          this.setConfig[attr] = []
+      if (attr.startsWith('can')) {
+        this.methodStore[prefixDicts.is + _.upperFirst(attr)] = () => this.config[attr] ?? false;
+        this.methodStore[prefixDicts.set +  _.upperFirst(attr)] = (bol) => {
+          if (!this.setConfig[attr]) {
+            this.setConfig[attr] = []
+          }
+          this.setConfig[attr].push(this.methodStore[prefixDicts.is+ _.upperFirst(attr)]())
+          this.config[attr] = bol;
         }
-        this.setConfig[attr].push(this.methodStore[prefixDicts.is + _.upperFirst(attr)]())
-        this.config[attr] = bol;
+      } else if (attr.startsWith('push')) {
+        this.methodStore[prefixDicts.get + _.upperFirst(attr)] = () => this.config[attr] ?? [];
+        this.methodStore[prefixDicts.push + _.upperFirst(attr)] = (anyType) => {
+          if (!this.setConfig[attr]) {
+            this.setConfig[attr] = []
+          }
+          this.setConfig[attr].push(_.cloneDeep(this.methodStore[ prefixDicts.get + _.upperFirst(attr)]()))
+          
+          if (!_.isArray(this.config[attr])) {
+            this.config[attr] = [];
+          }
+          this.config[attr].push(anyType)
+        };
       }
       this.methodStore[prefixDicts.reset + _.upperFirst(attr)] = () => { 
         this.config[attr] =  this.setConfig[attr].pop()

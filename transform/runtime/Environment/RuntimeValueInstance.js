@@ -317,7 +317,7 @@ export function createArrowFunction(ast, env) {
     }, env)
     // TODO 可能会出问题
     retRv.restConfig[RUNTIME_VALUE_DICTS.symbolAsyncFunctionAst] = ast;
-    console.log(retRv, 'retRv');
+    // console.log(retRv, 'retRv');
     return retRv;
   }
   return new RuntimeRefValue(RUNTIME_VALUE_TYPE.arrow_func, {

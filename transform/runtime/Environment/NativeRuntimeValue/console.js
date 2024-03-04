@@ -10,7 +10,6 @@ export function getConsoleV(bool) {
     consoleV = createObject({});
     const generateFn = getGenerateFn()
     consoleV.setWithDescriptor('log', generateFn('console$log', (args) => {
-      // console.log(args);
       const getType = (type, item) => {
         if ([
           RUNTIME_VALUE_TYPE.string,

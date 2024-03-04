@@ -28,6 +28,7 @@ import parseFunctionExpression from "./Parse/parseFunctionExpression";
 import parseGetRuntimeValueExpression from "./Parse/parseGetRuntimeValueExpression";
 import parseIdentifier from "./Parse/parseIdentifier";
 import parseIfStatement from "./Parse/parseIfStatement";
+import parseLabeledStatement from "./Parse/parseLabeledStatement";
 import parseLiteral from "./Parse/parseLiteral";
 import parseLogicalExpression from "./Parse/parseLogicalExpression";
 import parseMemberExpression from "./Parse/parseMemberExpression";
@@ -92,7 +93,8 @@ export function innerParseAst(ast, env) {
     case 'FunctionDeclaration': return parseFunctionDeclaration(ast, env);
     case 'IfStatement': return parseIfStatement(ast, env);
     case 'Identifier': return parseIdentifier(ast, env); 
-    case 'Literal': return parseLiteral(ast);    
+    case 'Literal': return parseLiteral(ast);  
+    case 'LabeledStatement': return parseLabeledStatement(ast, env); 
     case 'LogicalExpression': return parseLogicalExpression(ast, env);
     case 'MemberExpression': return parseMemberExpression(ast, env);
     case 'NewExpression': return parseNewExpression(ast, env);

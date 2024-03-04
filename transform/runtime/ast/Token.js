@@ -27,6 +27,13 @@ export class Token {
     return this.type === type;
   }
 
+  isOneOf(typeList) {
+    if (!_.isArray(typeList)) {
+      throw '类型错误'
+    }
+    return _.some(typeList, c => this.is(c))
+  }
+
   change(type) {
     this.type = type;
     return this;

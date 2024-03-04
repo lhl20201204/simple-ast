@@ -239,6 +239,7 @@ export class RuntimeRefValue extends RuntimeValue {
     const base = this.getBaseHasProperty(attr)
 
     if (!base || base === getNullValue()) {
+      console.log(base)
       return getUndefinedValue()
     }
 

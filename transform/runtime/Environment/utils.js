@@ -90,12 +90,22 @@ export function createGetRuntimeValueAst(index) {
 
 export function createLiteralAst(str){
   if (_.isObject(str)) {
-    console.error('有object类型的Literal')
+   throw ('有object类型的Literal')
   }
   return {
     type: 'Literal',
     value: str,
     raw: `${str}`,
+  }
+}
+
+export function createIdentifierAst(name) {
+  if (!_.isString(name)) {
+    throw 'name 类型错误'
+  }
+  return {
+    type: 'Identifier',
+    name,
   }
 }
 

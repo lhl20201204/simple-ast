@@ -106,7 +106,6 @@ export function setMemberExpression(v, ast, env, restConfig) {
 export function setVariableDeclaration(v, ast, env, restConfig) {
   const { declarations, kind } = ast;
   for(const { id } of  declarations) {
-    // console.log(v, id);
     setPattern(v, id, env, {...restConfig, kind })
   }
 }

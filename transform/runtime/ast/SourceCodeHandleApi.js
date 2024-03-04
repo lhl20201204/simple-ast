@@ -453,12 +453,19 @@ export class SourceCodeHandleApi {
         console.warn(prefix, type)
       throw new Error('方法调用错误');
     }
-    if ([prefixDicts.is, prefixDicts.reset].includes(prefix) && _.size(params)) {
+    if ([prefixDicts.is, prefixDicts.reset, prefix.get].includes(prefix) && _.size(params)) {
       throw new Error(prefix + '方法后面不应该有参数')
     }
-    if (prefix === prefixDicts.set && !_.size(params)) {
-      throw new Error('set方法后面至少一个参数')
+    if ([prefixDicts.set, prefixDicts.push].includes(prefix) && !_.size(params)) {
+      throw new Error(prefix + '方法后面至少一个参数')
     }
+    
+    if (
+      type.startsWith('can') && [prefixDicts.push, prefixDicts.get].includes(prefix)
+      || type.startsWith('push') && [prefixDicts.set, prefixDicts.is].includes(prefix)) {
+      throw new Error('属性错误')
+    }
+
     return this.astContext.methodStore[prefix + _.upperFirst(type)](...params);
   }
 
@@ -617,7 +624,7 @@ export class SourceCodeHandleApi {
                 this.consume();
               }
             } catch(e) {
-              if (!mayBe || !isUnhandleError(e) || !_.isEqual(e.token, expectMayBeToken)) {
+              if (!mayBe || !(isUnhandleError(e) || _.isEqual(e.token, expectMayBeToken))) {
                 throw e;
               }
               if (mayBe) {
@@ -756,11 +763,15 @@ export class SourceCodeHandleApi {
     };
   }
 
-  wrapInDecorator(flag, cb, bool = true) {
+  wrapInDecorator(flag, cb, value = true) {
     ensureAllTypeInList(flag, AST_FLAG_VALUE_LIST)
     let attrs = _.flatten([flag])
     _.forEach(attrs, (x) => {
-      this.proxyMethod(prefixDicts.set, x, bool)
+      const isPushType = x.startsWith('push');
+      if (isPushType && arguments.length < 3) {
+        throw '漏传值'
+      }
+      this.proxyMethod( isPushType ? prefixDicts.push: prefixDicts.set, x, value)
     })
     const ret = cb()
     _.forEach(attrs, (x) => {

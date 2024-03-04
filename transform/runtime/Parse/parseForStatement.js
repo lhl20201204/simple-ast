@@ -18,7 +18,7 @@ export default function parseForStatement(ast, env) {
     initEnv.pushEnvStack()
   }
 
-  parseAst(init, initEnv)
+  init && parseAst(init, initEnv)
   while(parseRuntimeValue(parseAst(test, initEnv))) {
     const bodyEnv = createEnviroment('for let/const statement body', initEnv, {
       [ENV_DICTS.isForEnv]: true,

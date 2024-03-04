@@ -54,6 +54,7 @@ export const RUNTIME_LITERAL = {
 export const ENV_DICTS = {
   isUseStrict: 'isUseStrict',
   continueFlag: 'continueFlag',
+  currentBreakContinueValue: 'currentBreakContinueValue',
   breakFlag: 'breakFlag',
   isForEnv: 'isForEnv',
   returnFlag: 'returnFlag',
@@ -61,6 +62,8 @@ export const ENV_DICTS = {
   currentEnvReturnFlag: 'currentEnvReturnFlag',
   currentEnvReturnValue: 'currentEnvReturnValue',
   isWhileEnv: 'isWhileEnv',
+  isLabelEnv: 'isLabelEnv',
+  currentEnvLabelValue: 'currentEnvLabelValue',
   isDoWhileEnv: 'isDoWhileEnv',
   isSwitchEnv: 'isSwitchEnv',
   isFunctionEnv: 'isFunctionEnv',

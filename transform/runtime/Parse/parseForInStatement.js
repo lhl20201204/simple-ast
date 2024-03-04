@@ -29,7 +29,7 @@ export default function parseForInStatement(ast, env) {
           [ENV_DICTS.isForEnv]: true,
           [ENV_DICTS.noNeedLookUpVar]: true
         }, createEmptyEnviromentExtraConfig({ast}))
-        setPattern(value, left,  paramsEnv, {});
+        setPattern(createString(value), left,  paramsEnv, {});
         parseAst(body, childEnv);
         if (childEnv.hadBreak()) {
           break;
