@@ -5,6 +5,7 @@ import { AST_DICTS, DEBUGGER_DICTS } from "../constant";
 import { getArrowFunctionExpressionCode, getFunctionDeclarationCode, getFunctionExpressionCode } from "./functionCode";
 import { getObjectExpressionCode, getObjectPatternCode } from "./objectCode";
 import { getArrayExpressionCode, getArrayPatternCode } from "./arrayCode";
+import { PrivateIdentifierNameTransform } from "../../commonApi";
 
 export function getAstCode(ast, config) {
   if (!config) {
@@ -41,6 +42,7 @@ export function getAstCode(ast, config) {
     case 'ForOfStatement': return getForOfStatementCode(ast,config);
     case 'ForStatement': return getForStatementCode(ast, config);
     case 'ForInStatement': return getForInStatementCode(ast, config);
+    case 'PrivateIdentifier': getIdentifierCode(PrivateIdentifierNameTransform(ast), config);
     case 'Identifier': return getIdentifierCode(ast, config);
     case 'IfStatement': return getIfStatementCode(ast, config);
     case 'LabeledStatement': return getLabeledStatementCode(ast, config);

@@ -15,6 +15,7 @@ import { getYieldValue, isYieldError } from "./transform/runtime/Parse/parseYiel
 import { RuntimeAwaitValue } from "./transform/runtime/Environment/RuntimeValue";
 import parseRuntimeValue from "./transform/runtime/Environment/parseRuntimeValue";
 import { innerParseProgram } from "./transform/runtime/Parse/parseProgram";
+import { CookedToRaw, rawToCooked } from "./transform/runtime/ast/utils";
 
 const source = document.getElementById('source');
 const astJsonContainer = document.getElementById('astJsonContainer');
@@ -136,17 +137,17 @@ function getErrorInfoPrefixContent(index) {
   const totalArr = [...window.tokenIndexToDomMap];
   const arr = _.slice(totalArr, 0, sRow);
   const ret = []
-  for(const [, [, nodesStr]] of arr) {
+  for (const [, [, nodesStr]] of arr) {
     if (nodesStr !== '\n') {
-      ret.push('<span>&nbsp;</span>');
+      ret.push(nodesStr);
     } else {
       ret.push('<br/>');
     }
   }
   const currentLineItem = totalArr[sRow]
-  const  [,lineStr] = currentLineItem[1];
-  console.error({currentLineItem, totalArr, index, str: currentLineItem[1]});
-  return ret.join('') + lineStr.slice(0, sCol)
+  const [, lineStr] = currentLineItem[1];
+  console.error({ currentLineItem, totalArr, index, str: currentLineItem[1] });
+  return [ret.join('') ,sCol, lineStr]
 }
 
 let currentSourceCodeStr = ""
@@ -158,17 +159,17 @@ const debounceThrowError = _.debounce((err) => {
     if (Array.isArray(e.charList)) {
       const { start, end } = e.errorToken;
       Reflect.defineProperty(e, '点击跳转到错误的token', {
-        get () {
+        get() {
           selectStartEnd(start, end)
         }
       })
       console.log(e)
-      const html =`<div>${
-        getErrorInfoPrefixContent(start) + `<span style="border-bottom: 3px solid red;">${e.errorToken.value
-        }</span>` 
-      }</div>`
-      
-  
+      const [prefixLine, sCol, lineStr] = getErrorInfoPrefixContent(start);
+      const html = `<div>${ prefixLine + lineStr.slice(0, sCol) + `<span style="border-bottom: 3px solid red;">${e.errorToken.value
+        }</span>` +  lineStr.slice(sCol + _.size(e.errorToken.value))
+        }</div>`
+
+
       source_copy.innerHTML = html;
     }
     console.error(err);
@@ -180,7 +181,7 @@ const writeSourceCodeAndRun = (text, shouldNoRun) => {
   try {
     source_copy.innerHTML = '';
     const ast = astInstance.getAst();
-    let nextAstWithoutStartEnd =  omitAttrsDfs(ast, ['tokens', 'start', 'end']);
+    let nextAstWithoutStartEnd = omitAttrsDfs(ast, ['tokens', 'start', 'end']);
     const noRun = shouldNoRun || _.isEqual(
       currentAstWithoutStartEnd,
       nextAstWithoutStartEnd
@@ -208,10 +209,39 @@ const writeSourceCodeAndRun = (text, shouldNoRun) => {
 
 function saveTokensLineMessage(type) {
   (() => {
-    let len = currentSourceCodeStr.length;
+    // let childNodes = [...source.childNodes];
+
     let childNodeIndex = 0;
     const map = window.tokenIndexToDomMap;
-    map.clear()
+    map.clear();
+    // console.warn('保存', currentSourceCodeStr === source.innerText, [currentSourceCodeStr.length, currentSourceCodeStr.split('')])
+    let totalIndex = 0;
+    // childNodes.forEach(x => {
+    //   if (x instanceof HTMLBRElement) {
+    //     return map.set(childNodeIndex++, [totalIndex++, '\n']);
+    //   }
+    //   if ( x instanceof Text) {
+    //     let t = x.textContent;
+    //     map.set(childNodeIndex++, [totalIndex, t]);
+    //     totalIndex+= _.size(t);
+    //     return 
+    //   }
+    //   const dom = x;
+    //   let t =  x.innerText
+    //   map.set(childNodeIndex++, [totalIndex, t]);
+    //   totalIndex += _.size(t)
+    //   if (dom instanceof HTMLDivElement) {
+    //     const textDom = document.createTextNode(x.innerText);
+    //     const brDom = document.createElement('br');
+    //     source.insertBefore(brDom, dom);
+    //     source.insertBefore(textDom, brDom);
+    //     x.remove()
+    //     map.set(childNodeIndex++, [totalIndex++, '\n']);
+    //   }
+    //   return ;
+    // })
+    let len = currentSourceCodeStr.length;
+  
     map.set(childNodeIndex, [0, '']);
     for (let i = 0; i < len; i++) {
       const c = currentSourceCodeStr[i];
@@ -224,7 +254,10 @@ function saveTokensLineMessage(type) {
       }
     }
     // console.warn('保存',type);
-    if(_.map([...map], '1.1').join('') !== currentSourceCodeStr) {
+    const newStr = _.map([...map], '1.1').join('');
+    // console.log(map)
+    if ( newStr !== currentSourceCodeStr) {
+      console.warn([newStr.length, currentSourceCodeStr.length,newStr.split(''), currentSourceCodeStr.split('')]);
       throw '保存出错'
     }
   })()
@@ -232,61 +265,228 @@ function saveTokensLineMessage(type) {
 
 const debounceSaveTokensLineMessage = _.debounce(saveTokensLineMessage,
   200, {
-    leading: true,
-    trailing: false,
-  })
+  leading: true,
+  trailing: false,
+})
 
 let shouldHandleWrapLine = false;
 
-source.addEventListener('keypress', function(e) {
+let isFocusingAndChange = false;
+
+source.addEventListener('keypress', function (e) {
   if (e.code === 'Enter') {
-      e.preventDefault();
-      const selection = window.getSelection();
-      if (selection) {
-        const t =  selection.getRangeAt(0);
-        if (isInstanceOf(t.endContainer, Text) && t.endOffset === _.size(t.endContainer)) {
-          document.execCommand('insertHTML', false, '<br/><br/>');
-          return;
-        }
+    e.preventDefault();
+    const selection = window.getSelection();
+    if (selection) {
+      const t = selection.getRangeAt(0);
+      const tContainer = t.endContainer;
+      if (
+        tContainer instanceof Text &&
+        t.endOffset === _.size(tContainer) &&
+        (!tContainer.nextSibling ||
+          tContainer.nextSibling instanceof HTMLBRElement)
+      ) {
+        // console.warn('文字末尾换行');
+        document.execCommand('insertHTML', false, '<br/><br/>');
+        const r = new Range();
+        selection.removeAllRanges();
+        const nextContainer = tContainer.nextSibling.nextSibling;
+        r.setStart(nextContainer, 0);
+        r.setEnd(nextContainer, 0);
+        selection.addRange(r);
+      } else if (
+        tContainer === source ||
+        tContainer instanceof HTMLBRElement
+      ) {
+        let nextContainer =
+          tContainer instanceof HTMLBRElement
+            ? tContainer.nextSibling
+            : tContainer.childNodes[t.endOffset]?.nextSibling;
+        document.execCommand('insertHTML', false, '<br/><br/>');
+        nextContainer =
+          nextContainer?.previousSibling ||
+          _.last(source.childNodes);
+        // console.warn(
+        //   '空白换行',
+        //   nextContainer === tContainer,
+        //   nextContainer,
+        // );
+        const r = new Range();
+        selection.removeAllRanges();
+        r.setStart(nextContainer, 0);
+        r.setEnd(nextContainer, 0);
+        selection.addRange(r);
+      } else {
+        // console.warn('文字中间换行', tContainer);
+        document.execCommand('insertHTML', false, '<br/>');
       }
-      document.execCommand('insertHTML', false, '<br/>');
-     return;
+    }
   }
 })
 
 source.addEventListener(
   'input',
-  _.throttle((e) => {
-    let str = getSourceTextCodeFromHtml()
+  _.debounce((e) => {
+    isFocusingAndChange = true;
+    let str = ensureDomOnlyTextAndBr()
     writeSourceCodeAndRun(str, true)
     debounceSaveTokensLineMessage('oninput.debounce')
     shouldHandleWrapLine = true;
   }, 200)
 )
 
-function getSourceTextCodeFromHtml(bol) {
-  let str = source.innerText
-  if ( bol) {
-    str = str.replace(/\n{2,2}/g, '\n');
+source.addEventListener('click', () => {
+  const range = window.getSelection()?.getRangeAt(0);
+  if (
+    range &&
+    !isFocusingAndChange &&
+    range.startOffset === range.endOffset
+  ) {
+    let t = range.endContainer;
+    const dom = [];
+    if (t === source) {
+      const targetDom = t.childNodes[range.endOffset];
+      if (targetDom instanceof HTMLBRElement) {
+        console.log(
+          (targetDom).getAttribute('data-index'),
+        );
+      }
+    } else {
+      while (t && !(t instanceof HTMLBRElement)) {
+        dom.push(t);
+        t = t?.previousSibling;
+      }
+      if (t instanceof HTMLBRElement) {
+        const endIndex = t.getAttribute('data-index');
+        // const totalText = dom.map((x) => x.textContent).join('');
+        const restEndIndex =
+          Number(endIndex) + range.endOffset + 1;
+        if (!_.isNil(endIndex)) {
+          console.log(restEndIndex);
+        }
+      } else {
+        console.log(range.endOffset);
+      }
+    }
   }
-  return str;
+
+})
+
+
+function ensureDomOnlyTextAndBr(str) {
+  source.innerHTML = relaceTextToHtml(str ?? source.innerText)
+  const nodeList = [...source.childNodes];
+  const list = [];
+  let hadMerge = false;
+  for(const x of nodeList) {
+    if (x instanceof HTMLBRElement || (x instanceof Text)) {
+      list.push(x)
+    } else {
+      hadMerge = true;
+      const ret = []
+      let newText = ''
+      while(list.length && !(_.last(list) instanceof HTMLBRElement)) {
+        let t = list.pop()
+        ret.push(t)
+        newText += t.textContent;
+      }
+      if (x instanceof HTMLSpanElement) {
+        ret.push(x)
+        newText += x.innerText;
+      } else {
+        console.warn('未处理的类型', x)
+      }
+      source.insertBefore(document.createTextNode(newText), x);
+      _.forEach(ret, x => x.remove())
+    }
+  }
+  if (hadMerge || (_.size(str) && str !== source.innerText)) {
+   return ensureDomOnlyTextAndBr()
+  }
+  return source.innerText;
 }
 
 source.addEventListener(
   "blur",
   _.debounce(function (e) {
     setTimeout(() => {
+      isFocusingAndChange = false;
       localStorage.removeItem('ast-temp');
-      let str = getSourceTextCodeFromHtml()
       if (shouldHandleWrapLine) {
         shouldHandleWrapLine = false;
+        let str = ensureDomOnlyTextAndBr()
         writeSourceCodeAndRun(str)
-        source.innerHTML = relaceTextToHtml(str)
         debounceSaveTokensLineMessage('onblur');
       }
     });
   }, 200)
 );
+
+source.addEventListener('paste', (e) => {
+  console.log(e)
+  e.stopPropagation();
+  e.preventDefault();
+  let text = e.clipboardData.getData('text/plain');
+  if (document.queryCommandSupported('insertText')) {
+    document.execCommand('insertText', false, text);
+  } 
+  [...source.childNodes].forEach(x => {
+    if (x instanceof HTMLBRElement) {
+      return 
+    }
+    if ( x instanceof Text) {
+      return 
+    }
+    const dom = x;
+    if (dom instanceof HTMLDivElement && _.size(dom.childNodes) === 1) {
+      const textDom = document.createTextNode(x.innerText);
+      const brDom = document.createElement('br');
+      source.insertBefore(textDom, dom);
+      source.insertBefore(brDom, textDom);
+      const nextDom = dom.nextSibling
+      if (nextDom instanceof HTMLDivElement &&
+        _.size(nextDom.childNodes) > 1
+        ) {
+          source.insertBefore(document.createElement('br'), nextDom);
+        }
+      x.remove()
+    } else {
+      const nodeList = x.childNodes
+      source.append(...nodeList)
+      x.remove()
+    }
+    return ;
+  })
+
+  // e.clipboardData
+  // e.preventDefault();
+
+  // const newNode = document.createDocumentFragment()
+  // const textList =  _.split(e.clipboardData.getData('text'), '\n')
+  // let i = 0, len = textList.length;
+  // const ret = []
+  // for(;i < len; i++) {
+  //   // TODO 可能还会有其他特殊符号，还不能直接替换。。。。
+  //   const textNode = document.createTextNode(
+  //     CookedToRaw( textList[i])
+  //   );
+  //   ret.push(textNode)
+  //   if (i < len -1) {
+  //     ret.push(document.createElement('br'));
+  //   }
+  // }
+  // newNode.append(
+  //   ...ret,
+  // );
+  // window.getSelection().getRangeAt(0).insertNode(newNode);
+  // isFocusingAndChange = true;
+  // let str = getSourceTextCodeFromHtml()
+  // writeSourceCodeAndRun(str, true)
+  // debounceSaveTokensLineMessage('onpaste.debounce')
+  // shouldHandleWrapLine = true;
+  // window.getSelection()?.removeAllRanges()
+  
+})
 
 const openText = '当前关闭，点击打开';
 const closeText = '当前开启, 点击关闭';
@@ -346,7 +546,7 @@ if (process.env.mode === 'development' && closeOrOpenDiffJson.innerText === clos
 const inputAst = function (e) {
   // console.log(e.target.value)
   const ast = JSON.parse(e.target.value);
-  source.innerHTML = relaceTextToHtml(generateCode(ast, { [DEBUGGER_DICTS.isHTMLMode]: true }));
+  source.innerHTML = ensureDomOnlyTextAndBr(generateCode(ast, { [DEBUGGER_DICTS.isHTMLMode]: true }));
   AST.testingCode = '';
   console.clear()
   writeAstAndRun(ast)
@@ -371,12 +571,10 @@ astJsonContainer.addEventListener(
   inputAst,
 );
 
-const change = (text) => {
-  source.innerHTML = relaceTextToHtml(text);
+const changeSourceCodeContent = (text) => {
+  let str = ensureDomOnlyTextAndBr(text);
   source.focus();
-  let str = getSourceTextCodeFromHtml(true)
   writeSourceCodeAndRun(str)
-  source.innerHTML = relaceTextToHtml(str)
   saveTokensLineMessage('window.load')
 }
 
@@ -385,7 +583,7 @@ mode.addEventListener(
   'change',
   (e) => {
     AST.selectMethod = e.target.value
-    change(textList.getText(e.target.value))
+    changeSourceCodeContent(textList.getText(e.target.value))
   }
 )
 
@@ -428,6 +626,6 @@ window.addEventListener("load", () => {
       }
     })
   } else {
-    change(textList.getText(AST.selectMethod))
+    changeSourceCodeContent(textList.getText(AST.selectMethod))
   }
 });

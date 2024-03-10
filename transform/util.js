@@ -34,10 +34,18 @@ function randomColor(c) {
   return color;
 }
 
-export function relaceTextToHtml(text) {
+export function relaceTextToHtml(str) {
   try {
-    let t =text.replace(/\n/g, '<br/>')
-    return t;
+    const ret = [];
+    let  i =0, len  = str.length;
+    _.forEach(str, (x, i) => {
+      if (x === '\n') {
+        ret.push(`<br data-index="${i}" />`);
+      } else {
+        ret.push(x);
+      }
+    });
+    return ret.join('');
   } catch (e) {
     console.log(text)
     console.error(e)
@@ -195,6 +203,53 @@ const unselectedDom = (dom) => {
   dom.classList.remove('selectedBottomColor')
 }
 
+export function convertHtmlToText(inputText) {
+  let returnText = "" + inputText;
+
+  returnText = returnText.replace(/<\/div>/ig, '\r\n');
+  returnText = returnText.replace(/<\/li>/ig, '\r\n');
+  returnText = returnText.replace(/<li>/ig, '  *  ');
+  returnText = returnText.replace(/<\/ul>/ig, '\r\n');
+  returnText = returnText.replace(/&nbsp;/ig, ' ');
+  //-- 删除br标签并用换行符替换它们
+  returnText = returnText.replace(/<br\s*[\/]?>/gi, "\r\n");
+
+  //-- 删除P和A标签，但保留其中的内容
+  returnText = returnText.replace(/<p.*?>/gi, "\r\n");
+  returnText = returnText.replace(/<a.*href="(.*?)".*>(.*?)<\/a>/gi, " $2 ($1)");
+
+  //-- 截取图片标签中的路径内容
+  if (returnText.indexOf("<img") > -1) {
+    //去空格
+    // returnText = returnText.replace(/\s+/g, '');
+    returnText = returnText + returnText.substring(returnText.indexOf("src=\"") + 5, returnText.indexOf("g\"") + 1);
+  }
+  //-- 删除所有SCRIPT和STYLE标签
+  returnText = returnText.replace(/<script.*>[\w\W]{1,}(.*?)[\w\W]{1,}<\/script>/gi, "");
+  returnText = returnText.replace(/<style.*>[\w\W]{1,}(.*?)[\w\W]{1,}<\/style>/gi, "");
+  //-- 删除所有其他
+  returnText = returnText.replace(/<(?:.|\s)*?>/g, "");
+
+  //--摆脱2个以上的多个换行符：
+  returnText = returnText.replace(/(?:(?:\r\n|\r|\n)\s*){2,}/gim, "\r\n\r\n");
+
+  //-- 摆脱2个以上的空格：
+  returnText = returnText.replace(/ +(?= )/g, '');
+
+  //-- 摆脱html编码的字符：
+  returnText = returnText.replace(/ /gi, " ");
+  returnText = returnText.replace(/&/gi, "&");
+  returnText = returnText.replace(/"/gi, '"');
+  returnText = returnText.replace(/</gi, '<');
+  returnText = returnText.replace(/>/gi, '>');
+
+  // 空数据判断
+  if (isBlank(returnText))
+    returnText = "";
+
+  return returnText;
+}
+
 export const getRowColBySourceCodeIndex = (index) => {
   
   const arr = [...window.tokenIndexToDomMap];
@@ -206,6 +261,7 @@ export const getRowColBySourceCodeIndex = (index) => {
     offset++;
   }
   const len = offset - s
+  // console.log(item, index);
   return [item[0],len]
 }
 const astDomWeakMap = new WeakMap();

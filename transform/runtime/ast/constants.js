@@ -1,4 +1,5 @@
 export const TOKEN_TYPE = {
+  unexpected: 'unexpected',
   Split: '  Split',
   WrapLine: '\n WrapLine',
   Point: '. Point',
@@ -166,7 +167,13 @@ export const AST_TYPE = {
   ForInStatement: 'ForInStatement',
   ForStatement: 'ForStatement',
   SwitchStatement: 'SwitchStatement',
-  SwitchCase: 'SwitchCase'
+  SwitchCase: 'SwitchCase',
+  TryStatement: 'TryStatement',
+  CatchClause: 'CatchClause',
+  DoWhileStatement: 'DoWhileStatement',
+  Super: 'Super',
+  ChainExpression: 'ChainExpression',
+  PrivateIdentifier: 'PrivateIdentifier'
 }
 
 export const ReservedKeyList = [
@@ -201,8 +208,8 @@ export const ReservedKeyList = [
   ['var', TOKEN_TYPE.var],
   ['let', TOKEN_TYPE.let],
   ['const', TOKEN_TYPE.const],
-  ['set', TOKEN_TYPE.set],
-  ['get', TOKEN_TYPE.get],
+  // ['set', TOKEN_TYPE.set],
+  // ['get', TOKEN_TYPE.get],
   ['debugger', TOKEN_TYPE.debugger],
   ['switch', TOKEN_TYPE.switch],
   ['case', TOKEN_TYPE.case],
@@ -216,9 +223,7 @@ export const ReservedKeyList = [
 ]
 
 export const canUseVariableNameKeyList = [
-'set',
 'async',
-'get',
 'sleep',
 'of',
 'NaN',
@@ -280,7 +285,7 @@ export const METHOD_TYPE = {
   getFunctionExpressionOrWithArrowAst: 'getFunctionExpressionOrWithArrowAst',
   getFunctionParams: 'getFunctionParams',
   getWhileStatementAst: 'getWhileStatementAst',
-  getArrowFunctionExpressionAst: 'getArrowFunctionExpressionAst',
+  getParenthesiOrArrowFunctionExpressionAst: 'getParenthesiOrArrowFunctionExpressionAst',
   getThisExpressionAst: 'getThisExpressionAst',
 
   getObjectProperties: 'getObjectProperties',
@@ -297,8 +302,13 @@ export const METHOD_TYPE = {
   getExpressionStatementOrLabelStatementAst: 'getExpressionStatementOrLabelStatementAst',
   getForOfInStatementAst: 'getForOfInStatementAst',
 
+  getParenthesisAst: 'getParenthesisAst',
   getSwitchStatementAst: 'getSwitchStatementAst',
   getSwitchCaseAst: 'getSwitchCaseAst',
+  getTryStatementAst: 'getTryStatementAst',
+  getDoWhileStatementAst: 'getDoWhileStatementAst',
+  getSuperAst: 'getSuperAst',
+  getYieldAst: 'getYieldAst'
 }
 
 export const AstFlagDicts = {
@@ -306,6 +316,7 @@ export const AstFlagDicts = {
   canSpreadable: 'canSpreadable',
   canYieldable: 'canYieldable',
   canUseAssignmentPattern: 'canUseAssignmentPattern',
+  cannotUseParenthesis: 'cannotUseParenthesis',
   canRestable: 'canRestable',
   cannotUsePureArrowExpression: 'cannotUsePureArrowExpression',
   canUseTemplateLiteralMiddleString: 'canUseTemplateLiteralMiddleString',
@@ -337,7 +348,8 @@ export const commonLiteral = {
   init: 'init',
   method: 'method',
   set: 'set',
-  get: 'get'
+  get: 'get',
+  constructor: 'constructor'
 }
 
 export const literalAstToValue = {
@@ -351,6 +363,14 @@ export const IdentifierAstTokenTypeList = [
   TOKEN_TYPE.undefined,
   TOKEN_TYPE.NaN,
   TOKEN_TYPE.arguments
+];
+
+export const LiteralAstTokenTypeList = [
+  TOKEN_TYPE.true,
+  TOKEN_TYPE.false,
+  TOKEN_TYPE.String,
+  TOKEN_TYPE.null,
+  TOKEN_TYPE.Number,
 ];
 
 export const directlyReturnFlag = '_self';

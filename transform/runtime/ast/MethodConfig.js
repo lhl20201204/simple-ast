@@ -1,7 +1,7 @@
 import { after } from "lodash";
 import { isInstanceOf, log } from "../../commonApi";
 import ASTItem from "./ASTITem";
-import { AST_TYPE, AstFlagDicts, METHOD_TYPE, METHOD_TYPE_VALUES_LIST, TOKEN_TYPE, commonLiteral, prefixDicts, directlyReturnFlag } from "./constants";
+import { AST_TYPE, AstFlagDicts, METHOD_TYPE, METHOD_TYPE_VALUES_LIST, TOKEN_TYPE, commonLiteral, prefixDicts, directlyReturnFlag, IdentifierAstTokenTypeList, LiteralAstTokenTypeList } from "./constants";
 import { throwError } from "./utils";
 
 const canBeAnyType = AST_TYPE.Identifier;
@@ -181,43 +181,6 @@ export const MethodConfig = {
       }
     ]
   ],
-  [METHOD_TYPE.getArrayPatternAst]: [
-    {
-      type: AST_TYPE.ArrayPattern,
-      [AstFlagDicts.canRestable]: true,
-      [AstFlagDicts.canUseAssignmentPattern]: true,
-    },[
-      {
-        expectType: TOKEN_TYPE.LeftBracket,
-      },
-      {
-        ifType: TOKEN_TYPE.RightBracket,
-        ifTrueInjectConfig: {
-          elements: []
-        },
-        alternate: [
-          {
-            type: METHOD_TYPE.getPatternAst,
-            groupName: 'elements',
-            after(config) {
-              if (_.last(config.elements).is(AST_TYPE.RestElement)) {
-                return {
-                  jump: 4,
-                }
-              }
-            }
-          },
-          {
-            ifType: TOKEN_TYPE.Comma,
-            jump: 2,
-          },
-          {
-            expectType:  TOKEN_TYPE.RightBracket
-          }
-        ]
-      }
-    ]
-  ],
   [METHOD_TYPE.getRestElementAst]: [
     AST_TYPE.RestElement,
     [
@@ -279,28 +242,18 @@ export const MethodConfig = {
     ]
   ],
   [METHOD_TYPE.getPrimaryAst]: switchConfig({
-    [METHOD_TYPE.getLiteralAst]: [
-      TOKEN_TYPE.true,
-      TOKEN_TYPE.false,
-      TOKEN_TYPE.String,
-      TOKEN_TYPE.null,
-      TOKEN_TYPE.Number,
-    ],
+    [METHOD_TYPE.getLiteralAst]: LiteralAstTokenTypeList,
     [METHOD_TYPE.getTemplateLiteralAst]: [
       TOKEN_TYPE.TemplateLiteralStart,
       TOKEN_TYPE.WholeTemplateLiteral,
     ],
     [METHOD_TYPE.getObjectExpressionAst]: TOKEN_TYPE.LeftBrace,
     [METHOD_TYPE.getArrayExpressionAst]: TOKEN_TYPE.LeftBracket,
-    [METHOD_TYPE.getArrowFunctionExpressionAst]: TOKEN_TYPE.LeftParenthesis,
+    [METHOD_TYPE.getParenthesiOrArrowFunctionExpressionAst]: TOKEN_TYPE.LeftParenthesis,
     [METHOD_TYPE.getFunctionExpressionOrWithArrowAst]: [TOKEN_TYPE.async, TOKEN_TYPE.function],
-    [METHOD_TYPE.getIdentifierOrArrowFunctionAst]: [
-      TOKEN_TYPE.Word, 
-      TOKEN_TYPE.NaN,
-      TOKEN_TYPE.arguments,
-      TOKEN_TYPE.undefined
-    ],
+    [METHOD_TYPE.getIdentifierOrArrowFunctionAst]: IdentifierAstTokenTypeList,
     [METHOD_TYPE.getThisExpressionAst]: TOKEN_TYPE.this,
+    [METHOD_TYPE.getSuperAst]: TOKEN_TYPE.super,
   }, '{{getPrimaryAst未处理的语法}}', {
   }
   ),
@@ -311,7 +264,7 @@ export const MethodConfig = {
     [METHOD_TYPE.getAssignmentPatternOrIdentityAst]: TOKEN_TYPE.Word,
   }, '未允许的复制表达式左边'),
   [METHOD_TYPE.getObjectPatternPropertyAst]: [
-    AST_TYPE.Property,
+    (AST_TYPE.Property),
     [
       {
         ifType: TOKEN_TYPE.LeftBracket,
@@ -415,42 +368,32 @@ export const MethodConfig = {
       }
     ]
   ],
-  [METHOD_TYPE.getObjectPatternAst]: [
-    {
-      type: AST_TYPE.ObjectPattern,
-      [AstFlagDicts.canRestable]: true,
-      [AstFlagDicts.canUseAssignmentPattern]: true,
-      after: completeAttribute('properties', [])
-    },
-    [
-      {
-        expectType: TOKEN_TYPE.LeftBrace
-      },
-      {
-        ifType: TOKEN_TYPE.RightBrace,
-        alternate: [
-          {
-            type: METHOD_TYPE.getObjectPatternPropertyOrRestElementAst,
-            groupName: 'properties',
-            after(config) {
-              if (_.last(config.properties).is(AST_TYPE.RestElement)) {
-                return {
-                  jump: 4,
-                }
-              }
-            }
-          },
-          {
-            ifType: TOKEN_TYPE.Comma,
-            jump: 2
-          },
-          {
-            expectType: TOKEN_TYPE.RightBrace,
-          }
-        ]
-      }
-    ]
-  ],
+  // [METHOD_TYPE.getObjectPatternAst]: [
+  //   {
+  //     type: AST_TYPE.ObjectPattern,
+  //     [AstFlagDicts.canRestable]: true,
+  //     [AstFlagDicts.canUseAssignmentPattern]: true,
+  //     after: completeAttribute('properties', [])
+  //   },
+  //   [
+  //     {
+  //       expectType: TOKEN_TYPE.LeftBrace
+  //     },
+  //     {
+  //       ifType: TOKEN_TYPE.RightBrace,
+  //       alternate: [
+  //         getLoopGroupConfig(TOKEN_TYPE.RightBrace, 'properties', METHOD_TYPE.getObjectPatternPropertyOrRestElementAst),
+  //         {
+  //           ifType: TOKEN_TYPE.Comma,
+  //           jump: 2
+  //         },
+  //         {
+  //           expectType: TOKEN_TYPE.RightBrace,
+  //         }
+  //       ]
+  //     }
+  //   ]
+  // ],
   [METHOD_TYPE.getVariableDeclaratorAst]: [
     {
       type: AST_TYPE.VariableDeclarator,
@@ -544,45 +487,45 @@ export const MethodConfig = {
         flagName: 'hadCondition',
         consequent: [
           {
-            type: METHOD_TYPE.getExpAst,
+            type: METHOD_TYPE.getYieldExpression,
             configName: 'consequent',
           },
           {
             expectType: TOKEN_TYPE.Colon,
           },
           {
-            type: METHOD_TYPE.getExpAst,
+            type: METHOD_TYPE.getYieldExpression,
             configName: 'alternate'
           }
         ]
       },
     ]
   ],
-  [METHOD_TYPE.getYieldExpression]: [
-    (AST_TYPE.YieldExpression),
-    [
-      {
-        ifType: TOKEN_TYPE.yield,
-        consequent: [
-          {
-            ifType: TOKEN_TYPE.Star,
-            before(config) {
-              if (!this.proxyMethod(prefixDicts.is, AstFlagDicts.canYieldable)) {
-                throwError('当前不在generator函数结构体内不允许使用', config.restTokens[0]);
-              }
-            },
-            configName: 'delegate',
-          },
-          {
-            type: METHOD_TYPE.getAssignmentExpression,
-            configName: 'argument',
-            mayBe: true,
-          },
-        ],
-        alternate: [getDirectlyReturnConfig(METHOD_TYPE.getAssignmentExpression)]
-      },
-    ]
-  ],
+  // [METHOD_TYPE.getYieldExpression]: [
+  //   (AST_TYPE.YieldExpression),
+  //   [
+  //     {
+  //       ifType: TOKEN_TYPE.yield,
+  //       consequent: [
+  //         {
+  //           ifType: TOKEN_TYPE.Star,
+  //           before(config) {
+  //             if (!this.proxyMethod(prefixDicts.is, AstFlagDicts.canYieldable)) {
+  //               throwError('当前不在generator函数结构体内不允许使用', config.restTokens[0]);
+  //             }
+  //           },
+  //           configName: 'delegate',
+  //         },
+  //         {
+  //           type: METHOD_TYPE.getAssignmentExpression,
+  //           configName: 'argument',
+  //           mayBe: true,
+  //         },
+  //       ],
+  //       alternate: [getDirectlyReturnConfig(METHOD_TYPE.getAssignmentExpression)]
+  //     },
+  //   ]
+  // ],
   [METHOD_TYPE.getSpreadElement]: [
     {
       type: AST_TYPE.SpreadElement,
@@ -649,30 +592,30 @@ export const MethodConfig = {
       }
     ]
   ],
-  [METHOD_TYPE.getReturnStatementAst]: [
-    {
-      type: AST_TYPE.ReturnStatement,
-      after: completeAttribute('argument', null)
-    },
-    [
-      {
-        expectType: TOKEN_TYPE.return,
-        after(config) {
-          if (!this.proxyMethod(prefixDicts.is, AstFlagDicts.canReturnable)) {
-            throwError('不能在非函数内', _.last(config.restTokens))
-          }
-        }
-      },
-      {
-        type: METHOD_TYPE.getExpAst,
-        configName: 'argument',
-        mayBe: true,
-      },
-      {
-        ifType: TOKEN_TYPE.Semicolon
-      }
-    ]
-  ],
+  // [METHOD_TYPE.getReturnStatementAst]: [
+  //   {
+  //     type: AST_TYPE.ReturnStatement,
+  //     after: completeAttribute('argument', null)
+  //   },
+  //   [
+  //     {
+  //       expectType: TOKEN_TYPE.return,
+  //       after(config) {
+  //         if (!this.proxyMethod(prefixDicts.is, AstFlagDicts.canReturnable)) {
+  //           throwError('不能在非函数内', _.last(config.restTokens))
+  //         }
+  //       }
+  //     },
+  //     {
+  //       type: METHOD_TYPE.getExpAst,
+  //       configName: 'argument',
+  //       mayBe: true,
+  //     },
+  //     {
+  //       ifType: TOKEN_TYPE.Semicolon
+  //     }
+  //   ]
+  // ],
   [METHOD_TYPE.getThrowStatementAst]: [
     {
       type: AST_TYPE.ThrowStatement,
@@ -712,10 +655,6 @@ export const MethodConfig = {
       type: AST_TYPE.ExpressionStatement,
       after(oldConfig) {
         const config = { ...oldConfig };
-        const { expression } = config;
-        if (expression.is(AST_TYPE.Literal) && _.startsWith(expression.value, 'use ')) {
-          config.directive = expression.value;
-        }
         return config;
       }
     },

@@ -67,4 +67,20 @@ export default class ASTItem{
     this[attr] = value
   }
 
+  find(cb) {
+    if (cb(this)) {
+      return this;
+     }
+    for(const attr of _.keys(this)) {
+      const v = this[attr];
+      if (isInstanceOf(v, ASTItem)) {
+        const t =  v.find(cb)
+        if (t) {
+          return t;
+        }
+      }
+    }
+    return null;
+  }
+
 }

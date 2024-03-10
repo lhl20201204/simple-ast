@@ -1,4 +1,5 @@
 import parseAst from "..";
+import { PrivateIdentifierNameTransform } from "../../commonApi";
 import { PROPERTY_DESCRIPTOR_DICTS, RUNTIME_LITERAL } from "../constant";
 import parseRuntimeValue from "../Environment/parseRuntimeValue";
 import { createLiteralAst, getObjectAttrOfPropertyDescriptor } from "../Environment/utils";
@@ -121,6 +122,7 @@ export default function setExpression(left, right, env, config) {
     throw new Error('config 必传')
   }
   switch(left.type) {
+    case 'PrivateIdentifier':  return setIdentifierExpression(PrivateIdentifierNameTransform(left), right, env, config);
     case 'Identifier': return setIdentifierExpression(left, right, env, config);
     case 'ArrayPattern': return setArrayPattern(left, right, env, config);
     case 'ObjectPattern': return setObjectPattern(left, right, env, config);

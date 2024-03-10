@@ -1,5 +1,5 @@
 import { getDebugging } from "../../debugger";
-import { isInstanceOf } from "../commonApi";
+import { PrivateIdentifierNameTransform, isInstanceOf } from "../commonApi";
 import AstConfig, { ensureAstHadConfig, withRecordEnvStack } from "./Environment/Generator/AstConfig";
 import { getNullValue } from "./Environment/RuntimeValueInstance";
 import generateCode from "./Generate";
@@ -99,6 +99,7 @@ export function innerParseAst(ast, env) {
     case 'MemberExpression': return parseMemberExpression(ast, env);
     case 'NewExpression': return parseNewExpression(ast, env);
     case 'ObjectExpression': return parseObjectExpression(ast, env);
+    case 'PrivateIdentifier': return parseIdentifier(PrivateIdentifierNameTransform(ast), env);
     case 'Program': return parseProgram(ast); 
     case 'ReturnStatement': return parseReturnStatement(ast,env);
     case 'Super': return parseSuper(ast, env);

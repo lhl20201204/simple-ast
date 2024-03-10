@@ -1,3 +1,4 @@
+import { PrivateIdentifierNameTransform } from "../../commonApi";
 import { getLookUpUndefinedRv } from "../Environment/NativeRuntimeValue/undefined";
 import { AST_DICTS } from "../constant";
 
@@ -33,6 +34,7 @@ function getDeclarationsKey(ast, config) {
     throw new Error('config 不能为空')
   }
   switch(ast.type) {
+    case 'PrivateIdentifier': return getIdentifierKey(PrivateIdentifierNameTransform(ast), config);
     case 'Identifier': return getIdentifierKey(ast, config);
     case 'ArrayPattern': return getArrayPatternKey(ast, config);
     case 'ObjectPattern': return getObjectPatternKey(ast, config);

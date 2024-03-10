@@ -18,6 +18,7 @@ export class Token {
     this.endCol = _.last(value).col;
     this.end = _.last(value).index;
     if (_.size(prefixTokens) && _.some(prefixTokens, c => !(c instanceof Token))) {
+      console.warn(prefixTokens)
       throw new Error('无效相关token');
     }
     this.prefixTokens = prefixTokens;

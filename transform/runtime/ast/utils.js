@@ -2,7 +2,7 @@ import AST from ".";
 import { isInstanceOf } from "../../commonApi";
 import ASTItem from "./ASTITem";
 import { Token } from "./Token";
-import { AST_TYPE, TOKEN_TYPE, literalAstToValue } from "./constants";
+import { AST_TYPE, TOKEN_TYPE, commonLiteral, literalAstToValue } from "./constants";
 
 export function valueToRaw({ value, type}) {
   if (type === TOKEN_TYPE.String) {
@@ -121,7 +121,7 @@ export function ensureCannotHadAttrsInSameTime(item, attrs){
 
 export function getValueOfLiteralToken(token) {
   if (token.is(TOKEN_TYPE.String)) {
-    return _.slice(token.value, 1, -1).join('') 
+    return rawToCooked(_.slice(token.value, 1, -1).join(''))
   } 
   if (token.is(TOKEN_TYPE.Number)) {
     return Number(token.value)
@@ -168,7 +168,7 @@ export function rawToCooked(raw) {
   while(i < raw.length) {
     const c = raw[i]
     // 应该是一个 \ 直接省略。。。
-    if (['$', '\`', '\\', 'f', 't', 'n', 'r', 'b'].includes(c) 
+    if (['$', '\`', '\\','\'','\"', '{', '}', '/', 'f', 't', 'n', 'r', 'b'].includes(c) 
     && _.get(_.last(ret), 0) === '\\'
     && !_.get(_.last(ret), 1) 
        ) {
@@ -187,6 +187,31 @@ export function rawToCooked(raw) {
     i++
   }
   return _.map(ret, 0).join('')
+}
+
+
+const tempDiv = document.createElement('div');
+export function CookedToRaw(str) {
+  tempDiv.innerHTML = str
+  if (tempDiv.innerText === str) {
+    return str;
+  }
+  // 有html格式的内容;
+  //TODO 最后肯定是要写dom解析器的。先看看效果
+  return str.replace(/\</g, '&lt;')
+  let ret = []
+  const map = {
+    // '\`': '\\\`',
+  }
+  for(const x of str) {
+    ret.push(map[x] || x)
+  }
+  return ret.join('');
+}
+
+export function isSetOrGetTokenLike(token) {
+  return token.is(TOKEN_TYPE.Word) && [commonLiteral.get,
+  commonLiteral.get].includes(token.value)
 }
 
 _.rawToCooked = rawToCooked

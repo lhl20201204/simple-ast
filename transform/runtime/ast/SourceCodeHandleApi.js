@@ -3,7 +3,7 @@ import { AST_FLAG_VALUE_LIST, AST_TYPE, AST_TYPE_VALUE_LIST, AstFlagDicts, EOFFl
 import { Token, TokenChar } from './Token';
 import ASTContext from './AstContext';
 import ASTItem from './ASTITem';
-import { avoidPureArrowFuncitonExpressionNextTokenIsOperator, ensureAllTypeInList, ensureCannotHadAttrsInSameTime, isUnhandleError } from './utils';
+import { avoidPureArrowFuncitonExpressionNextTokenIsOperator, ensureAllTypeInList, ensureCannotHadAttrsInSameTime, isUnhandleError, throwError } from './utils';
 import { isInstanceOf, log } from '../../commonApi';
 
 // TODO 以后扩展属性记得处理这里的拷贝
@@ -25,14 +25,16 @@ export class SourceCodeHandleApi {
 
   expectChar(str) {
     if (!this.nextCharIs(str)) {
-      throw new Error(`预期是${str}的字符串`)
+      throwError(`预期是${str}的字符串`,  Token.createToken(TOKEN_TYPE.unexpected, this.eat(str)))
     }
     return this.eat(str)
   }
 
   expectToken(type) {
     if (_.isNil(type) || !this.nextTokenIs(type)) {
-      const token = this.eatToken();;
+      console.log(this.sourceCode)
+      const token = this.eatToken();
+      console.log(type, this.astContext)
       const e = new Error(`${token.startRow}行:${token.startCol}列-${token.endRow}行:${token.endCol}列  预期是${type}`);
       e.token = token
       throw e;
@@ -65,13 +67,13 @@ export class SourceCodeHandleApi {
   }
 
   eatWord() {
-    // 字母，下划线开头
+    // 字母，下划线,#开头
     const c = this.nextCharIs()
     if (!c || c === EOFFlag) {
       return []
     }
     const ret = []
-    const isAlpha = (c) => c.toLowerCase() !== c.toUpperCase();
+    const isAlpha = (c) =>c && c !== EOFFlag && (c.toLowerCase() !== c.toUpperCase() || ['_'].includes(c) || (!_.size(ret) && ['#', '$'].includes(c)));
     let flag = false;
     if (this.nextCharIs('_') || isAlpha(this.nextCharIs())) {
       flag = true;
@@ -95,7 +97,15 @@ export class SourceCodeHandleApi {
     if (!str) {
       throw new Error('STR 必传')
     }
-    return _.last(ret)?.char === str
+    let k =0;
+    for(const { char } of ret) {
+      if (char === '\\') {
+        k++
+      } else {
+        k=0;
+      }
+    }
+    return _.last(ret)?.char === str && k % 2 === 1
   }
 
   eatTemplateLiteralString(fc) {
@@ -122,14 +132,16 @@ export class SourceCodeHandleApi {
     if (!c || !['\'', '\"'].includes(c)) {
       return []
     }
-    const ret = [this.eat()]
+    const ret = [...this.eat()]
     const lastIs = this.getLastIsfunc(ret)
 
-    while (!this.nextCharIs('\n') && (!this.nextCharIs(c) || lastIs('\\')) && this.sourceCode.length) {
-      ret.push(this.eat())
+    while (!this.nextCharIs('\n') 
+    && (!this.nextCharIs(c) || lastIs('\\')) 
+    && this.sourceCode.length) {
+      ret.push(...this.eat())
     }
-    ret.push(this.expectChar(c))
-    return _.flatten(ret);
+    ret.push(...this.expectChar(c))
+    return ret;
   }
 
   nextCharIsNumber(t) {
@@ -483,7 +495,8 @@ export class SourceCodeHandleApi {
         const operatorToken = this.eatToken();
         restTokens.push(operatorToken);
 
-        let right =this.wrapInDecorator(AstFlagDicts.cannotUsePureArrowExpression ,() =>this[attr]());
+        let right =this.wrapInDecorator(AstFlagDicts.cannotUsePureArrowExpression ,() =>this[attr](), 
+        astType !== AST_TYPE.AssignmentExpression);
         checkLeft(left);
         checkRight(right);
         left = this.createAstItem({

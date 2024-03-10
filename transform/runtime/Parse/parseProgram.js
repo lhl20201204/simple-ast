@@ -225,11 +225,13 @@ export function innerParseProgram(ast, jumpInitEnv = false) {
     env.setCacheFromParentEnv(true)
   }
   // console.log(ast.body[0], 'parseBlockStatement');
-  if (ast.body.length && _.startsWith(ast.body[0].directive, 'use ')) {
-    const type = _.slice(ast.body[0].directive, 4).join('')
+  let i = 0;
+  while ( i < ast.body.length && _.startsWith(ast.body[i].directive, 'use ')) {
+    const type = _.slice(ast.body[i].directive, 4).join('')
     if (_.size(type)) {
       env.setDirective(type);
     }
+    i++
     // console.warn(type, env.isInGeneratorEnv(), env.canSleepAble())
   }
   const statements = getStatement(ast.body, env);

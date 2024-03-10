@@ -139,7 +139,119 @@ console.log('else if')
 console.log('else')
 }`
 export const isProgram = `
-let f = 4;
+
+generateFn((
+  [
+    objRv,
+    attrRv,
+  ],
+) => {
+  return createArray(_.map(objRv.keys(), t => {
+    return createString(isJsSymbolType(t) ? t.toString(): t)
+  }))
+})
+
+
+
+
+
+function getDebuggerStatementCode(ast, config) {
+  const text = purple(RUNTIME_LITERAL.debugger, config);
+  if (config[DEBUGGER_DICTS.isHTMLMode]) {
+  const spanId = \`currentDebuggerSpan\`;
+  // setTimeout(() => {
+  // const dom = document.getElementById(spanId);
+  // if (dom) {
+  // const child = document.getElementById('debuggerScene');
+  // document.body.removeChild(child);
+  // dom.appendChild(child);
+  // }
+  
+  // }, 0)
+  return \`\${text}\`
+  }
+  return text;
+  }
+
+
+  
+
+windowRv.get('Reflect').setWithDescriptor('ownKeys', generateFn('Reflect$ownKeys', (
+  [
+  objRv,
+  attrRv,
+  ],
+  ) => {
+  return createArray(_.map(objRv.keys(), t => {
+  return createString(isJsSymbolType(t) ? t.toString(): t)
+  }))
+  }))
+  
+if (!c || !['\\'', '\\"'].includes(c)) {
+
+}
+'\\n WrapLine';
+this.methodStore[prefixDicts.is + _.upperFirst(attr)] = () => this.config[attr] ?? false
+if (!(eofToken = this.expectToken(TOKEN_TYPE.EOF))) {
+  throw new Error(body, '解析出错');
+}
+const getMayBeMiddleToken = (type) => (...args) => {
+  return this.wrapInDecorator(AstFlagDicts.canUseTemplateLiteralMiddleString, () => this[type](...args))
+}
+this.wrapInDecorator(AstFlagDicts.canUseKeyWordAsKey, () => this[METHOD_TYPE.getIdentifierAst]())
+const { params:tParams, restTokens: tRestoken } = this
+async function * a() {
+  ff: while(true) {
+  hh:while(true) {
+    break;
+    continue;
+    break
+    ;
+    continue
+    ;
+    break
+    hh;
+    contine
+    ff;
+    break ff;
+    continue hh;
+    break ff;continue}
+}
+  yield 
+  yield
+  ;
+  yield 
+    1;
+
+    yield * [];
+  yield 1;
+  yield yield;
+  yield yield 1;
+  return  async() => {}
+  return
+  ;
+  return  1 + (async() => {}); 
+  return 
+  1;
+  if (true)return
+  if (true){return}
+}
+async () => 0
+window.a?.b
+class A extends Object{
+  constructor(){
+    super({x: 1})
+  }
+}
+console.log(new A())
+let i =0;
+do{i++;if(i<3)continue;console.log(i); if (i > 5) break}while(true)
+try{}catch{}finally{}
+try{}catch(e){}finally{}
+try{}catch{}
+try{}finally{}
+try{}catch(e){}
+/*let f = 4;
 switch(f) {
  case 4 : console.log('1');
 

@@ -112,3 +112,14 @@ export function log(x){
   console.log(x)
   return x;
 }
+
+export function PrivateIdentifierNameTransform(ast) {
+  if (ast.type !== 'PrivateIdentifier') {
+    throw '类型错误'
+  }
+  return {
+    ...ast,
+    type: 'Identifier',
+    name: '#' + ast.name,
+  }
+}

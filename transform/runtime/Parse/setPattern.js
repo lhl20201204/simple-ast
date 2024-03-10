@@ -8,7 +8,7 @@ import { getObjectPropertyExpressionKey } from "./parseObjectExpression";
 import { AST_DICTS, PROPERTY_DESCRIPTOR_DICTS, RUNTIME_LITERAL, RUNTIME_VALUE_TYPE } from "../constant";
 import { getObjectAttrOfPropertyDescriptor, isUndefinedRuntimeValue } from "../Environment/utils";
 import PropertyDescriptor from "../Environment/PropertyDescriptor";
-import { isInstanceOf } from "../../commonApi";
+import { PrivateIdentifierNameTransform, isInstanceOf } from "../../commonApi";
 import { createArray, createObject, getUndefinedValue } from "../Environment/RuntimeValueInstance";
 import { ensureAstHadConfig } from "../Environment/Generator/AstConfig";
 
@@ -120,6 +120,7 @@ function innerSetPattern(v, ast, env, restConfig ) {
   }
   switch(ast.type) {
     // case 'RuntimeValue': return setRuntimeValuePattern(v, ast, env, restConfig )
+    case 'PrivateIdentifier': return setIdentifierPattern(v, PrivateIdentifierNameTransform(ast), env, restConfig);
     case 'Identifier': return setIdentifierPattern(v, ast, env, restConfig);
     case 'AssignmentPattern': return setAssignmentPattern(v, ast, env, restConfig);
     case 'ArrayPattern': return setArrayPattern(v, ast, env, restConfig);
