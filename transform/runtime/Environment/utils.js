@@ -559,7 +559,9 @@ export function PromiseRvThen({
   promiseInstanceRv,
   thenCb,
   thenCbIntroduction = 'args',
+  catchCbIntroduction = 'args',
   env,
+  catchCb,
 }) {
   if (!isInstanceOf(env, Environment)
    || !isInstanceOf(promiseInstanceRv, RuntimePromiseInstanceValue)
@@ -571,36 +573,43 @@ export function PromiseRvThen({
     type: 'CallExpression',
     callee: {
       type: 'MemberExpression',
-      object: createRuntimeValueAst(  promiseInstanceRv, 'innerPromiseInstance'),
+      object: createRuntimeValueAst( promiseInstanceRv, 'innerPromiseInstance'),
       property: createRuntimeValueAst(createString('then'), 'then'),
       computed: false,
       optional: false,
     },
-    arguments: [
-      createRuntimeValueAst(generateFn(thenCbIntroduction, thenCb), thenCbIntroduction)
-    ]
+    arguments: _.compact([
+      createRuntimeValueAst(generateFn(thenCbIntroduction, thenCb), thenCbIntroduction),
+      catchCb && createRuntimeValueAst(generateFn(catchCbIntroduction, catchCb), catchCbIntroduction)
+    ])
   }, env)
 }
 
-export function PromiseRvResolve(valueRv, env) {
-  if (!isInstanceOf(env, Environment)
-  ) {
-    throw new Error('入参缺少env')
+function _innerGetResolveReject (attr) {
+  return function PromiseRvResolve(valueRv, env) {
+    if (!isInstanceOf(env, Environment)
+    ) {
+      throw new Error('入参缺少env')
+    }
+    return parseAst({
+      type: 'CallExpression',
+      callee: {
+        type: 'MemberExpression',
+        object: createRuntimeValueAst(getPromiseRv(), 'Promise'),
+        property: createRuntimeValueAst(createString(attr), attr),
+        computed: false,
+        optional: false,
+      },
+      arguments: [
+        createRuntimeValueAst(valueRv, '_innerValue'),
+      ]
+    }, env)
   }
-  return parseAst({
-    type: 'CallExpression',
-    callee: {
-      type: 'MemberExpression',
-      object: createRuntimeValueAst(getPromiseRv(), 'Promise'),
-      property: createRuntimeValueAst(createString('resolve'), 'resolve'),
-      computed: false,
-      optional: false,
-    },
-    arguments: [
-      createRuntimeValueAst(valueRv, '_innerValue'),
-    ]
-  }, env)
 }
+
+export const PromiseRvResolve = _innerGetResolveReject('resolve');
+
+export const PromiseRvReject = _innerGetResolveReject('reject');
 
 export function consolePromiseRv(PIrv, env) {
   if (!isInstanceOf(env, Environment)
@@ -636,7 +645,19 @@ export function createPromiseRvAndPromiseResolveCallback(env) {
       "type": "CallExpression",
       "callee": createRuntimeValueAst(ret.get('promiseResolve'), 'promiseResolve'),
       "arguments": [
-        createRuntimeValueAst(argsRv, '_innerargsRv')
+        createRuntimeValueAst(argsRv, '_innerArgsRv')
+      ],
+      "optional": false
+    }, env)},
+    promiseRejectCallback: (errorRv, env) => {
+      if (!isInstanceOf(env, Environment)) {
+        throw new Error('env比传')
+      }
+      return parseAst({
+      "type": "CallExpression",
+      "callee": createRuntimeValueAst(ret.get('promiseReject'), 'promiseReject'),
+      "arguments": [
+        createRuntimeValueAst(errorRv, '_innerErrorRvv')
       ],
       "optional": false
     }, env)}

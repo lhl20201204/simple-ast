@@ -2,7 +2,7 @@ import { createRuntimeValueAst, isFunctionRuntimeValue, isUndefinedRuntimeValue 
 import generateCode from "../Generate";
 
 import { DEBUGGER_DICTS, RUNTIME_LITERAL, RUNTIME_VALUE_TYPE, getRuntimeValueCreateByClassName } from "../constant";
-import RuntimeValue, { RuntimeRefValue, RuntimeConfigValue, RuntimeAwaitValue } from "./RuntimeValue";
+import RuntimeValue, { RuntimeRefValue, RuntimeConfigValue, RuntimeAwaitValue, RuntimePromiseInstanceValue } from "./RuntimeValue";
 import { SPAN_TAG_HTML, isInstanceOf } from "../../commonApi";
 import { getUndefinedValue } from "./RuntimeValueInstance";
 import PropertyDescriptor from "./PropertyDescriptor";
@@ -263,6 +263,14 @@ export default function parseRuntimeValue(rv, config = {}) {
         cloneObj['[[constructor]]'] = parseRuntimeValue(rv.getMergeCtorFunctionType(), subConfigLevel({
           ...config,
         })) ?? null
+      }
+
+      if (isInstanceOf(rv, RuntimePromiseInstanceValue)) {
+        Reflect.defineProperty(cloneObj, 'promise', {
+          get() {
+            return rv.getPromiseInstance()
+          }
+        })
       }
   
       cloneObj['[[Prototype]]'] = parseRuntimeValue(rv.getProto(), subConfigLevel(config)) ?? null

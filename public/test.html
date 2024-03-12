@@ -30,10 +30,60 @@
     // rrrr
     // rrrr
     function test() {
-      for({...rest} of [1, 2]) {
-        
+
+      let p = Promise.resolve(0)
+      for (let i = 0; i < 20; i++) {
+        p.then((x) => console.log('第' + x + '轮'))
+        p = p.then(() => i + 1)
       }
+      async function fff() {
+        try {
+          await Promise.reject('1111');
+          console.log('报错不能继续运行')
+        } catch (e) {
+          console.error('try catch捕获', e)
+        }
+      }
+
+      function wrap(f) {
+        return function (...args) {
+          return new Promise((res, rej) => {
+            f.call(this, ...args).next()
+              .then(({ value }) => {
+                console.log('async generator res', value)
+                res(value)
+              }, (e) => {
+                console.log('async generator rej', e)
+                rej(e)
+              })
+          })
+        }
+      }
+
+      const instance2 = wrap(async function* fff() {
+        await Promise.reject('1111');
+        console.log('报错不能继续运行')
+      })()
+
+      const instance = fff();
+      console.log('instance', instance instanceof Promise, instance)
+      instance.catch(console.warn);
+
+      instance2.catch((E) => console.warn('2', E))
+
+      instance.then(x => {
+        console.log('-1-->', x)
+      }).catch(e => {
+        console.error('-2-->', e)
+      })
+
+      instance2.then(x => {
+        console.log('-3-->', x)
+      }).catch(e => {
+        console.error('-4-->', e)
+      })
     }
+    test()
 
 
     function test54() {
@@ -43,7 +93,7 @@
       }
       const fffff = fff.call({ ff: 555 }, 80)
       fffff.then(console.log)
-     
+
     }
     function test53() {
       async function* foo() {

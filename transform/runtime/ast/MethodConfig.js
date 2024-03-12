@@ -251,6 +251,7 @@ export const MethodConfig = {
     [METHOD_TYPE.getArrayExpressionAst]: TOKEN_TYPE.LeftBracket,
     [METHOD_TYPE.getParenthesiOrArrowFunctionExpressionAst]: TOKEN_TYPE.LeftParenthesis,
     [METHOD_TYPE.getFunctionExpressionOrWithArrowAst]: [TOKEN_TYPE.async, TOKEN_TYPE.function],
+    [METHOD_TYPE.getClassExpressionAst]: TOKEN_TYPE.class,
     [METHOD_TYPE.getIdentifierOrArrowFunctionAst]: IdentifierAstTokenTypeList,
     [METHOD_TYPE.getThisExpressionAst]: TOKEN_TYPE.this,
     [METHOD_TYPE.getSuperAst]: TOKEN_TYPE.super,

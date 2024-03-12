@@ -759,9 +759,12 @@ export default class AST extends SourceCodeHandleApi {
     })
   }
 
-  [METHOD_TYPE.getClassDeclarationAst]() {
+  _innerGetClassAst = (astType, isExp = false) => () => {
     const restTokens = [this.expectToken(TOKEN_TYPE.class)];
-    const id = this[METHOD_TYPE.getIdentifierAst]();
+    let id = null;
+    if (!isExp || this.nextTokenIs(IdentifierAstTokenTypeList)) {
+      id = this[METHOD_TYPE.getIdentifierAst]();
+    }
     let superClass = null;
     if (this.nextTokenIs(TOKEN_TYPE.extends)) {
       restTokens.push(this.eatToken());
@@ -769,14 +772,18 @@ export default class AST extends SourceCodeHandleApi {
     }
     const body = this[METHOD_TYPE.getClassBodyAst]();
     return this.createAstItem({
-      type: AST_TYPE.ClassDeclaration,
+      type: astType,
       id,
       superClass,
       body,
       restTokens,
     })
-  }
+  };
 
+  [METHOD_TYPE.getClassExpressionAst] = this._innerGetClassAst(AST_TYPE.ClassExpression, true);
+
+  [METHOD_TYPE.getClassDeclarationAst] = this._innerGetClassAst(AST_TYPE.ClassDeclaration, false);
+  
   [METHOD_TYPE.getArrayPatternAst] = this._innerGetArrayOrObjectPattern(
     [TOKEN_TYPE.LeftBracket, TOKEN_TYPE.RightBracket],
     METHOD_TYPE.getPatternAst,

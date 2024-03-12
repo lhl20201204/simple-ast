@@ -115,7 +115,6 @@ export default class Environment {
 
   addVar(key, value) {
     if (this.keyMap.get(key) === 'params') {
-      console.log(this)
       return;
     }
     if (this.keyMap.has(key)
@@ -379,8 +378,11 @@ export default class Environment {
   }
 
   isInGeneratorEnv() {
-    return this.currentIsGeneratorFunctionEnv() ||
-      (!!this.parent && this.parent.isInGeneratorEnv())
+    let t = this;
+    while(t && !t.isFunctionEnv()) {
+      t = t.parent;
+    }
+    return t?.currentIsGeneratorFunctionEnv?.();
   }
 
   setCurrentIsGeneratorFunctionEnv(bool) {

@@ -1,12 +1,15 @@
 let code = `
 (()=> {
   let promiseResolve = null;
-  let promise =new Promise(r => {
-    promiseResolve = r
+  let promiseReject = null;
+  let promise =new Promise((res, rej) => {
+    promiseResolve = res
+    promiseReject = rej
   })
   return {
     promise,
-    promiseResolve
+    promiseResolve,
+    promiseReject
   }
 })();
 `
@@ -14,11 +17,11 @@ let code = `
 export const _codePromiseResolveAst =  {
   "type": "CallExpression",
   "start": 0,
-  "end": 150,
+  "end": 232,
   "callee": {
     "type": "ArrowFunctionExpression",
     "start": 1,
-    "end": 147,
+    "end": 229,
     "id": null,
     "expression": false,
     "generator": false,
@@ -27,7 +30,7 @@ export const _codePromiseResolveAst =  {
     "body": {
       "type": "BlockStatement",
       "start": 6,
-      "end": 147,
+      "end": 229,
       "body": [
         {
           "type": "VariableDeclaration",
@@ -58,33 +61,59 @@ export const _codePromiseResolveAst =  {
         {
           "type": "VariableDeclaration",
           "start": 39,
-          "end": 98,
+          "end": 64,
           "declarations": [
             {
               "type": "VariableDeclarator",
               "start": 43,
-              "end": 98,
+              "end": 63,
               "id": {
                 "type": "Identifier",
                 "start": 43,
-                "end": 50,
+                "end": 56,
+                "name": "promiseReject"
+              },
+              "init": {
+                "type": "Literal",
+                "start": 59,
+                "end": 63,
+                "value": null,
+                "raw": "null"
+              }
+            }
+          ],
+          "kind": "let"
+        },
+        {
+          "type": "VariableDeclaration",
+          "start": 67,
+          "end": 161,
+          "declarations": [
+            {
+              "type": "VariableDeclarator",
+              "start": 71,
+              "end": 161,
+              "id": {
+                "type": "Identifier",
+                "start": 71,
+                "end": 78,
                 "name": "promise"
               },
               "init": {
                 "type": "NewExpression",
-                "start": 52,
-                "end": 98,
+                "start": 80,
+                "end": 161,
                 "callee": {
                   "type": "Identifier",
-                  "start": 56,
-                  "end": 63,
+                  "start": 84,
+                  "end": 91,
                   "name": "Promise"
                 },
                 "arguments": [
                   {
                     "type": "ArrowFunctionExpression",
-                    "start": 64,
-                    "end": 97,
+                    "start": 92,
+                    "end": 160,
                     "id": null,
                     "expression": false,
                     "generator": false,
@@ -92,36 +121,65 @@ export const _codePromiseResolveAst =  {
                     "params": [
                       {
                         "type": "Identifier",
-                        "start": 64,
-                        "end": 65,
-                        "name": "r"
+                        "start": 93,
+                        "end": 96,
+                        "name": "res"
+                      },
+                      {
+                        "type": "Identifier",
+                        "start": 98,
+                        "end": 101,
+                        "name": "rej"
                       }
                     ],
                     "body": {
                       "type": "BlockStatement",
-                      "start": 69,
-                      "end": 97,
+                      "start": 106,
+                      "end": 160,
                       "body": [
                         {
                           "type": "ExpressionStatement",
-                          "start": 75,
-                          "end": 93,
+                          "start": 112,
+                          "end": 132,
                           "expression": {
                             "type": "AssignmentExpression",
-                            "start": 75,
-                            "end": 93,
+                            "start": 112,
+                            "end": 132,
                             "operator": "=",
                             "left": {
                               "type": "Identifier",
-                              "start": 75,
-                              "end": 89,
+                              "start": 112,
+                              "end": 126,
                               "name": "promiseResolve"
                             },
                             "right": {
                               "type": "Identifier",
-                              "start": 92,
-                              "end": 93,
-                              "name": "r"
+                              "start": 129,
+                              "end": 132,
+                              "name": "res"
+                            }
+                          }
+                        },
+                        {
+                          "type": "ExpressionStatement",
+                          "start": 137,
+                          "end": 156,
+                          "expression": {
+                            "type": "AssignmentExpression",
+                            "start": 137,
+                            "end": 156,
+                            "operator": "=",
+                            "left": {
+                              "type": "Identifier",
+                              "start": 137,
+                              "end": 150,
+                              "name": "promiseReject"
+                            },
+                            "right": {
+                              "type": "Identifier",
+                              "start": 153,
+                              "end": 156,
+                              "name": "rej"
                             }
                           }
                         }
@@ -136,53 +194,74 @@ export const _codePromiseResolveAst =  {
         },
         {
           "type": "ReturnStatement",
-          "start": 101,
-          "end": 145,
+          "start": 164,
+          "end": 227,
           "argument": {
             "type": "ObjectExpression",
-            "start": 108,
-            "end": 145,
+            "start": 171,
+            "end": 227,
             "properties": [
               {
                 "type": "Property",
-                "start": 114,
-                "end": 121,
+                "start": 177,
+                "end": 184,
                 "method": false,
                 "shorthand": true,
                 "computed": false,
                 "key": {
                   "type": "Identifier",
-                  "start": 114,
-                  "end": 121,
+                  "start": 177,
+                  "end": 184,
                   "name": "promise"
                 },
                 "kind": "init",
                 "value": {
                   "type": "Identifier",
-                  "start": 114,
-                  "end": 121,
+                  "start": 177,
+                  "end": 184,
                   "name": "promise"
                 }
               },
               {
                 "type": "Property",
-                "start": 127,
-                "end": 141,
+                "start": 190,
+                "end": 204,
                 "method": false,
                 "shorthand": true,
                 "computed": false,
                 "key": {
                   "type": "Identifier",
-                  "start": 127,
-                  "end": 141,
+                  "start": 190,
+                  "end": 204,
                   "name": "promiseResolve"
                 },
                 "kind": "init",
                 "value": {
                   "type": "Identifier",
-                  "start": 127,
-                  "end": 141,
+                  "start": 190,
+                  "end": 204,
                   "name": "promiseResolve"
+                }
+              },
+              {
+                "type": "Property",
+                "start": 210,
+                "end": 223,
+                "method": false,
+                "shorthand": true,
+                "computed": false,
+                "key": {
+                  "type": "Identifier",
+                  "start": 210,
+                  "end": 223,
+                  "name": "promiseReject"
+                },
+                "kind": "init",
+                "value": {
+                  "type": "Identifier",
+                  "start": 210,
+                  "end": 223,
+                  "name": "promiseReject"
                 }
               }
             ]

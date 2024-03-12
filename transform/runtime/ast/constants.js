@@ -173,7 +173,8 @@ export const AST_TYPE = {
   DoWhileStatement: 'DoWhileStatement',
   Super: 'Super',
   ChainExpression: 'ChainExpression',
-  PrivateIdentifier: 'PrivateIdentifier'
+  PrivateIdentifier: 'PrivateIdentifier',
+  ClassExpression: 'ClassExpression'
 }
 
 export const ReservedKeyList = [
@@ -308,7 +309,8 @@ export const METHOD_TYPE = {
   getTryStatementAst: 'getTryStatementAst',
   getDoWhileStatementAst: 'getDoWhileStatementAst',
   getSuperAst: 'getSuperAst',
-  getYieldAst: 'getYieldAst'
+  getYieldAst: 'getYieldAst',
+  getClassExpressionAst: 'getClassExpressionAst',
 }
 
 export const AstFlagDicts = {

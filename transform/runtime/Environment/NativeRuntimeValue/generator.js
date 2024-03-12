@@ -1,11 +1,13 @@
+import Environment from ".."
+import parseAst from "../.."
 import { isInstanceOf } from "../../../commonApi"
 import { isAwaitError } from "../../Parse/parseAwaitExpression"
 import { getYieldEnv, getYieldValue, isYieldError } from "../../Parse/parseYieldExpression"
 import { RUNTIME_VALUE_DICTS } from "../../constant"
-import { RuntimeGeneratorInstanceValue, RuntimePromiseInstanceValue } from "../RuntimeValue"
+import RuntimeValue, { RuntimeGeneratorInstanceValue, RuntimePromiseInstanceValue } from "../RuntimeValue"
 import { createGeneratorInstance, createObject, getFalseV, getGenerateFn, getTrueV, getUndefinedValue } from "../RuntimeValueInstance"
 import parseRuntimeValue from "../parseRuntimeValue"
-import { PromiseRvResolve, PromiseRvThen, createPromiseRvAndPromiseResolveCallback, getGenerateInstanceConfig } from "../utils"
+import { PromiseRvReject, PromiseRvResolve, PromiseRvThen, createIdentifierAst, createPromiseRvAndPromiseResolveCallback, createRuntimeValueAst, getGenerateInstanceConfig } from "../utils"
 import { getJsSymbolIterator } from "./symbol"
 
 let generatorRv
@@ -16,9 +18,28 @@ export function getGeneratorPrototypeRv() {
   if (!generatorPrototypeRv) {
     const generateFn = getGenerateFn()
     const handle = (nextRv, _this, env) => {
+      const execute = (attr, rv, env) => {
+        if (!isInstanceOf(rv, RuntimeValue) || !isInstanceOf(env, Environment)) {
+          throw '类型错误'
+        }
+        return parseAst({
+        "type": "CallExpression",
+        "callee": {
+          "type": "MemberExpression",
+          "object": createRuntimeValueAst(_this, 'this'),
+          "property": createIdentifierAst(attr),
+          "computed": false,
+          "optional": false
+        },
+        "arguments": [
+          createRuntimeValueAst(rv, 'args')
+        ],
+        "optional": false
+      }, env)}
+      
       const generateConfig = _this.getGenerateConfig()
       const canAwaitable = generateConfig.canAwaitable()
-      const run = (nextRv, promiseResolveCallback) => {
+      const run = (nextRv, promiseResolveCallback, promiseRejectCallback) => {
         let tempE = null;
         generateConfig.setNextValue(nextRv ?? getUndefinedValue());
         let value = getUndefinedValue()
@@ -44,11 +65,15 @@ export function getGeneratorPrototypeRv() {
           });
           if (tempE && isAwaitError(tempE)) {
             const retRv = PromiseRvThen({
-              promiseInstanceRv: PromiseRvResolve(value, env),
+              promiseInstanceRv:  PromiseRvResolve(value, env),
               thenCb: ([resRv]) => {
-                return run(resRv, promiseResolveCallback)
+                return run(resRv, promiseResolveCallback, promiseRejectCallback)
               },
               thenCbIntroduction: 'async$generator$auto$then$callback',
+              catchCbIntroduction: 'async$generator$auto$catch$callback',
+              catchCb: ([e], { env }) => {
+                return execute('throw', e, env)
+              },
               env
             })
 
@@ -77,7 +102,7 @@ export function getGeneratorPrototypeRv() {
       }
       if (canAwaitable) {
         const lastPromiseRv = generateConfig.getPendingPromiseNextValue()
-        const { promiseRv, promiseResolveCallback } = createPromiseRvAndPromiseResolveCallback(env)
+        const { promiseRv, promiseResolveCallback, promiseRejectCallback } = createPromiseRvAndPromiseResolveCallback(env)
         generateConfig.setPendingPromiseNextValue(promiseRv);
 
         if (isInstanceOf(lastPromiseRv, RuntimePromiseInstanceValue)) {
@@ -86,23 +111,39 @@ export function getGeneratorPrototypeRv() {
               env,
               promiseInstanceRv: lastPromiseRv,
               thenCb: () => {
-                run(nextRv, promiseResolveCallback)
-              }
+                run(nextRv, promiseResolveCallback, promiseRejectCallback)
+              },
+              catchCb: ([e], { env }) => {
+                return execute('throw', e, env)
+              },
             })
           }
         } else {
-          run(nextRv, promiseResolveCallback);
+          run(nextRv, promiseResolveCallback, promiseRejectCallback);
         }
-        const { promiseRv: promiseRv2, promiseResolveCallback: promiseResolveCallback2 } = createPromiseRvAndPromiseResolveCallback(env)
+        const { 
+          promiseRv: promiseRv2, 
+          promiseResolveCallback: promiseResolveCallback2,
+          promiseRejectCallback: promiseRejectCallback2
+         } = createPromiseRvAndPromiseResolveCallback(env)
         PromiseRvThen({
           env,
           promiseInstanceRv: promiseRv,
           thenCb: ([argsRv]) => {
             generateConfig.pendingResolveCallbackList.shift()
             promiseResolveCallback2(argsRv, env);
-          }
+          },
+          catchCb: ([e], { env }) => {
+            return execute('throw', e, env)
+          },
         });
-        generateConfig.pendingResolveCallbackList.push([promiseResolveCallback, promiseResolveCallback2])
+        generateConfig.pendingResolveCallbackList.push([
+          promiseResolveCallback, 
+          promiseResolveCallback2,
+          promiseRejectCallback,
+          promiseRejectCallback2,
+        ])
+  
         return promiseRv2
       }
       return run(nextRv)
@@ -134,7 +175,7 @@ export function getGeneratorPrototypeRv() {
         }
         const generateConfig = _this.getGenerateConfig()
         const env = generateConfig.getYieldEnv();
-        if (env) {
+        if (env) { 
           env.envStackStore.setError(errRv)
         } else {
           generateConfig.setPendingErrorValue(errRv);

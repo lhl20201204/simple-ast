@@ -86,10 +86,18 @@ export default class GeneratorConfig {
       throw new Error('index 必须为数字')
     }
     this.pendingResolveCallbackList.shift()
-    this.pendingResolveCallbackList.forEach(t => t[index](createObject({
-      value: getUndefinedValue(),
-      done: getTrueV()
-    }), env))
+    this.pendingResolveCallbackList.forEach(t => {
+      t[index](createObject({
+        value: getUndefinedValue(),
+        done: getTrueV()
+      }), env);
+
+      t[index + 2](createObject({
+        value: getUndefinedValue(),
+        done: getTrueV()
+      }), env);
+      }
+    )
     this.pendingResolveCallbackList.length = 0;
   }
 

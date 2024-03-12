@@ -12,7 +12,7 @@ import { createPromiseRvAndPromiseResolveCallback } from "./transform/runtime/En
 import { AstJSON, copyToClipboard, debounceCopyToClipboard, diffStr, isInstanceOf } from "./transform/commonApi";
 import ASTItem from "./transform/runtime/ast/ASTITem";
 import { getYieldValue, isYieldError } from "./transform/runtime/Parse/parseYieldExpression";
-import { RuntimeAwaitValue } from "./transform/runtime/Environment/RuntimeValue";
+import RuntimeValue, { RuntimeAwaitValue } from "./transform/runtime/Environment/RuntimeValue";
 import parseRuntimeValue from "./transform/runtime/Environment/parseRuntimeValue";
 import { innerParseProgram } from "./transform/runtime/Parse/parseProgram";
 import { CookedToRaw, rawToCooked } from "./transform/runtime/ast/utils";
@@ -286,7 +286,7 @@ source.addEventListener('keypress', function (e) {
         (!tContainer.nextSibling ||
           tContainer.nextSibling instanceof HTMLBRElement)
       ) {
-        // console.warn('文字末尾换行');
+        console.warn('文字末尾换行');
         document.execCommand('insertHTML', false, '<br/><br/>');
         const r = new Range();
         selection.removeAllRanges();
@@ -300,24 +300,24 @@ source.addEventListener('keypress', function (e) {
       ) {
         let nextContainer =
           tContainer instanceof HTMLBRElement
-            ? tContainer.nextSibling
+            ? nextContainer
             : tContainer.childNodes[t.endOffset]?.nextSibling;
         document.execCommand('insertHTML', false, '<br/><br/>');
         nextContainer =
           nextContainer?.previousSibling ||
           _.last(source.childNodes);
-        // console.warn(
-        //   '空白换行',
-        //   nextContainer === tContainer,
-        //   nextContainer,
-        // );
+        console.warn(
+          '空白换行',
+          nextContainer === tContainer,
+          nextContainer,
+        );
         const r = new Range();
         selection.removeAllRanges();
         r.setStart(nextContainer, 0);
         r.setEnd(nextContainer, 0);
         selection.addRange(r);
       } else {
-        // console.warn('文字中间换行', tContainer);
+        console.warn('文字中间换行', tContainer);
         document.execCommand('insertHTML', false, '<br/>');
       }
     }
@@ -629,3 +629,10 @@ window.addEventListener("load", () => {
     changeSourceCodeContent(textList.getText(AST.selectMethod))
   }
 });
+
+window.addEventListener('unhandledrejection', (x) => {
+  if (isInstanceOf(x.reason, RuntimeValue)) {
+    x.preventDefault()
+    Promise.reject(parseRuntimeValue(x.reason))
+  }
+})

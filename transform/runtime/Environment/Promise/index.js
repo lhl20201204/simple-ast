@@ -18,21 +18,24 @@ export default function createPromiseInstanceRv(config) {
   }
   const ret =  new RuntimePromiseInstanceValue(RUNTIME_VALUE_TYPE.object, value, 
     _.omit(config, [RUNTIME_VALUE_DICTS.PromiseResult,RUNTIME_VALUE_DICTS.PromiseState]))
-  const promise = ret.getPromiseInstance();
-  const getHandle =(type) =>(rv = getUndefinedValue()) => {
-    // console.warn(type)
-    ret.setPromiseResult(rv)
-    ret.setPromiseState(createString(type))
-  }
+  
+  // const promise = ret.getPromiseInstance();
+  // const getHandle =(type, rv = getUndefinedValue()) => {
+  //   // console.warn(type)
+  //   ret.setPromiseResult(rv)
+  //   ret.setPromiseState(createString(type))
+  // }
 
   // (async () => {
+  //   // 借助原生js的promise。。。
   //   try {
   //     const x = await promise;
   //     // console.warn(x, promise.state)
-  //     getHandle('fulfilled')(x)
+  //     getHandle('fulfilled', x)
   //   } catch(e) {
   //     e = JSErrorToRuntimeValue(e)
-  //     getHandle('rejected')(e)
+  //     getHandle('rejected', e)
+  //     throw e;
   //   }
   // })();
   return ret;

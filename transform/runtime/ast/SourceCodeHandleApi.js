@@ -32,9 +32,9 @@ export class SourceCodeHandleApi {
 
   expectToken(type) {
     if (_.isNil(type) || !this.nextTokenIs(type)) {
-      console.log(this.sourceCode)
+      console.log(new Error().stack)
       const token = this.eatToken();
-      console.log(type, this.astContext)
+      // console.log(type, this.astContext)
       const e = new Error(`${token.startRow}行:${token.startCol}列-${token.endRow}行:${token.endCol}列  预期是${type}`);
       e.token = token
       throw e;

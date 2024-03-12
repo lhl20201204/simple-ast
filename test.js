@@ -140,66 +140,81 @@ console.log('else')
 }`
 export const isProgram = `
 
-generateFn((
-  [
-    objRv,
-    attrRv,
-  ],
-) => {
-  return createArray(_.map(objRv.keys(), t => {
-    return createString(isJsSymbolType(t) ? t.toString(): t)
-  }))
+let p = Promise.resolve(0)
+for(let i=0; i< 20; i++) {
+   p.then((x) => console.log('第' + x + '轮'))
+   p = p.then(() => i+ 1)
+}
+async function fff() {
+  try {
+  await Promise.reject('1111');
+  console.log('报错不能继续运行')
+  } catch(e) {
+    console.error('try catch捕获', e)
+  }
+}
+
+function wrap(f) {
+  return function (...args) { 
+    return new Promise((res, rej)=> {
+        f.call(this,...args).next()
+        .then(({value}) => {
+          console.log('async generator res', value)
+          res(value)
+        },(e) => { 
+          console.log('async generator rej', e)
+          rej(e) 
+        }) 
+     }) 
+  }
+}
+
+
+
+const instance = fff();
+console.log('instance', instance instanceof Promise, instance)
+instance.catch(console.warn);
+instance.then(x => {
+  console.log('-1-->', x)
+}).catch(e => {
+  console.error('-2-->',e)
 })
 
+/*const instance2 = wrap(async function * fff() {
+  await Promise.reject('1111');
+  console.log('报错不能继续运行')
+})()
+instance2.catch((E) => console.warn('2', E))
 
 
 
+instance2.then(x => {
+  console.log('-3-->', x)
+}).catch(e => {
+  console.error('-4-->',e)
+})
 
-function getDebuggerStatementCode(ast, config) {
-  const text = purple(RUNTIME_LITERAL.debugger, config);
-  if (config[DEBUGGER_DICTS.isHTMLMode]) {
-  const spanId = \`currentDebuggerSpan\`;
-  // setTimeout(() => {
-  // const dom = document.getElementById(spanId);
-  // if (dom) {
-  // const child = document.getElementById('debuggerScene');
-  // document.body.removeChild(child);
-  // dom.appendChild(child);
-  // }
-  
-  // }, 0)
-  return \`\${text}\`
+/*const ccc = class extends Object{
+  constructor(a) {
+    super({})
+    this.a = a
   }
-  return text;
+}
+
+console.log(new ccc(666))
+
+function test(a) {
+  console.log(a)
+   a = 1;
+  return
+  if (true) {
+    function a() {
+
+    }
   }
-
-
-  
-
-windowRv.get('Reflect').setWithDescriptor('ownKeys', generateFn('Reflect$ownKeys', (
-  [
-  objRv,
-  attrRv,
-  ],
-  ) => {
-  return createArray(_.map(objRv.keys(), t => {
-  return createString(isJsSymbolType(t) ? t.toString(): t)
-  }))
-  }))
-  
-if (!c || !['\\'', '\\"'].includes(c)) {
-
 }
-'\\n WrapLine';
-this.methodStore[prefixDicts.is + _.upperFirst(attr)] = () => this.config[attr] ?? false
-if (!(eofToken = this.expectToken(TOKEN_TYPE.EOF))) {
-  throw new Error(body, '解析出错');
-}
-const getMayBeMiddleToken = (type) => (...args) => {
-  return this.wrapInDecorator(AstFlagDicts.canUseTemplateLiteralMiddleString, () => this[type](...args))
-}
-this.wrapInDecorator(AstFlagDicts.canUseKeyWordAsKey, () => this[METHOD_TYPE.getIdentifierAst]())
-const { params:tParams, restTokens: tRestoken } = this
+test(22)
+
 async function * a() {
   ff: while(true) {
   hh:while(true) {
