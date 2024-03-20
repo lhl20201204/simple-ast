@@ -58,8 +58,16 @@ export class EnvJSON {
 
 // 加快速率不继承了
 export class AstJSON {
-  constructor(x) {
-    Object.assign(this, x)
+  constructor(ret) {
+    Object.defineProperty(this, 'return', {
+      enumerable: false,
+      writable: false,
+      configurable: false,
+      value: ret,
+    })
+  }
+  set(k, v) {
+    this[k] = v;
   }
 }
 

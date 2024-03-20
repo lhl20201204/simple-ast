@@ -139,6 +139,28 @@ console.log('else if')
 console.log('else')
 }`
 export const isProgram = `
+async function  ag() {
+  try {
+  const f = await Promise.resolve(7777);
+  console.log('后面的句子', f)
+  } finally{
+    throw 8888
+  }
+}
+console.log(ag().then(x => x, console.warn))
+/*const ag = async function * ag() {
+  try {
+  await Promise.reject('1111');
+  console.log('报错不能继续运行')
+  } finally {
+    console.error('finally捕获')
+  }
+};
+
+const agx = ag();
+console.log(agx.next()
+.then((x) =>console.log(x), x =>console.warn(x, '--->'))
+)
 
 let p = Promise.resolve(0)
 for(let i=0; i< 20; i++) {
@@ -153,6 +175,7 @@ async function fff() {
     console.error('try catch捕获', e)
   }
 }
+
 
 function wrap(f) {
   return function (...args) { 

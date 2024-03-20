@@ -1,26 +1,31 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>js语法执行</title>
 </head>
+
 <body>
   <div id="selectWrap">
     <button id="paste">粘贴ast到中间的框</button>
     <select id="mode">
-   </select>
-   <button id="closeOrOpenDiffJson"></button>
+    </select>
+    <button id="closeOrOpenDiffJson"></button>
   </div>
-  
-   <div id="container">
-    <div id="source_copy_wrap"><div id="source_copy" contenteditable="true"></div></div>
+  <div id="container">
+    <div id="source_copy_wrap">
+      <div id="source_copy" contenteditable="true"></div>
+    </div>
     <div id="source" contenteditable="true">
     </div>
-    <div id="astJsonContainer"  contenteditable="true"></div>
-    <div id="envJsonContainer"  contenteditable="true"></div>
-   </div>
+    <div id="astJsonContainerWrap">
+      <div id="astJsonContainer" contenteditable="true"></div>
+    </div>
+    <div id="envJsonContainer" contenteditable="true"></div>
+  </div>
   <div id="debuggerScene">
     <div style="text-align: center;">
       <button id="debuggerBtn">结束调试</button>
@@ -30,12 +35,12 @@
   <button id="focuableButton"></button>
 </body>
 <style>
-  *{
+  * {
     padding: 0;
     margin: 0;
   }
-  
-  #paste{
+
+  #paste {
     cursor: pointer;
   }
 
@@ -45,7 +50,7 @@
     position: relative;
   }
 
-  #closeOrOpenDiffJson::before{
+  #closeOrOpenDiffJson::before {
     content: '自动JSON对比:';
     position: absolute;
     left: 0;
@@ -53,20 +58,20 @@
     white-space: nowrap;
     transform: translate(calc(-100% - 8px), -50%);
   }
-  
-  #selectWrap{
+
+  #selectWrap {
     display: flex;
     justify-content: center;
   }
 
-  #selectWrap > select{
+  #selectWrap>select {
     margin: 10px;
     min-width: 200px;
   }
 
   #source,
-  #astJsonContainer,
-  #envJsonContainer{
+  #astJsonContainerWrap,
+  #envJsonContainer {
     border: 1px solid #252525;
     overflow: auto;
   }
@@ -95,33 +100,42 @@
     pointer-events: none;
   }
 
-  #container{
+  #container {
     margin-top: 20px;
     position: relative;
     height: 93vh;
     display: flex;
   }
-  #astJsonContainer,
+
+  #astJsonContainerWrap {
+    overflow-x: scroll;
+  }
+
+  #astJsonContainer{
+    white-space: nowrap;
+  }
+
+  #astJsonContainerWrap,
   #source,
-  #envJsonContainer{
+  #envJsonContainer {
     width: 30%;
     margin: 0 1%;
     height: 100%;
     resize: none;
   }
 
-  #debuggerScene{
+  #debuggerScene {
     z-index: 999;
     opacity: 0;
     border: 1px solid black;
     background-color: black;
-    position : absolute;
-    left : 60px;
-    top : 0;
-    transform : translateY( -100%);
+    position: absolute;
+    left: 60px;
+    top: 0;
+    transform: translateY(-100%);
   }
 
-  #debuggerText{
+  #debuggerText {
     /* color: white; */
     background: white;
     padding: 20px;
@@ -130,11 +144,13 @@
     overflow: auto;
   }
 
-  .selectedBottomColor{
+  .selectedBottomColor {
     border-bottom: 3px solid red;
   }
-  .selectedBottomColor .space{
+
+  .selectedBottomColor .space {
     border-bottom: 3px solid white;
   }
 </style>
+
 </html>

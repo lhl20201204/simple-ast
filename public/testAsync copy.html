@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" >
+  <title>正宗</title>
+</head>
+
+<body>
+
+  <script>
+  //   let p = Promise.resolve(0);
+  //  for(let i = 0; i< 20; i++) {
+  //    p.then((x) => console.log('第' + x + '轮'))
+  //    p = p.then(() => i + 1)
+  //  }
+
+   async function ff() {
+      try{
+        const ff = await Promise.resolve(7777)
+        console.log('后面的句子', ff)
+      } finally {
+        throw 777
+      }
+   }
+   console.log(ff().then(x => x, console.warn))
+
+  </script>
+
+</body>
+
+</html>

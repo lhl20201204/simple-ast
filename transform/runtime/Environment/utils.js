@@ -61,7 +61,7 @@ export function isNumberRuntimeValue(rv, ...args) {
 
 export function createRuntimeValueAst(value, name, ast) {
   if (!isInstanceOf(value, RuntimeValue) && !_.isFunction(value)) {
-    console.error(value)
+    console.error(value, new Error().stack)
     throw new Error('创建失败')
   }
   const ret = new RuntimeValueAst({
@@ -652,6 +652,10 @@ export function createPromiseRvAndPromiseResolveCallback(env) {
     promiseRejectCallback: (errorRv, env) => {
       if (!isInstanceOf(env, Environment)) {
         throw new Error('env比传')
+      }
+      if (!isInstanceOf(errorRv, RuntimeValue)) {
+        // console.log(errorRv.toString())
+        errorRv = createString(errorRv.toString())
       }
       return parseAst({
       "type": "CallExpression",

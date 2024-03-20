@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" >
+  <title>仿照</title>
+</head>
+
+<body>
+
+  <script>
+    // 运行时，async， await 伪代码。
+    let lastPromise = null;
+    let err = null;
+    let ret = null;
+    let done = false;
+    let nextValue = null;
+    let needRun = new Array(10).fill(true);
+    let index = 0;
+
+    class YieldError {
+      constructor(obj, index) {
+        this.value = obj
+        this.index = index;
+      }
+
+      getIndex() {
+        return this.index;
+      }
+
+      getValue() {
+        return this.value;
+      }
+    }
+
+    class AwaitError extends YieldError {
+
+    }
+
+    const getP = () => {
+      let res = null;
+      let rej = null;
+      let p = new Promise((x, y) => {
+        res = x;
+        rej = y;
+      })
+      return {
+        p,
+        res,
+        rej,
+      }
+    }
+
+    const getNext = () => {
+      return nextValue;
+    }
+
+    const getAwait = (cb) => {
+      if (needRun[index]) {
+        throw new AwaitError(cb(), index)
+      } else {
+        index++;
+        return getNext()
+      }
+    }
+
+    const wrapInMemo = (cb) => {
+      if (needRun[index]) {
+          cb();
+          needRun[index] = false
+      }
+      index ++;
+    }
+
+    const runCode = () => {
+      index = 0;
+      let tempE = null;
+      try {
+        if (ret) {
+          return ret;
+        }
+        if (err) {
+          throw err;
+        }
+        const ff = getAwait(() => Promise.resolve(7777))
+        wrapInMemo(() => console.log('后面的句子', ff))
+      } catch(E) {
+        if (E instanceof YieldError) {
+          tempE = E
+        } else {
+          throw E;
+        }
+      } finally{
+        if (tempE) {
+          throw tempE
+        }
+        wrapInMemo(() => {
+          throw 8888
+        })
+      }
+    }
+
+    const run = (v, res, rej, type) => {
+      nextValue = v;
+      let tempE = null
+      let value = null;
+      try {
+        value = runCode()
+        done = true;
+      } catch (e) {
+        if (e instanceof YieldError) {
+          value = e.getValue()
+          needRun[e.getIndex()] = false;
+          tempE = e;
+        } else {
+          // done = true;
+          // rej(e)
+          rej(e)
+        }
+      }
+
+      if (tempE instanceof AwaitError) {
+        // 获得await 的那个值。
+        Promise.resolve(value).then(
+          (x) => {
+            run(x, res, rej)
+          },
+          (e) => {
+            const p1 = agx.throw(e).then(res, rej);
+          }
+        )
+
+        const tret = Promise.resolve({
+          value,
+          done,
+        })
+
+        if (!lastPromise) {
+          lastPromise = tret;
+        }
+
+        return tret;
+      }
+      
+      const tret2 = Promise.resolve({
+        value,
+        done,
+      })
+
+      if (done) {
+        res(tret2)
+      }
+      return tret2;
+    }
+
+
+    const handle = (v, type) => {
+      const { p, res, rej } = getP();
+      const t = lastPromise;
+      lastPromise = p;
+      if (t && type !== 'throw') {
+        // 非首次
+        t.then((x) => {
+          run(v, res, rej)
+        }) 
+      } else {
+        // 首次进来
+        run(v, res, rej, type)
+      }
+
+      // 包一层
+      return new Promise((r, x) => {
+        p.then(r, x);
+      })
+    }
+
+    const agx = {
+      next(x) {
+        return handle(x, 'next')
+      },
+      throw(x) {
+        err = x;
+        return handle(undefined, 'throw')
+      },
+      return(x) {
+        ret = x;
+        return handle(undefined, 'return')
+      }
+    }
+
+
+    console.log(agx.next().then(x => x, console.warn))
+
+
+  </script>
+
+</body>
+
+</html>

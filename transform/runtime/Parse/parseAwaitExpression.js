@@ -24,7 +24,7 @@ export default function parseAwaitExpression(ast, env) {
       return env.getNextValue();
     }
     // yield 关键字底层用Error抛出处理；
-    const e = new Error('yield 中断停止');
+    const e = new Error('await 中断停止');
     // 设置唯一标志符
     setIsAwaitError(e, )
     setYieldValue(e, yieldRv);

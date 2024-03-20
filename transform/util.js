@@ -37,7 +37,6 @@ function randomColor(c) {
 export function relaceTextToHtml(str) {
   try {
     const ret = [];
-    let  i =0, len  = str.length;
     _.forEach(str, (x, i) => {
       if (x === '\n') {
         ret.push(`<br data-index="${i}" />`);
@@ -252,7 +251,7 @@ export function convertHtmlToText(inputText) {
 
 export const getRowColBySourceCodeIndex = (index) => {
   
-  const arr = [...window.tokenIndexToDomMap];
+  const arr = [...window.mapObj.tokenIndexToDomMap];
   const item =  _.findLast(arr, x => x[1][0] <= index);
   let s = item[1][0]
   let offset = s;
@@ -264,7 +263,6 @@ export const getRowColBySourceCodeIndex = (index) => {
   // console.log(item, index);
   return [item[0],len]
 }
-const astDomWeakMap = new WeakMap();
 
 export function selectStartEnd(start, end) {
   var selection = window.getSelection();
@@ -278,7 +276,11 @@ export function selectStartEnd(start, end) {
     f =  sourceDom.childNodes[ti++];
   }
   if (f?.scrollIntoView) {
-    f.scrollIntoView()
+    f.scrollIntoView({
+      behavior:'smooth',
+      block: 'center',
+      inline:  'end'
+    })
   }
   range.setStart(startDom, sofset);
   const endDom = sourceDom.childNodes[ei];
@@ -287,11 +289,11 @@ export function selectStartEnd(start, end) {
   selection.addRange(range);
 }
 
-const selectedDom = (dom) => {
+export const selectedDom = (dom) => {
   if (lastSelected) {
     unselectedDom(lastSelected)
   }
-  const astJson = astDomWeakMap.get(dom);
+  const astJson = window.mapObj.domAstWeakMap.get(dom);
   if (!astJson) {
     console.warn('无法找到对应json')
     return
@@ -312,7 +314,9 @@ const createASTJSONSpan = ([obj, prefix, config], text, { state }) => {
       console.warn('没有挂载')
       return
     }
-    astDomWeakMap.set(dom, obj)
+    dom.dataset.state = state;
+    window.mapObj.domAstWeakMap.set(dom, obj)
+    window.mapObj.astDomWeakMap.set(obj, dom)
     prefix = Math.max(prefix, 0);
     if (!dom) {
       console.error(obj);
@@ -337,6 +341,7 @@ const createASTJSONSpan = ([obj, prefix, config], text, { state }) => {
       )
       state = !state;
       dom.setAttribute('title', (!state ? '展开' : '收起') + text)
+      dom.dataset.state = state;
       if (state) {
         selectedDom(dom)
       } else {
@@ -488,7 +493,7 @@ export default function writeJSON(obj, prefix, config, weakMap = new WeakMap()) 
   // if (obj instanceof Environment) {
   //   console.error('$hideInHTML')
   // }
-  for (let attr of Reflect.ownKeys(obj)) {
+  for (let attr in obj) {
     const t = obj[attr];
     attr = stringFormat(attr)
 

@@ -92,10 +92,10 @@ export default class GeneratorConfig {
         done: getTrueV()
       }), env);
 
-      t[index + 2](createObject({
-        value: getUndefinedValue(),
-        done: getTrueV()
-      }), env);
+      // t[index + 2](createObject({
+      //   value: getUndefinedValue(),
+      //   done: getTrueV()
+      // }), env);
       }
     )
     this.pendingResolveCallbackList.length = 0;

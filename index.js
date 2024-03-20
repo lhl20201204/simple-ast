@@ -6,7 +6,7 @@ import parseAst, { setLoop } from "./transform/runtime";
 import Environment from "./transform/runtime/Environment";
 import { getWindowEnv } from "./transform/runtime/Environment/getWindow";
 import generateCode from "./transform/runtime/Generate";
-import writeJSON, { getRowColBySourceCodeIndex, relaceTextToHtml, selectStartEnd } from "./transform/util";
+import writeJSON, { getRowColBySourceCodeIndex, relaceTextToHtml, selectStartEnd, selectedDom } from "./transform/util";
 import { DEBUGGER_DICTS } from "./transform/runtime/constant";
 import { createPromiseRvAndPromiseResolveCallback } from "./transform/runtime/Environment/utils";
 import { AstJSON, copyToClipboard, debounceCopyToClipboard, diffStr, isInstanceOf } from "./transform/commonApi";
@@ -34,7 +34,11 @@ source.addEventListener('scroll', _.throttle((x) => {
   trailing: true
 }))
 
-window.tokenIndexToDomMap = new Map();
+window.mapObj = {
+  tokenIndexToDomMap: new Map(),
+  domAstWeakMap: new WeakMap(),
+  astDomWeakMap: new WeakMap()
+}
 
 debuggerBtn.onclick = () => {
   // console.log('点击');
@@ -91,19 +95,19 @@ const writeAstAndRun = (ast, noRun) => {
 
 const astInstance = new Ast()
 
-function omitAttrsDfs(x, attrs) {
+function omitAttrsDfs(x, attrs, returnAstJson = null) {
   if (isInstanceOf(x, ASTItem)) {
-    const obj = {}
+    const obj = new AstJSON(returnAstJson)
     for (const t in x) {
       if (attrs.includes(t)) {
         continue;
       }
-      obj[t] = omitAttrsDfs(x[t], attrs)
+      obj.set(t, omitAttrsDfs(x[t], attrs, obj))
     }
-    return new AstJSON(obj);
+    return obj
   }
   if (Array.isArray(x)) {
-    return _.map(x, c => (omitAttrsDfs(c, attrs)))
+    return _.map(x, c => (omitAttrsDfs(c, attrs, returnAstJson)))
   }
   return x;
 }
@@ -134,7 +138,7 @@ function onlyPickIndentifyDfs(x) {
 
 function getErrorInfoPrefixContent(index) {
   const [sRow, sCol] = getRowColBySourceCodeIndex(index);
-  const totalArr = [...window.tokenIndexToDomMap];
+  const totalArr = [...window.mapObj.tokenIndexToDomMap];
   const arr = _.slice(totalArr, 0, sRow);
   const ret = []
   for (const [, [, nodesStr]] of arr) {
@@ -147,11 +151,13 @@ function getErrorInfoPrefixContent(index) {
   const currentLineItem = totalArr[sRow]
   const [, lineStr] = currentLineItem[1];
   console.error({ currentLineItem, totalArr, index, str: currentLineItem[1] });
-  return [ret.join('') ,sCol, lineStr]
+  return [ret.join(''), sCol, lineStr]
 }
 
 let currentSourceCodeStr = ""
 let currentAstWithoutStartEnd = {}
+
+let lastAstJSON = null;
 
 const debounceThrowError = _.debounce((err) => {
   requestIdleCallback(() => {
@@ -165,8 +171,8 @@ const debounceThrowError = _.debounce((err) => {
       })
       console.log(e)
       const [prefixLine, sCol, lineStr] = getErrorInfoPrefixContent(start);
-      const html = `<div>${ prefixLine + lineStr.slice(0, sCol) + `<span style="border-bottom: 3px solid red;">${e.errorToken.value
-        }</span>` +  lineStr.slice(sCol + _.size(e.errorToken.value))
+      const html = `<div>${prefixLine + lineStr.slice(0, sCol) + `<span style="border-bottom: 3px solid red;">${e.errorToken.value
+        }</span>` + lineStr.slice(sCol + _.size(e.errorToken.value))
         }</div>`
 
 
@@ -195,9 +201,11 @@ const writeSourceCodeAndRun = (text, shouldNoRun) => {
       throw new Error('token 漏了');
     }
     if (!noRun || currentSourceCodeStr !== text) {
-      const simpleAst = _.T(ast, true)
+      const simpleAst = _.T(ast, true);
       console.log([ast, onlyPickIndentifyDfs(ast), simpleAst])
-      writeAstAndRun(omitAttrsDfs(ast, ['tokens']), noRun);
+      const astJson = omitAttrsDfs(ast, ['tokens']);
+      lastAstJSON = astJson;
+      writeAstAndRun(astJson, noRun);
     }
     currentSourceCodeStr = text;
   } catch (err) {
@@ -212,7 +220,7 @@ function saveTokensLineMessage(type) {
     // let childNodes = [...source.childNodes];
 
     let childNodeIndex = 0;
-    const map = window.tokenIndexToDomMap;
+    const map = window.mapObj.tokenIndexToDomMap;
     map.clear();
     // console.warn('保存', currentSourceCodeStr === source.innerText, [currentSourceCodeStr.length, currentSourceCodeStr.split('')])
     let totalIndex = 0;
@@ -241,7 +249,7 @@ function saveTokensLineMessage(type) {
     //   return ;
     // })
     let len = currentSourceCodeStr.length;
-  
+
     map.set(childNodeIndex, [0, '']);
     for (let i = 0; i < len; i++) {
       const c = currentSourceCodeStr[i];
@@ -256,8 +264,8 @@ function saveTokensLineMessage(type) {
     // console.warn('保存',type);
     const newStr = _.map([...map], '1.1').join('');
     // console.log(map)
-    if ( newStr !== currentSourceCodeStr) {
-      console.warn([newStr.length, currentSourceCodeStr.length,newStr.split(''), currentSourceCodeStr.split('')]);
+    if (newStr !== currentSourceCodeStr) {
+      console.warn([newStr.length, currentSourceCodeStr.length, newStr.split(''), currentSourceCodeStr.split('')]);
       throw '保存出错'
     }
   })()
@@ -298,9 +306,10 @@ source.addEventListener('keypress', function (e) {
         tContainer === source ||
         tContainer instanceof HTMLBRElement
       ) {
+        const isWrapInEmptyLine = tContainer instanceof HTMLBRElement;
         let nextContainer =
-          tContainer instanceof HTMLBRElement
-            ? nextContainer
+          isWrapInEmptyLine
+            ? tContainer.nextSibling
             : tContainer.childNodes[t.endOffset]?.nextSibling;
         document.execCommand('insertHTML', false, '<br/><br/>');
         nextContainer =
@@ -309,6 +318,7 @@ source.addEventListener('keypress', function (e) {
         console.warn(
           '空白换行',
           nextContainer === tContainer,
+          isWrapInEmptyLine,
           nextContainer,
         );
         const r = new Range();
@@ -328,12 +338,127 @@ source.addEventListener(
   'input',
   _.debounce((e) => {
     isFocusingAndChange = true;
-    let str = ensureDomOnlyTextAndBr()
+    let str = ensureDomOnlyTextAndBr(false)
     writeSourceCodeAndRun(str, true)
     debounceSaveTokensLineMessage('oninput.debounce')
     shouldHandleWrapLine = true;
   }, 200)
 )
+
+const foldAstJSON = (ASTJSONLIST) => {
+  _.forEach(ASTJSONLIST, (v) => {
+    const dom = window.mapObj.astDomWeakMap.get(v);
+    if (dom && dom.dataset.state === 'true') {
+      dom.click()
+    }
+  })
+}
+
+const foldAstJSON2 = (ASTJSONLIST) => {
+  while (_.size(ASTJSONLIST)) {
+   const current = ASTJSONLIST.shift();
+    const handleAstJSON = (astJSon) => {
+      if (astJSon === ASTJSONLIST[0]) {
+        return;
+      }
+      const dom = window.mapObj.astDomWeakMap.get(astJSon);
+      if (dom && dom.dataset.state === 'true') {
+        dom.click()
+      }
+    }
+    _.forEach(current, v => {
+      if (isInstanceOf(v, AstJSON)) {
+        handleAstJSON(v)
+      } else if (_.isArray(v)) {
+        _.forEach(v, handleAstJSON)
+      }
+    })
+  }
+
+}
+
+const unFoldAstJSON = (targetAstJson) => {
+  let astJSon = targetAstJson;
+  const astJSONList = []
+  while (astJSon) {
+    astJSONList.unshift(astJSon)
+    astJSon = astJSon.return
+  }
+
+  const copyList = [...astJSONList];
+  astJSONList.shift();
+
+  const awaitTask = (cb) => {
+    return new Promise(r => {
+      const ret = cb();
+      setTimeout(() => {
+        r(ret)
+      }, 50)
+    })
+  }
+  let targetdom = null;
+  const run = () => {
+    if (!astJSONList.length) {
+      return Promise.resolve();
+    }
+    const astJSon = astJSONList.shift()
+    const dom = window.mapObj.astDomWeakMap.get(astJSon);
+    targetdom = dom;
+    return awaitTask(() => {
+      if (dom.dataset.state === 'false') {
+        dom.click()
+      }
+    }).then(run)
+  }
+
+  // foldAstJSON(rootAstJSon.body);
+  run().then(() => {
+    if (!targetdom) {
+      console.log('选中全局了')
+      return
+    }
+    foldAstJSON2(copyList)
+    selectedDom(targetdom);
+
+    setTimeout(() => {
+      targetdom.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center',
+        inline: 'end'
+      })
+    })
+  })
+}
+
+const AstJsonIncludesIndex = (astJson, index) => astJson.start <= index && astJson.end >= index
+const isInAst = (astJson, index) => isInstanceOf(astJson, AstJSON) && AstJsonIncludesIndex(astJson, index)
+const clickIndex = (index) => {
+  if (!lastAstJSON || !AstJsonIncludesIndex(lastAstJSON, index)) {
+    console.error('未点击到ast')
+    return;
+  }
+
+  const findAstByIndex = (ast) => {
+    for (const x in ast) {
+      if (x === 'tokens') {
+        continue;
+      }
+      const v = ast[x];
+      if (isInAst(v, index)) {
+        return findAstByIndex(v)
+      } else if (_.isArray(v)) {
+        for (const c of v) {
+          if (isInAst(c, index)) {
+            return findAstByIndex(c);
+          }
+        }
+      }
+    }
+    return ast;
+  }
+  const target = findAstByIndex(lastAstJSON)
+  unFoldAstJSON(target)
+}
 
 source.addEventListener('click', () => {
   const range = window.getSelection()?.getRangeAt(0);
@@ -347,7 +472,7 @@ source.addEventListener('click', () => {
     if (t === source) {
       const targetDom = t.childNodes[range.endOffset];
       if (targetDom instanceof HTMLBRElement) {
-        console.log(
+        clickIndex(
           (targetDom).getAttribute('data-index'),
         );
       }
@@ -362,30 +487,32 @@ source.addEventListener('click', () => {
         const restEndIndex =
           Number(endIndex) + range.endOffset + 1;
         if (!_.isNil(endIndex)) {
-          console.log(restEndIndex);
+          clickIndex(restEndIndex);
         }
       } else {
-        console.log(range.endOffset);
+        clickIndex(range.endOffset);
       }
     }
   }
 
 })
 
-
-function ensureDomOnlyTextAndBr(str) {
+function ensureDomOnlyTextAndBr(updateDomFlag, str) {
+  if (!updateDomFlag) {
+    return source.innerText;
+  }
   source.innerHTML = relaceTextToHtml(str ?? source.innerText)
   const nodeList = [...source.childNodes];
   const list = [];
   let hadMerge = false;
-  for(const x of nodeList) {
+  for (const x of nodeList) {
     if (x instanceof HTMLBRElement || (x instanceof Text)) {
       list.push(x)
     } else {
       hadMerge = true;
       const ret = []
       let newText = ''
-      while(list.length && !(_.last(list) instanceof HTMLBRElement)) {
+      while (list.length && !(_.last(list) instanceof HTMLBRElement)) {
         let t = list.pop()
         ret.push(t)
         newText += t.textContent;
@@ -401,7 +528,8 @@ function ensureDomOnlyTextAndBr(str) {
     }
   }
   if (hadMerge || (_.size(str) && str !== source.innerText)) {
-   return ensureDomOnlyTextAndBr()
+    source.innerHTML = relaceTextToHtml(source.innerText)
+    return ensureDomOnlyTextAndBr(updateDomFlag)
   }
   return source.innerText;
 }
@@ -414,7 +542,7 @@ source.addEventListener(
       localStorage.removeItem('ast-temp');
       if (shouldHandleWrapLine) {
         shouldHandleWrapLine = false;
-        let str = ensureDomOnlyTextAndBr()
+        let str = ensureDomOnlyTextAndBr(true)
         writeSourceCodeAndRun(str)
         debounceSaveTokensLineMessage('onblur');
       }
@@ -423,19 +551,18 @@ source.addEventListener(
 );
 
 source.addEventListener('paste', (e) => {
-  console.log(e)
   e.stopPropagation();
   e.preventDefault();
   let text = e.clipboardData.getData('text/plain');
   if (document.queryCommandSupported('insertText')) {
     document.execCommand('insertText', false, text);
-  } 
+  }
   [...source.childNodes].forEach(x => {
     if (x instanceof HTMLBRElement) {
-      return 
+      return
     }
-    if ( x instanceof Text) {
-      return 
+    if (x instanceof Text) {
+      return
     }
     const dom = x;
     if (dom instanceof HTMLDivElement && _.size(dom.childNodes) === 1) {
@@ -446,46 +573,18 @@ source.addEventListener('paste', (e) => {
       const nextDom = dom.nextSibling
       if (nextDom instanceof HTMLDivElement &&
         _.size(nextDom.childNodes) > 1
-        ) {
-          source.insertBefore(document.createElement('br'), nextDom);
-        }
+      ) {
+        source.insertBefore(document.createElement('br'), nextDom);
+      }
       x.remove()
     } else {
       const nodeList = x.childNodes
       source.append(...nodeList)
       x.remove()
     }
-    return ;
+    return;
   })
 
-  // e.clipboardData
-  // e.preventDefault();
-
-  // const newNode = document.createDocumentFragment()
-  // const textList =  _.split(e.clipboardData.getData('text'), '\n')
-  // let i = 0, len = textList.length;
-  // const ret = []
-  // for(;i < len; i++) {
-  //   // TODO 可能还会有其他特殊符号，还不能直接替换。。。。
-  //   const textNode = document.createTextNode(
-  //     CookedToRaw( textList[i])
-  //   );
-  //   ret.push(textNode)
-  //   if (i < len -1) {
-  //     ret.push(document.createElement('br'));
-  //   }
-  // }
-  // newNode.append(
-  //   ...ret,
-  // );
-  // window.getSelection().getRangeAt(0).insertNode(newNode);
-  // isFocusingAndChange = true;
-  // let str = getSourceTextCodeFromHtml()
-  // writeSourceCodeAndRun(str, true)
-  // debounceSaveTokensLineMessage('onpaste.debounce')
-  // shouldHandleWrapLine = true;
-  // window.getSelection()?.removeAllRanges()
-  
 })
 
 const openText = '当前关闭，点击打开';
@@ -544,9 +643,8 @@ if (process.env.mode === 'development' && closeOrOpenDiffJson.innerText === clos
 
 
 const inputAst = function (e) {
-  // console.log(e.target.value)
   const ast = JSON.parse(e.target.value);
-  source.innerHTML = ensureDomOnlyTextAndBr(generateCode(ast, { [DEBUGGER_DICTS.isHTMLMode]: true }));
+  source.innerHTML = ensureDomOnlyTextAndBr(true, generateCode(ast, { [DEBUGGER_DICTS.isHTMLMode]: true }));
   AST.testingCode = '';
   console.clear()
   writeAstAndRun(ast)
@@ -572,7 +670,7 @@ astJsonContainer.addEventListener(
 );
 
 const changeSourceCodeContent = (text) => {
-  let str = ensureDomOnlyTextAndBr(text);
+  let str = ensureDomOnlyTextAndBr(true, text);
   source.focus();
   writeSourceCodeAndRun(str)
   saveTokensLineMessage('window.load')
