@@ -318,6 +318,7 @@ export class SourceCodeHandleApi {
   }
 
   save() {
+    // console.log('save --->', _.size( this.lastAstContextStack))
     if (_.size(this.tempTokensStack)) {
       throw new Error('save调用有误');
     }
@@ -338,6 +339,7 @@ export class SourceCodeHandleApi {
   }
 
   restore() {
+    // console.log('restore <---', _.size( this.lastAstContextStack))
     if (_.isNil(this.lastRowColIndex)) {
       throw new Error('restore调用有误');
     }
@@ -360,6 +362,7 @@ export class SourceCodeHandleApi {
   }
 
   consume() {
+    // console.log('consume <---', _.size( this.lastAstContextStack))
     if (_.isNil(this.lastRowColIndex)) {
       throw new Error('consume调用有误');
     }

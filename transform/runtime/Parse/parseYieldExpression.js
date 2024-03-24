@@ -79,8 +79,8 @@ export function innerParseYieldExpression(ast, env) {
     const yieldRv = ast.argument ? parseAst(ast.argument, env) : getUndefinedValue();
     const astConfig = _.get(ast, AST_DICTS._config);
     if (astConfig.getNeedReceiveNextValue()) {
-      // console.log('yield 接受值', env.getNextValue());
-      return env.getNextValue();
+      const ret = env.getNextValue()
+      return ret;
     }
     // yield 关键字底层用Error抛出处理；
     const e = new Error('yield 中断停止');
@@ -97,5 +97,5 @@ export default function parseYieldExpression(ast, env) {
   if (!env.isInGeneratorEnv()) {
     throw new Error('当前不在生成器函数定义范围内无法' + RUNTIME_LITERAL.yield)
   }
-  innerParseYieldExpression(ast, env);
+  return innerParseYieldExpression(ast, env);
 }

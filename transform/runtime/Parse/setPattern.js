@@ -25,7 +25,6 @@ function getType(restConfig, env) {
 export function setIdentifierPattern(argsRv, paramsAst, env, restConfig) {
   // console.log('设置', env);
   if (!isInstanceOf(argsRv,  RuntimeValue)) {
-    console.error(argsRv, isInstanceOf(argsRv, RuntimeValue ));
     throw new Error('运行时赋值出错')
   }
   if (isInstanceOf(env , RuntimeValue)) {

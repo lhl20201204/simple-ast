@@ -2,6 +2,7 @@ import _ from "lodash";
 import { isInstanceOf } from "../../../commonApi";
 import { AST_DICTS } from "../../constant";
 import { getUndefinedValue } from "../RuntimeValueInstance";
+import RuntimeValue from "../RuntimeValue";
 
 
 export default class AstConfig{

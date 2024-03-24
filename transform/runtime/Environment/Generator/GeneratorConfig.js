@@ -34,6 +34,10 @@ export default class GeneratorConfig {
     this.runtimeStack = [];
   }
 
+  isPureAsync() {
+    return this.ast.isAsyncToGenerator
+  }
+
   canAwaitable() {
     return  this.ast.async;
   }

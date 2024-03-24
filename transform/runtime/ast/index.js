@@ -1220,7 +1220,7 @@ export default class AST extends SourceCodeHandleApi {
       })
     }
     this.save()
-    const matchForFromSecondSemicolon = (init) => {
+    const matchForFromSecondSemicolon = (init, shouldNotConsume) => {
       let test = null;
       if (!this.nextTokenIs(TOKEN_TYPE.Semicolon)) {
         test = this[METHOD_TYPE.getExpAst]();
@@ -1231,7 +1231,9 @@ export default class AST extends SourceCodeHandleApi {
         update = this[METHOD_TYPE.getExpAst]();
       }
       restTokens.push(this.expectToken(TOKEN_TYPE.RightParenthesis))
-      this.consume();
+      if (!shouldNotConsume) {
+        this.consume();
+      }
       return this.createAstItem({
         type: AST_TYPE.ForStatement,
         init,
@@ -1265,7 +1267,7 @@ export default class AST extends SourceCodeHandleApi {
         restTokens.push(this.expectToken(TOKEN_TYPE.Semicolon))
       }
 
-      return matchForFromSecondSemicolon(left)
+      return matchForFromSecondSemicolon(left, true)
     }
     const kindToken = this.eatToken()
     restTokens.push(kindToken)

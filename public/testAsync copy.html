@@ -10,22 +10,384 @@
 <body>
 
   <script>
-  //   let p = Promise.resolve(0);
-  //  for(let i = 0; i< 20; i++) {
-  //    p.then((x) => console.log('第' + x + '轮'))
-  //    p = p.then(() => i + 1)
-  //  }
+    let p = Promise.resolve(0);
+for(let i = 0; i< 20; i++) {
+  p.then((x) => console.log('第' + x + '轮'))
+  p = p.then(() => i + 1)
+}
+function wrap(f) {
+  return function (...args) { 
+    return new Promise((res, rej)=> {
+        f.call(this,...args).next()
+        .then(({value}) => res(value),(e) => rej(e)) 
+     }) 
+  }
+}
 
-   async function ff() {
-      try{
-        const ff = await Promise.resolve(7777)
-        console.log('后面的句子', ff)
-      } finally {
-        throw 777
+const ag2 = async function * ag() {
+  try {
+  const f = await Promise.reject(7777);
+  console.log('后面的句子', f)
+  } finally{
+    return 999
+    throw 8888
+  }
+};
+
+const g =ag2();
+
+wrap(ag2)().then(console.log, console.warn)
+
+g.next().then(console.log, console.warn)
+
+
+async function ag() {
+  try {
+    console.log(await 8909090)
+  const f = await Promise.reject(7777);
+  console.log('后面的句子', f)
+  } finally{
+    return 999
+    throw 8888
+  }
+}
+ag().then(console.log, console.warn)
+
+function test53() {
+  async function* foo() {
+    yield await Promise.resolve('a')
+    yield await Promise.resolve('b')
+    yield await Promise.resolve('c')
+  } /* function end */
+  let str = '';
+  async function generate() {
+    for await (const t of [1, 2, 3]) {
+      console.log(t)
+    }  /* for of end */
+    console.log(str)
+  } /* function end */
+  generate()
+}
+test53() 
+
+// function test51() {
+//   (() => {
+//     const A = class {
+//       static store = []
+//       constructor(x) {
+//         this.x = x;
+//         A.store.push(this)
+//       }
+
+//       get() {
+//         return this.x;
+//       }
+//     }
+//     A.prototype = { a: 2 }
+//     const z = new A(3);
+//     console.log(z, z.get(), A.prototype);
+//     const z2 = new A(4)
+//     console.log(A.store)
+//     function* gen(x = {}) {
+//       while (true) {
+//         yield* {
+//           async  ['sadf']() {
+
+//           } /* function end */,
+//           g() {
+
+//           } /* function end */,
+//           *[Symbol.iterator](x) {
+//             console.log('进来---->')
+//             yield* [1, 2]
+//           } /* function end */
+//         }
+//         const c = yield* ["a", "b"]
+//         console.log('yield *', c);
+//         let i = 0;
+//         while (i++ < 2) {
+//           yield i
+//         } /* while end */
+//       }
+//     } /* function end */
+//     const y = gen();
+
+//     console.log(
+//       y[Symbol.iterator]() === y,
+//       y[Symbol.GeneratorFunction],
+//       y.next(3),
+//       y.next(4),
+//     )
+//     console.log(
+//       y.next(5),
+//       y.next(6),
+//     )
+//     console.log(
+//       y.next(7),
+//       y.next(8)
+//     )
+//     console.log(y.next(9), y.next(10))
+//     function* gen2(i = 0) {
+//       while (true) {
+//         yield i++
+//         yield gen2(i)
+//         yield* gen2(i)
+//       } /* while end */
+//     } /* function end */
+//     const x = gen2();
+//     console.log(
+//       x.next(),
+//       x.next(),
+//     )
+
+//     console.log(x.next(),
+//       x.next(),
+//       x.next(),
+//       x.next())
+
+//   })()
+//   console.log('----')
+//   return;
+//   let x = [5, 6];
+//   console.log(a)
+//   for (var a of {
+//     *[Symbol.iterator]() {
+//       yield 3
+//       yield 4
+//       yield x
+//     }
+//   }) {
+//     console.log(a)
+//   }
+//   console.log(a, a === x)
+
+
+//   function* gen() {
+//     yield 1;
+//     yield 2;
+//     yield 3;
+//   }
+
+//   const g = gen();
+
+//   console.log(g.next()); // { value: 1, done: false }
+//   console.log(g.return("foo")); // { value: "foo", done: true }
+//   console.log(g.next()); // { value: undefined, done: true }
+
+
+
+
+//   function* gen0() {
+//     try {
+//       let i = 0;
+//       while (i++ < 3) {
+//         yield i;
+//         console.log(i);
+//         throw new Error('fff')
+//       }
+//       console.log('while 运行结束')
+//       return 4
+//     } catch (e) {
+//       yield e;
+//     } finally {
+//       console.log('finally')
+//       return 5
+//     }
+//     console.log('rest')
+//   }
+//   const g0 = gen0()
+//   console.log('----s1---')
+//   console.log(g0.next())
+//   console.log(g0.return(3333))
+//   console.log('----s2---')
+//   console.log(g0.next())
+//   console.log('----s3---')
+//   console.log(g0.next())
+//   console.log('----s4---')
+//   console.log(g0.next())
+//   console.log('----end---')
+
+//   function* gen3() {
+//     let i = 1;
+//     const e = new Error('主动抛出错误')
+//     // return e
+//     while (i++ < 2) {
+//       yield 1;
+//       try {
+//         yield 2
+//         try {
+//           throw e;
+//           yield
+//         } catch (e) { // 这里怎么处理重复e的问题？
+//           console.log('catch-')
+//           yield 3
+//           console.log('catch+')
+//           throw e;
+//         } finally {
+//           console.log('finally-')
+//           yield 4;
+//           console.log('finally+')
+//           throw e;
+//         }
+//         yield
+//       } catch (e) {
+//         throw e;
+//         console.log('outer-catch')
+
+//       } finally {
+//         console.log('outer-finally +')
+//         yield 5
+//         console.log('outer-finally -')
+//         return 9999
+//       }
+//     }
+//   }
+//   const g3 = gen3()
+//   // g.throw('外部传入error')
+//   console.log('----1--')
+//   console.log(g3.next())
+//   console.log('---2--')
+//   console.log(g3.next())
+//   console.log('---3---')
+//   console.log(g3.next())
+//   console.log('---4--')
+//   console.log(g3.next())
+//   console.log('---5--')
+//   console.log(g3.next())
+//   console.log('---6--')
+//   console.log(g3.next())
+// }
+// test51()
+/*function test50() {
+
+
+  let pro = Promise.resolve('第1轮微任务开始')
+
+  for (let i = 0; i < 20; i++) {
+    pro = pro.then((x) => {
+      console.log(x)
+      return '第' + (i + 2) + '轮微任务开始'
+    })
+  }
+
+  function run() {
+
+    let last = Promise.resolve(5)
+      .then(res => {
+        console.log('my', 't', res)
+        return ('a')
+      }).then(res => {
+        console.log('my', res)
+        return 'b'
+      }).then((b) => {
+        console.log('my', b)
+        return {
+          value: 7
+        }
+      })
+
+
+    let t = last.then(x => x);
+    t.then(res => console.log('my', res.value, 'a'));
+
+
+    // next('x')
+    last = last.then(() => {
+      console.log('my', 6, 'x')
+      return 'c'
+    }).then(res => {
+      console.log('my', res)
+      return 'd'
+    }).then((b) => {
+      console.log('my', b)
+      return 9
+    }).then((value) => {
+      return {
+        value
       }
-   }
-   console.log(ff().then(x => x, console.warn))
+    });
 
+    t = last.then(x => x);
+    t.then(res => console.log('my', res.value, 'b'));
+
+
+    last = last.then(() => {
+      console.log('my', 8, 'y')
+      return 'e'
+    }).then(res => {
+      console.log('my', res)
+      return 11
+    }).then((value) => {
+      return {
+        value
+      }
+    })
+
+    t = last.then(x => x);
+
+    t.then(res => console.log('my', res.value, 'c'));
+
+
+    last = last.then(() => 'f')
+      .then(x => {
+        console.log('my', x)
+        console.log('my', 10, 'z')
+        return {
+          value: 12
+        }
+      }
+      )
+
+    t = last.then(x => x);
+    t.then(res => console.log('my', res.value, 'd'));
+  }
+
+  run()
+  async function* createAsyncGenerator() {
+    yield 8888
+    console.log(2)
+    const t = await 5
+    console.log('t', t)
+    const t1 = await 'a'
+    console.log(t1)
+    const t5 = await 'b'
+    console.log(t5)
+    const x = yield t + 2;
+    console.log(6, x)
+    try {
+      console.log(iojojono)
+    } catch (e) {
+      console.error(e);
+      throw e
+    }
+    const t2 = await 'c'
+    console.log(t2)
+    return '9999'
+    const t6 = await 'd'
+    console.log(t6)
+    const y = yield await 9
+    console.log(8, y)
+    const t3 = await 'e'
+    console.log(t3)
+    const z = yield await 11
+    const t4 = await 'f'
+    console.log(t4)
+    console.log(10, z)
+    return 12
+  }
+  const asyncGen = createAsyncGenerator();
+  console.log(1)
+  asyncGen.next().then((res) => console.log(res.value, 'a'));
+  console.log(3)
+  asyncGen.next('x').then((res) => console.log(res.value, 'b'));
+  console.log(4)
+  asyncGen.next('y').then((res) => console.log(res.value, 'c'));
+  asyncGen.next('z').then((res) => console.log(res.value, 'd'));
+  asyncGen.next('z2').then((res) => console.log(res.value, 'e'));
+  console.log('main-end')
+
+}
+test50()*/
   </script>
 
 </body>

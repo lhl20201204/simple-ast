@@ -17,28 +17,19 @@ let generatorPrototypeRv
 export function getGeneratorPrototypeRv() {
   if (!generatorPrototypeRv) {
     const generateFn = getGenerateFn()
-    const handle = (nextRv, _this, env, type) => {
-      // console.log(type, env.envStackStore.error?.current)
-      const execute = (attr, rv, env) => {
-        if (!isInstanceOf(rv, RuntimeValue) || !isInstanceOf(env, Environment)) {
-          throw '类型错误'
+    const throwE = (_this, errRv) => {
+      const generateConfig = _this.getGenerateConfig()
+        const env = generateConfig.getYieldEnv();
+        if (env) { 
+          env.envStackStore.setError(errRv)
+        } else {
+          generateConfig.setPendingErrorValue(errRv);
         }
-        return parseAst({
-        "type": "CallExpression",
-        "callee": {
-          "type": "MemberExpression",
-          "object": createRuntimeValueAst(_this, 'this'),
-          "property": createIdentifierAst(attr),
-          "computed": false,
-          "optional": false
-        },
-        "arguments": [
-          createRuntimeValueAst(rv, 'args')
-        ],
-        "optional": false
-      }, env)}
+    }
+    const handle = (nextRv, _this, env, type, lastRes, lastRej) => {
       
       const generateConfig = _this.getGenerateConfig()
+      const isPureAsync = generateConfig.isPureAsync();
       const canAwaitable = generateConfig.canAwaitable()
       const undefinedRv = getUndefinedValue()
       const run = (nextRv, promiseResolveCallback, promiseRejectCallback) => {
@@ -66,7 +57,7 @@ export function getGeneratorPrototypeRv() {
         const doneRv = generateConfig.done ? getTrueV() : getFalseV();
 
         if (canAwaitable) {
-          const stepRv = createObject({
+          const stepRv = isPureAsync ? value : createObject({
             value,
             done: doneRv,
           });
@@ -74,23 +65,22 @@ export function getGeneratorPrototypeRv() {
             const retRv = PromiseRvThen({
               promiseInstanceRv:  PromiseRvResolve(value, env),
               thenCb: ([resRv]) => {
-                return run(resRv, promiseResolveCallback, promiseRejectCallback)
+                run(resRv, promiseResolveCallback, promiseRejectCallback)
               },
               thenCbIntroduction: 'async$generator$auto$then$callback',
               catchCbIntroduction: 'async$generator$auto$catch$callback',
               catchCb: ([e], { env }) => {
-                const p1 = 
-                 PromiseRvThen({
+                // const p1 = 
+                // return p1;
+                throwE(_this, e)
+              
+                PromiseRvThen({
                   env,
-                  promiseInstanceRv: execute('throw', e, env),
-                  thenCb: ([x], { env }) => {
-                    promiseResolveCallback(x, env)
-                  },
-                  catchCb: ([e], { env }) => {
-                    promiseRejectCallback(e, env);
+                  promiseInstanceRv: handle(e, _this, env, 'throw', promiseResolveCallback, promiseRejectCallback),
+                  catchCb: () => {
+                    // 做一个空的catch
                   },
                 })
-                return p1;
               },
               env
             })
@@ -101,15 +91,17 @@ export function getGeneratorPrototypeRv() {
             return retRv;
           }
 
-          const retRv = PromiseRvResolve(stepRv, env);
-          promiseResolveCallback(stepRv, env);
           if (generateConfig.done) {
             generateConfig.clearPromiseCallbackList(env, 0);
           } 
-          if (generateConfig.isNotPendingPromiseNextValue()) {
-            generateConfig.setPendingPromiseNextValue(retRv)
+          promiseResolveCallback(stepRv, env);
+          if (!isPureAsync) {
+            const retRv = PromiseRvResolve(stepRv, env);  
+            if (generateConfig.isNotPendingPromiseNextValue()) {
+              generateConfig.setPendingPromiseNextValue(retRv)
+            }
+            return retRv;
           }
-          return retRv;
         }
 
         return  createObject({
@@ -122,7 +114,8 @@ export function getGeneratorPrototypeRv() {
         // console.log('lastPromiseRv', lastPromiseRv)
         const { promiseRv, promiseResolveCallback, promiseRejectCallback } = createPromiseRvAndPromiseResolveCallback(env)
         generateConfig.setPendingPromiseNextValue(promiseRv);
-        if (type !== 'throw' && isInstanceOf(lastPromiseRv, RuntimePromiseInstanceValue)) {
+        const isThrowErrorType = type === 'throw'
+        if (!isThrowErrorType && isInstanceOf(lastPromiseRv, RuntimePromiseInstanceValue)) {
           // console.log('开始判断上一个promise的状态')
           if (!generateConfig.done) {
             PromiseRvThen({
@@ -131,16 +124,24 @@ export function getGeneratorPrototypeRv() {
               thenCb: () => {
                 run(nextRv, promiseResolveCallback, promiseRejectCallback)
               },
-              // catchCb: ([e], { env }) => {
-              //   // TODO 失败的情况
-              //   run(nextRv, promiseResolveCallback, promiseRejectCallback)
-              // },
+              catchCb: ([e], { env }) => {
+                // TODO 失败的情况
+                // run(nextRv, promiseResolveCallback, promiseRejectCallback)
+              },
             })
           }
         } else {
           // TODO 可能要做调整
-          run(nextRv, promiseResolveCallback, promiseRejectCallback);
+          run(nextRv,isThrowErrorType  ? (...args) => {
+            promiseResolveCallback(...args);
+            lastRes(...args)
+          } : promiseResolveCallback, isThrowErrorType ? (...args) => {
+            promiseRejectCallback(...args);
+            lastRej(...args)
+          } : promiseRejectCallback);
         }
+        
+        if (!isPureAsync) {
         const { 
           promiseRv: promiseRv2, 
           promiseResolveCallback: promiseResolveCallback2,
@@ -163,9 +164,11 @@ export function getGeneratorPrototypeRv() {
           promiseRejectCallback,
           promiseRejectCallback2,
         ])
+        return promiseRv2;
+       }
   
         // console.warn('promiseRv2', promiseRv2)
-        return promiseRv2
+        return promiseRv
       }
       return run(nextRv)
     }
@@ -194,13 +197,7 @@ export function getGeneratorPrototypeRv() {
         if (!isInstanceOf(_this, RuntimeGeneratorInstanceValue)) {
           throw new Error('不是generator实例')
         }
-        const generateConfig = _this.getGenerateConfig()
-        const env = generateConfig.getYieldEnv();
-        if (env) { 
-          env.envStackStore.setError(errRv)
-        } else {
-          generateConfig.setPendingErrorValue(errRv);
-        }
+        throwE(_this, errRv)
         
         return handle(getUndefinedValue(), _this, env, 'throw');
       }),

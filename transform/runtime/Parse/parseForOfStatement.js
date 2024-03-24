@@ -7,7 +7,7 @@ import { getJsSymbolIterator, getSymbolIteratorRv } from "../Environment/NativeR
 import { RuntimeGeneratorInstanceValue } from "../Environment/RuntimeValue";
 import createEnviroment, { createEmptyEnviromentExtraConfig } from "../Environment/createEnviroment";
 import parseRuntimeValue from "../Environment/parseRuntimeValue";
-import { PromiseRvThen, createRuntimeValueAst, isGeneratorFunctionRuntimeValue } from "../Environment/utils";
+import { PromiseRvResolve, PromiseRvThen, createPromiseRvAndPromiseResolveCallback, createRuntimeValueAst, isGeneratorFunctionRuntimeValue } from "../Environment/utils";
 import generateCode from "../Generate";
 import { AST_DICTS, ENV_DICTS, RUNTIME_LITERAL, RUNTIME_VALUE_TYPE } from "../constant";
 import setPattern from "./setPattern";
@@ -96,11 +96,17 @@ export default function parseForOfStatement(ast, env) {
   const run = () => {
     let stepCurrentRv = getStepRv()
     if (isAwait) {
-      const forOfAwaitInitAstConfig = rightAstConfig.getForOfAwaitInitAstConfig()
+      const forOfAwaitInitAstConfig = rightAstConfig.getForOfAwaitInitAstConfig();
       stepCurrentRv = parseAst({
         [AST_DICTS._config]: forOfAwaitInitAstConfig,
         type: 'AwaitExpression',
-        argument: createRuntimeValueAst(stepCurrentRv, 'leftInit'),
+        argument: (createRuntimeValueAst(
+          PromiseRvThen({
+            promiseInstanceRv:  PromiseRvResolve(stepCurrentRv, env),
+            thenCb: (([x]) => x),
+            env
+          })
+         , 'leftInit')),
       }, env)
     }
     if (parseRuntimeValue(stepCurrentRv.get('done'))) {

@@ -343,6 +343,7 @@ export function createFunction(config) {
       {
         ..._.cloneDeep(ast),
         generator: true,
+        isAsyncToGenerator: true,
       }
     ]
    }, config[RUNTIME_VALUE_DICTS.symbolEnv])

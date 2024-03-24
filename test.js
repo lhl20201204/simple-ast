@@ -139,15 +139,85 @@ console.log('else if')
 console.log('else')
 }`
 export const isProgram = `
-async function  ag() {
+// async function * g() {
+//   const x = yield 1;
+//   try {
+//     console.log(iojojono)
+//   } catch (e) {
+//     console.error(e);
+//     throw e
+//   }
+// }
+
+// const asyncGen = g();
+// console.log(1)
+// asyncGen.next().then((res) => console.log(res.value, 'a'));
+// console.log(3)
+// asyncGen.next('x').then((res) => console.log(res.value, 'b'));
+// console.log(4)
+// asyncGen.next('y').then((res) => console.log(res.value, 'c'));
+// console.log('main-end')
+
+let p = Promise.resolve(0);
+for(let i = 0; i< 20; i++) {
+  p.then((x) => console.log('第' + x + '轮'))
+  p = p.then(() => i + 1)
+}
+function wrap(f) {
+  return function (...args) { 
+    return new Promise((res, rej)=> {
+        f.call(this,...args).next()
+        .then(({value}) => res(value),(e) => rej(e)) 
+     }) 
+  }
+}
+
+const ag2 = async function * ag() {
   try {
-  const f = await Promise.resolve(7777);
+  const f = await Promise.reject(7777);
   console.log('后面的句子', f)
   } finally{
+    return 999
+    throw 8888
+  }
+};
+
+const g =ag2();
+
+wrap(ag2)().then(console.log, console.warn)
+
+g.next().then(console.log, console.warn)
+
+
+async function ag() {
+  try {
+    console.log(await 8909090)
+  const f = await Promise.reject(7777);
+  console.log('后面的句子', f)
+  } finally{
+    return 999
     throw 8888
   }
 }
-console.log(ag().then(x => x, console.warn))
+
+ag().then(console.log, console.warn)
+
+function test53() {
+  async function* foo() {
+    yield await Promise.resolve('a')
+    yield await Promise.resolve('b')
+    yield await Promise.resolve('c')
+  } /* function end */
+  let str = '';
+  async function generate() {
+    for await (const t of [1, 2, 3]) {
+      console.log(t)
+    }  /* for of end */
+    console.log(str)
+  } /* function end */
+  generate()
+}
+test53() 
 /*const ag = async function * ag() {
   try {
   await Promise.reject('1111');

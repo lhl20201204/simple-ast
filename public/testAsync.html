@@ -15,9 +15,10 @@
     let err = null;
     let ret = null;
     let done = false;
-    let nextValue = null;
     let needRun = new Array(10).fill(true);
+    let nextListValue = []
     let index = 0;
+    let nextIndex = 0;
 
     class YieldError {
       constructor(obj, index) {
@@ -53,7 +54,11 @@
     }
 
     const getNext = () => {
-      return nextValue;
+      return nextListValue[nextIndex++];
+    }
+
+    const setNext = (v) => {
+      nextListValue[nextIndex] = v;
     }
 
     const getAwait = (cb) => {
@@ -75,6 +80,7 @@
 
     const runCode = () => {
       index = 0;
+      nextIndex = 0;
       let tempE = null;
       try {
         if (ret) {
@@ -85,6 +91,9 @@
         }
         const ff = getAwait(() => Promise.resolve(7777))
         wrapInMemo(() => console.log('后面的句子', ff))
+        const gg = ff + getAwait(() => Promise.resolve(2222))
+        wrapInMemo(() => console.log('后面的句子2', gg))
+        // return 88
       } catch(E) {
         if (E instanceof YieldError) {
           tempE = E
@@ -98,11 +107,11 @@
         wrapInMemo(() => {
           throw 8888
         })
+        return 88
       }
     }
 
-    const run = (v, res, rej, type) => {
-      nextValue = v;
+    const run = (v, res, rej) => {
       let tempE = null
       let value = null;
       try {
@@ -122,40 +131,45 @@
 
       if (tempE instanceof AwaitError) {
         // 获得await 的那个值。
-        Promise.resolve(value).then(
+        // console.error(tempE)
+       const t = Promise.resolve(value).then(
           (x) => {
+            setNext(x)
             run(x, res, rej)
           },
           (e) => {
-            const p1 = agx.throw(e).then(res, rej);
+            err = e;
+            handle(e, 'throw', res, rej).catch(e => e);
+            // agx.throw(e).then((x) => {
+            //   res(x)
+            // }, (y) => {
+            //   rej(y)
+            // });
           }
         )
 
-        const tret = Promise.resolve({
-          value,
-          done,
-        })
+        // const tret = Promise.resolve({
+        //   value,
+        //   done,
+        // })
 
         if (!lastPromise) {
-          lastPromise = tret;
+          lastPromise = t;
         }
-
-        return tret;
+        return t;
       }
       
-      const tret2 = Promise.resolve({
+      // const tret2 = Promise.resolve()
+
+      res({
         value,
         done,
       })
-
-      if (done) {
-        res(tret2)
-      }
-      return tret2;
+      // console.error(value)
+      // return tret2;
     }
 
-
-    const handle = (v, type) => {
+    const handle = (v, type, lastRes, lastRej) => {
       const { p, res, rej } = getP();
       const t = lastPromise;
       lastPromise = p;
@@ -165,18 +179,23 @@
           run(v, res, rej)
         }) 
       } else {
-        // 首次进来
-        run(v, res, rej, type)
+        // 首次进来 或者报错
+        run(v, type=== 'throw' ? (x) => {
+          res(x)
+          lastRes(x)
+        } : res, type=== 'throw' ? (e) => {
+          rej(e)
+          lastRej(e)
+        } : rej)
       }
 
       // 包一层
-      return new Promise((r, x) => {
-        p.then(r, x);
-      })
+      return p
     }
 
     const agx = {
       next(x) {
+        nextListValue[nextIndex++] = x;
         return handle(x, 'next')
       },
       throw(x) {
@@ -189,8 +208,14 @@
       }
     }
 
+    let p = Promise.resolve(0);
+   for(let i = 0; i< 20; i++) {
+     p.then((x) => console.log('第' + x + '轮'))
+     p = p.then(() => i + 1)
+   }
 
-    console.log(agx.next().then(x => x, console.warn))
+
+   agx.next().then(console.log, console.warn)
 
 
   </script>
