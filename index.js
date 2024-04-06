@@ -16,6 +16,7 @@ import RuntimeValue, { RuntimeAwaitValue } from "./transform/runtime/Environment
 import parseRuntimeValue from "./transform/runtime/Environment/parseRuntimeValue";
 import { innerParseProgram } from "./transform/runtime/Parse/parseProgram";
 import { CookedToRaw, rawToCooked } from "./transform/runtime/ast/utils";
+import RegExpAst from "./transform/runtime/RegExp";
 
 const source = document.getElementById('source');
 const astJsonContainer = document.getElementById('astJsonContainer');
@@ -734,3 +735,10 @@ window.addEventListener('unhandledrejection', (x) => {
     Promise.reject(parseRuntimeValue(x.reason))
   }
 })
+
+
+setTimeout(() => {
+  currentSourceCodeStr = '/^\d{6}$/';
+  const ast = new RegExpAst().parse(currentSourceCodeStr);
+  console.log(_.T(ast, true));
+}, 500)

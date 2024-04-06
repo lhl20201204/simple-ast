@@ -157,7 +157,7 @@ export const isProgram = `
 // console.log(4)
 // asyncGen.next('y').then((res) => console.log(res.value, 'c'));
 // console.log('main-end')
-
+/*
 let p = Promise.resolve(0);
 for(let i = 0; i< 20; i++) {
   p.then((x) => console.log('第' + x + '轮'))
@@ -207,14 +207,14 @@ function test53() {
     yield await Promise.resolve('a')
     yield await Promise.resolve('b')
     yield await Promise.resolve('c')
-  } /* function end */
+  } 
   let str = '';
   async function generate() {
     for await (const t of [1, 2, 3]) {
       console.log(t)
-    }  /* for of end */
+    }  
     console.log(str)
-  } /* function end */
+  } 
   generate()
 }
 test53() 

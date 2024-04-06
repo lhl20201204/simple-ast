@@ -43,7 +43,7 @@ export function omitAttr(ast) {
   }
   if (_.isObject(ast)) {
     const obj = _.reduce(ast, (obj, v, k) => {
-      if (['start', 'end', 'tokens'].includes(k)) {
+      if (['start', 'end', 'tokens', 'parent'].includes(k)) {
         return obj;
       }
       return Object.assign(obj, {

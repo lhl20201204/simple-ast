@@ -1,4 +1,4 @@
-import { AstFlagDicts, prefixDicts } from "./constants";
+import { AstFlagDicts, prefixDicts } from "./constant";
 
 export default class ASTContext {
   constructor() {
