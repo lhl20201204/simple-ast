@@ -8,7 +8,7 @@ import { ENV_DICTS } from "../constant";
 
 export default function parseDoWhileStatement(ast, env) {
   const { test, body } = ast;
-  const isGeneratorEnv = env.canSleepAble() ||  env.isInGeneratorEnv();
+  const isGeneratorEnv = env.canYieldAble();
   const childEnv = createEnviroment('do_while_body', env, {
     [ENV_DICTS.isDoWhileEnv]: true,
     [ENV_DICTS.noNeedLookUpVar]: true,

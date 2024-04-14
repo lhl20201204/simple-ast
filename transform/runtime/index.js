@@ -43,6 +43,7 @@ import parseSleepStatement from "./Parse/parseSleepStatement";
 import parseSpreadElement from "./Parse/parseSpreadElement";
 import parseSuper from "./Parse/parseSuper";
 import parseSwitchStatement from "./Parse/parseSwitchStatement";
+import parseTaggedTemplateExpression from "./Parse/parseTaggedTemplateExpression";
 import parseTemplateElement from "./Parse/parseTemplateElement";
 import parseTemplateLiteral from "./Parse/parseTemplateLiteral";
 import parseThisExpression from "./Parse/parseThisExpression";
@@ -53,6 +54,7 @@ import parseUpdateExpression from "./Parse/parseUpdateExpression";
 import parseUseRuntimeValueExpression from "./Parse/parseUseRuntimeValueExpression";
 import parseVariableDeclaration from "./Parse/parseVariableDeclaration";
 import parseWhileStatement from "./Parse/parseWhileStatement";
+import parseWithStatement from "./Parse/parseWithStatement";
 import parseYieldExpression from "./Parse/parseYieldExpression";
 import { AST_DICTS, DEBUGGER_DICTS } from "./constant";
 
@@ -96,6 +98,7 @@ export function innerParseAst(ast, env) {
     case 'Literal': return parseLiteral(ast);  
     case 'LabeledStatement': return parseLabeledStatement(ast, env); 
     case 'LogicalExpression': return parseLogicalExpression(ast, env);
+    case 'MetaProperty': // TODO 先让他跟Member一样执行
     case 'MemberExpression': return parseMemberExpression(ast, env);
     case 'NewExpression': return parseNewExpression(ast, env);
     case 'ObjectExpression': return parseObjectExpression(ast, env);
@@ -107,6 +110,7 @@ export function innerParseAst(ast, env) {
     case 'SleepStatement': return parseSleepStatement(ast, env);
     case 'SpreadElement': return parseSpreadElement(ast,env);
     case 'SwitchStatement': return parseSwitchStatement(ast, env);
+    case  'TaggedTemplateExpression': return parseTaggedTemplateExpression(ast, env);
     case 'ThrowStatement': return parseThrowStatement(ast, env);
     case 'TryStatement': return parseTryStatement(ast, env);
     case 'ThisExpression': return parseThisExpression(ast, env);
@@ -115,6 +119,7 @@ export function innerParseAst(ast, env) {
     case 'UnaryExpression': return parseUnaryExpression(ast, env); 
     case 'UpdateExpression': return parseUpdateExpression(ast, env);
     case 'VariableDeclaration': return parseVariableDeclaration(ast, env);
+    case 'WithStatement': return parseWithStatement(ast, env);
     case 'WhileStatement': return parseWhileStatement(ast, env);
     case 'YieldExpression': return parseYieldExpression(ast, env);
     case AST_DICTS.RuntimeValue: return parseRuntimeValueExpression(ast, env);

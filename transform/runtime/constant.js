@@ -49,12 +49,14 @@ export const RUNTIME_LITERAL = {
   arguments: 'arguments',
   NaN: 'NaN',
   do: 'do',
+  with: 'with',
 }
 
 export const ENV_DICTS = {
   isUseStrict: 'isUseStrict',
   continueFlag: 'continueFlag',
   currentBreakContinueValue: 'currentBreakContinueValue',
+  // currentBreakValue: 'currentBreakValue',
   breakFlag: 'breakFlag',
   isForEnv: 'isForEnv',
   returnFlag: 'returnFlag',
@@ -81,6 +83,8 @@ export const ENV_DICTS = {
   isYieldBlockEnv: 'isYieldBlockEnv',
   runningGenerateConfig: 'runningGenerateConfig',
   isCacheFromParentEnv: 'isCacheFromParentEnv',
+  currentWithRuntimeValue: 'currentWithRuntimeValue',
+  currentWithRuntimeValueList: 'currentWithRuntimeValueList',
 }
 
 export const AST_DICTS = {
@@ -107,6 +111,9 @@ export const AST_DICTS = {
   yieldStarToForOfBodyAstConfig: 'yieldStarToForOfBodyAstConfig',
   forOfAwaitInitAstConfig: 'forOfAwaitInitAstConfig',
   preDeclarationAstConfig: 'preDeclarationAstConfig',
+  TaggedTemplateExpressionReflectAstConfig: 'TaggedTemplateExpressionReflectAstConfig',
+  TaggedTemplateExpressionExectueAstConfig: 'TaggedTemplateExpressionExectueAstConfig',
+  AssignmentExpressionInWithBlockAstConfig: 'AssignmentExpressionInWithBlockAstConfig',
 }
 
 export const GENERATOR_DICTS = {

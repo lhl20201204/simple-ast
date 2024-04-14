@@ -59,6 +59,7 @@ export const TOKEN_TYPE = {
   TemplateLiteralMiddle: '} ${ TemplateLiteralMiddle',
   TemplateLiteralEnd: '} ` TemplateLiteralEnd',
   WholeTemplateLiteral: '` ` WholeTemplateLiteral',
+  // TaggedTemplate: '` TaggedTemplate',
   Less: '< Less',
   LessEqual: '<= LessEqual',
   Great: '> Great',
@@ -111,6 +112,7 @@ export const TOKEN_TYPE = {
   sleep: 'sleep',
   NaN: 'NaN',
   do: 'do',
+  with: 'with',
 }
 
 export const EOFFlag = 'EOF';
@@ -174,7 +176,10 @@ export const AST_TYPE = {
   Super: 'Super',
   ChainExpression: 'ChainExpression',
   PrivateIdentifier: 'PrivateIdentifier',
-  ClassExpression: 'ClassExpression'
+  ClassExpression: 'ClassExpression',
+  WithStatement: 'WithStatement',
+  MetaProperty: 'MetaProperty',
+  TaggedTemplateExpression: 'TaggedTemplateExpression',
 }
 
 export const ReservedKeyList = [
@@ -221,6 +226,7 @@ export const ReservedKeyList = [
   ['NaN', TOKEN_TYPE.NaN],
   ['do', TOKEN_TYPE.do],
   ['sleep', TOKEN_TYPE.sleep],
+  ['with', TOKEN_TYPE.with],
 ]
 
 export const canUseVariableNameKeyList = [
@@ -261,6 +267,7 @@ export const METHOD_TYPE = {
   getExpAst: 'getExpAst',
   getArrayExpressionAst: 'getArrayExpressionAst',
   getObjectExpressionAst: 'getObjectExpressionAst',
+  getMaybeObjectExpressionAst: 'getMaybeObjectExpressionAst',
   getExpressionStatementAst: 'getExpressionStatementAst',
   getVariableDeclaratorAst: 'getVariableDeclaratorAst',
   getVariableDeclarationStatementAst: 'getVariableDeclarationStatementAst',
@@ -311,6 +318,8 @@ export const METHOD_TYPE = {
   getSuperAst: 'getSuperAst',
   getYieldAst: 'getYieldAst',
   getClassExpressionAst: 'getClassExpressionAst',
+
+  getWithStatementAst: 'getWithStatementAst',
 }
 
 export const AstFlagDicts = {
@@ -327,7 +336,11 @@ export const AstFlagDicts = {
   canUseKeyWordAsVariableName: 'canUseKeyWordAsVariableName',
   canBreakable: 'canBreakable',
   canContinueable: 'canContinueable',
-  pushLabelAddToContext: 'pushLabelAddToContext'
+  pushLabelAddToContext: 'pushLabelAddToContext',
+  // cannotUsePureObjectPattern: 'cannotUsePureObjectPattern',
+  canInWithBlock: 'canInWithBlock',
+  canUsePureExpression: 'canUsePureExpression',
+  canUseObjectPattern: 'canUseObjectPattern',
 }
 
 export const METHOD_TYPE_VALUES_LIST = _.values(METHOD_TYPE);

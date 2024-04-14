@@ -26,7 +26,7 @@ export default function parseForOfStatement(ast, env) {
     throw new Error(`for of 语句的遍历对象必须是生成器实例，
     或者实现 * Symbol[iterator]间接得到生成器实例的方法`);
   }
-  const isInGenerator = env.canSleepAble() || env.isInGeneratorEnv()
+  const isInGenerator = env.canYieldAble()
   if (isInGenerator) {
     if (!isInstanceOf(_.get(right, AST_DICTS._config), AstConfig)) {
       right[AST_DICTS._config] = new AstConfig()

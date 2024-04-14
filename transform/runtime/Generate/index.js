@@ -1,6 +1,6 @@
 import _ from "lodash";
 import { getClassBodyCode, getClassDeclarationCode, getClassExpressionCode, getMethodDefinitionCode, getNewExpressionCode, getPropertyDefinitionCode, getSuperCode } from "./classCode";
-import { getAssignmentExpressionCode, getAssignmentPatternCode, getAwaitExpressionCode, getBinaryExpressionCode, getBlockStatementCode, getBreakStatementCode, getCallExpressionCode, getChainExpressionCode, getConditionalExpressionCode, getContinueStatementCode, getDebuggerStatementCode, getDoWhileStatementCode, getExpressionStatementCode, getForInStatementCode, getForOfStatementCode, getForStatementCode, getGetRuntimeValueCode, getIdentifierCode, getIfStatementCode, getLabeledStatementCode, getLiteralCode, getLogicalExpressionCode, getMemberExpressionCode, getPreDeclarationCode, getProgramCode, getRestElementCode, getReturnStatementCode, getRuntimeValueCode, getSequenceExpressionCode, getSpreadElementCode, getStaticBlockCode, getSwitchStatementCode, getTemplateElementCode, getTemplateLiteralCode, getThisExpressionCode, getThrowStatementCode, getTryStatementCode, getUnaryExpressionCode, getUpdateExpressionCode, getUseRuntimeValueCode, getVariableDeclarationCode, getWhileStatementCode, getYieldExpressionCode } from "./commonCode";
+import { getAssignmentExpressionCode, getAssignmentPatternCode, getAwaitExpressionCode, getBinaryExpressionCode, getBlockStatementCode, getBreakStatementCode, getCallExpressionCode, getChainExpressionCode, getConditionalExpressionCode, getContinueStatementCode, getDebuggerStatementCode, getDoWhileStatementCode, getExpressionStatementCode, getForInStatementCode, getForOfStatementCode, getForStatementCode, getGetRuntimeValueCode, getIdentifierCode, getIfStatementCode, getLabeledStatementCode, getLiteralCode, getLogicalExpressionCode, getMemberExpressionCode, getMetaPropertyCode, getPreDeclarationCode, getProgramCode, getRestElementCode, getReturnStatementCode, getRuntimeValueCode, getSequenceExpressionCode, getSpreadElementCode, getStaticBlockCode, getSwitchStatementCode, getTaggedTemplateExpressionCode, getTemplateElementCode, getTemplateLiteralCode, getThisExpressionCode, getThrowStatementCode, getTryStatementCode, getUnaryExpressionCode, getUpdateExpressionCode, getUseRuntimeValueCode, getVariableDeclarationCode, getWhileStatementCode, getYieldExpressionCode } from "./commonCode";
 import { AST_DICTS, DEBUGGER_DICTS } from "../constant";
 import { getArrowFunctionExpressionCode, getFunctionDeclarationCode, getFunctionExpressionCode } from "./functionCode";
 import { getObjectExpressionCode, getObjectPatternCode } from "./objectCode";
@@ -49,6 +49,7 @@ export function getAstCode(ast, config) {
     case 'Literal': return getLiteralCode(ast, config); 
     case 'LogicalExpression': return getLogicalExpressionCode(ast, config);
     case 'MemberExpression': return getMemberExpressionCode(ast, config);
+    case 'MetaProperty': return getMetaPropertyCode(ast, config);
     case 'MethodDefinition': return getMethodDefinitionCode(ast, config);
     case 'NewExpression': return getNewExpressionCode(ast, config);
     case 'ObjectExpression': return getObjectExpressionCode(ast, config);
@@ -62,6 +63,7 @@ export function getAstCode(ast, config) {
     case 'SequenceExpression': return getSequenceExpressionCode(ast, config);
     case 'SwitchStatement': return getSwitchStatementCode(ast, config);
     case 'SpreadElement': return getSpreadElementCode(ast, config);
+    case 'TaggedTemplateExpression': return getTaggedTemplateExpressionCode(ast, config);
     case 'ThrowStatement': return getThrowStatementCode(ast, config);
     case 'ThisExpression': return getThisExpressionCode(ast, config);
     case 'TemplateLiteral': return getTemplateLiteralCode(ast, config);
@@ -71,6 +73,7 @@ export function getAstCode(ast, config) {
     case 'UpdateExpression': return getUpdateExpressionCode(ast, config);
     case 'VariableDeclaration': return getVariableDeclarationCode(ast, config);
     case 'WhileStatement': return getWhileStatementCode(ast, config);
+    case 'WithStatement': return getWithStatementCode(ast, config);
     case 'YieldExpression': return getYieldExpressionCode(ast, config);
     case AST_DICTS.RuntimeValue: return getRuntimeValueCode(ast, config);
     case AST_DICTS.UseRuntimeValue: return getUseRuntimeValueCode(ast, config);

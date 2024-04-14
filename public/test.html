@@ -27,9 +27,33 @@
 
     // 开始添加类
 
-    // rrrr
-    // rrrr
     function test() {
+      // const obj  = {}
+      // with(obj) {
+      //   name = 'ffff';
+      //   console.log(this, '111');
+      // }
+      // console.log(obj);
+      ({ cc } = { cc: 2})
+      function a() {
+        const obj = { name : 1, gg: { g: { h: 4 }}}
+console.log(obj)
+with(obj) {
+  name = 2
+  gg.g.h = 6
+}
+
+console.log(obj)
+      }
+      const c = { jjjj: 1 }
+      a.call(c);
+      console.log(c, 'c', window)
+    }
+    test()
+    // rrrr
+    // rrrr
+    function test55() {
+
 
       let p = Promise.resolve(0)
       for (let i = 0; i < 20; i++) {
@@ -83,7 +107,7 @@
         console.error('-4-->', e)
       })
     }
-    test()
+
 
 
     function test54() {

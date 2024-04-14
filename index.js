@@ -736,9 +736,8 @@ window.addEventListener('unhandledrejection', (x) => {
   }
 })
 
-
-setTimeout(() => {
-  currentSourceCodeStr = '/^\d{6}$/';
-  const ast = new RegExpAst().parse(currentSourceCodeStr);
-  console.log(_.T(ast, true));
-}, 500)
+// setTimeout(() => {
+//   currentSourceCodeStr = '/^\d{6}$/';
+//   const ast = new RegExpAst().parse(currentSourceCodeStr);
+//   console.log(_.T(ast, true));
+// }, 500)

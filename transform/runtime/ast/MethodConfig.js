@@ -247,7 +247,7 @@ export const MethodConfig = {
       TOKEN_TYPE.TemplateLiteralStart,
       TOKEN_TYPE.WholeTemplateLiteral,
     ],
-    [METHOD_TYPE.getObjectExpressionAst]: TOKEN_TYPE.LeftBrace,
+    [METHOD_TYPE.getMaybeObjectExpressionAst]: TOKEN_TYPE.LeftBrace,
     [METHOD_TYPE.getArrayExpressionAst]: TOKEN_TYPE.LeftBracket,
     [METHOD_TYPE.getParenthesiOrArrowFunctionExpressionAst]: TOKEN_TYPE.LeftParenthesis,
     [METHOD_TYPE.getFunctionExpressionOrWithArrowAst]: [TOKEN_TYPE.async, TOKEN_TYPE.function],

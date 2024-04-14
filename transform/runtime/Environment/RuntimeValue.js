@@ -237,7 +237,7 @@ export class RuntimeRefValue extends RuntimeValue {
     // }
 
     const base = this.getBaseHasProperty(attr)
-
+   
     if (!base || base === getNullValue()) {
       return getUndefinedValue()
     }
@@ -417,6 +417,11 @@ export class RuntimeRefValue extends RuntimeValue {
     }
 
     return getTrueV()
+  }
+
+  has(attr) {
+    // TODO 考虑是否自身有
+    return _.includes(this.keys(), attr)
   }
 
   keys() {

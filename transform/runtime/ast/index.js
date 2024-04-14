@@ -1,11 +1,12 @@
 import _ from "lodash";
-import { avoidPureArrowFuncitonExpressionNextTokenIsOperator, checkShouldWrapLine, checkThrowIfSameName, ensureAllTypeInList, getValueOfLiteralToken, isSetOrGetTokenLike, isUnhandleError, onlyAllowMemberExpressionOrIdentifier, rawToCooked, throwError, tokenHadWrapLine, valueToRaw } from "./utils";
+import { avoidPureArrowFuncitonExpressionNextTokenIsOperator, checkShouldWrapLine, checkThrowIfSameName, ensureAllTypeInList, getValueOfLiteralToken, isSetOrGetTokenLike, isUnhandleError, onlyAllowMemberExpressionOrIdentifier, onlyAllowPatternAst, rawToCooked, throwError, tokenHadWrapLine, valueToRaw } from "./utils";
 import { isInstanceOf, log } from "../../commonApi";
 import { AST_TYPE, AstFlagDicts, IdentifierAstTokenTypeList, LiteralAstTokenTypeList, METHOD_TYPE, TOKEN_TYPE, TOKEN_TYPE_VALUE_LIST, commonLiteral, definePriorityConfig, prefixDicts } from "./constants";
 import { Token } from "./Token";
 import { SourceCodeHandleApi } from "./SourceCodeHandleApi";
 import { MethodConfig } from "./MethodConfig";
 import ASTItem from "./ASTITem";
+import { AST_DICTS } from "../constant";
 
 export default class AST extends SourceCodeHandleApi {
   _innerGetFunctionAst = (type) => {
@@ -265,14 +266,19 @@ export default class AST extends SourceCodeHandleApi {
     return this.createAstItem(obj)
   }
 
-  _innerGetArrayOrObjectPattern = ([leftTokenType, rightTokenType], methodType, astType, attrType ,flagType) => {
+  _innerGetArrayOrObjectPattern = ([leftTokenType, rightTokenType], methodType, astType, attrType, flagType) => {
     const commonFlag = [AstFlagDicts.canRestable,
-      AstFlagDicts.canUseAssignmentPattern,
+    AstFlagDicts.canUseAssignmentPattern,
     ]
     if (flagType) {
       commonFlag.push(flagType)
     }
-     return this.decorator(commonFlag, () => {
+    return this.decorator(commonFlag, () => {
+      if (leftTokenType === TOKEN_TYPE.LeftBrace) {
+        // if (this.proxyMethod(prefixDicts.is, AstFlagDicts.cannotUsePureObjectPattern)) {
+        //   throwError('在with表达式里使用对象解构需要使用()包起来' ,this.nextTokenIs())
+        // }
+      }
       const restTokens = [this.expectToken(leftTokenType)];
       const properties = []
       while (!this.nextTokenIs(rightTokenType)) {
@@ -292,7 +298,7 @@ export default class AST extends SourceCodeHandleApi {
         [attrType]: properties,
         restTokens,
       })
-     })
+    })
 
   }
 
@@ -309,7 +315,7 @@ export default class AST extends SourceCodeHandleApi {
         if (flag && ast.is(AST_TYPE.ExpressionStatement) && ast.expression.is(AST_TYPE.Literal)) {
           ast.set('directive', _.slice(ast.expression.raw, 1, -1).join(''))
         } else {
-          flag =false
+          flag = false
         }
         body.push(ast)
       }
@@ -492,6 +498,28 @@ export default class AST extends SourceCodeHandleApi {
       restTokens: tempRestTokens,
       body: this.getFunctionBodyAst(),
     }
+  }
+
+  [METHOD_TYPE.getMaybeObjectExpressionAst]() {
+    // console.trace()
+    if (this.proxyMethod(prefixDicts.is, AstFlagDicts.canUseObjectPattern)) {
+      const ret = this[METHOD_TYPE.getObjectPatternAst]();
+      this.proxyMethod(prefixDicts.reset, AstFlagDicts.canUseObjectPattern);
+      return ret;
+    }
+    if (!this.proxyMethod(prefixDicts.is, AstFlagDicts.canUsePureExpression)) {
+      return this[METHOD_TYPE.getObjectExpressionAst]();
+    }
+    this.save()
+    const ret = this[METHOD_TYPE.getObjectExpressionAst]()
+    if (!this.nextTokenIs(TOKEN_TYPE.Equal)) {
+      this.consume();
+      return ret;
+    }
+    this.restore();
+    this.proxyMethod(prefixDicts.set, AstFlagDicts.canUseObjectPattern, true);
+    // console.log('enter')
+    return this[METHOD_TYPE.getAssignmentExpression]()
   }
 
   [METHOD_TYPE.getObjectExpressionPropertyAst]() {
@@ -783,7 +811,7 @@ export default class AST extends SourceCodeHandleApi {
   [METHOD_TYPE.getClassExpressionAst] = this._innerGetClassAst(AST_TYPE.ClassExpression, true);
 
   [METHOD_TYPE.getClassDeclarationAst] = this._innerGetClassAst(AST_TYPE.ClassDeclaration, false);
-  
+
   [METHOD_TYPE.getArrayPatternAst] = this._innerGetArrayOrObjectPattern(
     [TOKEN_TYPE.LeftBracket, TOKEN_TYPE.RightBracket],
     METHOD_TYPE.getPatternAst,
@@ -811,7 +839,13 @@ export default class AST extends SourceCodeHandleApi {
       throwError('未识别的语法', this.nextTokenIs())
     }
     if (this.proxyMethod(prefixDicts.is, AstFlagDicts.cannotUsePureArrowExpression)) {
-      const ret = this[METHOD_TYPE.getParenthesisAst]();
+      if (!this.getTokenByCallback(2)?.is?.(TOKEN_TYPE.LeftBrace)) {
+        return this[METHOD_TYPE.getParenthesisAst]();
+      }
+      const ret = this.wrapInDecorator([
+        // AstFlagDicts.cannotUsePureObjectPattern
+        AstFlagDicts.canUsePureExpression
+      ], () => this[METHOD_TYPE.getParenthesisAst](), true);
       if (this.nextTokenIs(TOKEN_TYPE.Arrow)) {
         throwError('可能需要对箭头函数加括号', this.nextTokenIs())
       }
@@ -852,14 +886,24 @@ export default class AST extends SourceCodeHandleApi {
         throw e
       }
     }
-  
-    return this[METHOD_TYPE.getParenthesisAst]()
+
+    if (!this.getTokenByCallback(2)?.is(TOKEN_TYPE.LeftBrace)) {
+      return this[METHOD_TYPE.getParenthesisAst]();
+    }
+
+    return this.wrapInDecorator([
+      // AstFlagDicts.cannotUsePureObjectPattern
+      AstFlagDicts.canUsePureExpression
+    ], () => this[METHOD_TYPE.getParenthesisAst](), true);
   }
 
   [METHOD_TYPE.getBlockStatementAst]() {
     const restTokens = [this.expectToken(TOKEN_TYPE.LeftBrace)];
     const body = this.getBlockStatementBodyContent(TOKEN_TYPE.RightBrace)
     restTokens.push(this.expectToken(TOKEN_TYPE.RightBrace))
+    if (this.nextTokenIs(TOKEN_TYPE.Equal)) {
+      throwError('如果是赋值表达式的话，可能需要包裹一个括号', this.nextTokenIs())
+    }
     return this.createAstItem({
       type: AST_TYPE.BlockStatement,
       body,
@@ -871,7 +915,7 @@ export default class AST extends SourceCodeHandleApi {
     let restTokens = [];
     while (this.nextTokenIs(TOKEN_TYPE.new)) {
       restTokens.push(this.eatToken());
-      let callee = this.wrapInDecorator(AstFlagDicts.cannotUseParenthesis ,() =>this[METHOD_TYPE.getNewExpression]());
+      let callee = this.wrapInDecorator(AstFlagDicts.cannotUseParenthesis, () => this[METHOD_TYPE.getNewExpression]());
       let s = this.nextTokenIs();
       while (s.is(TOKEN_TYPE.Point) || s.is(TOKEN_TYPE.Optional) || s.is(TOKEN_TYPE.LeftBracket)) {
         s = this.eatToken();
@@ -945,7 +989,9 @@ export default class AST extends SourceCodeHandleApi {
   [METHOD_TYPE.getMemberOrCallExpression]() {
     const methodName = METHOD_TYPE.getNewExpression
     let left = this[methodName]();
-    // console.log('ret2', left);
+    if (left.is(AST_TYPE.Literal) && _.last(left.tokens)?.is(TOKEN_TYPE.Number)) {
+      return left;
+    }
     let right = null;
     let isOptional = false;
     while (this.nextTokenIs([
@@ -957,7 +1003,7 @@ export default class AST extends SourceCodeHandleApi {
       // console.warn('enter', left)
       avoidPureArrowFuncitonExpressionNextTokenIsOperator(left);
       let s = this.eatToken();
-    
+
       if (s.is(TOKEN_TYPE.LeftParenthesis) || (s.is(TOKEN_TYPE.Optional) && this.nextTokenIs(TOKEN_TYPE.LeftParenthesis))) {
         this.proxyMethod(prefixDicts.set, AstFlagDicts.canSpreadable, true);
         this.proxyMethod(prefixDicts.set, AstFlagDicts.cannotUsePureArrowExpression, false)
@@ -1011,21 +1057,50 @@ export default class AST extends SourceCodeHandleApi {
           restTokens.push(this.expectToken(TOKEN_TYPE.RightBracket))
         }
 
-        left = this.createAstItem({
+        const obj = {
           type: AST_TYPE.MemberExpression,
           object: left,
           property: right,
           computed,
           optional,
           restTokens,
-        })
+        };
+
+        if (left.is(AST_TYPE.Identifier) && right.is(AST_TYPE.Identifier)
+          &&
+          ((left.name === 'import')
+            || (left.name === 'new'))
+        ) {
+          if ((left.name === 'import' && right.name !== 'meta')
+            || (left.name === 'new' && right.name !== 'target')) {
+            throwError(`${left.name}后面的属性不对`, _.last(right.tokens))
+          }
+          _.set(obj, 'type', AST_TYPE.MetaProperty);
+          _.set(obj, 'meta', left)
+          Reflect.deleteProperty(obj, 'object')
+        }
+
+        left = this.createAstItem(obj)
       }
     }
-    return isOptional ? this.createAstItem({
+    const ret = isOptional ? this.createAstItem({
       type: AST_TYPE.ChainExpression,
       expression: left,
       restTokens: []
     }) : left;
+    if (this.nextTokenIs([
+      TOKEN_TYPE.TemplateLiteralStart,
+      TOKEN_TYPE.WholeTemplateLiteral,
+    ])) {
+      const quasi = this[METHOD_TYPE.getTemplateLiteralAst]();
+      return this.createAstItem({
+        type: AST_TYPE.TaggedTemplateExpression,
+        tag: ret,
+        quasi,
+        restTokens: [],
+      })
+    }
+    return ret;
   }
 
   [METHOD_TYPE.getSuffixUpdateExpression]() {
@@ -1115,8 +1190,12 @@ export default class AST extends SourceCodeHandleApi {
     TOKEN_TYPE.XorEqual,
     TOKEN_TYPE.SingleOrEqual,
   ], AST_TYPE.AssignmentExpression, {
-    checkLeft(ast) {
-      onlyAllowMemberExpressionOrIdentifier(ast, '赋值表达式左边只能是:')
+    checkLeft: (ast) => {
+      // if (this.proxyMethod(prefixDicts.is, AstFlagDicts.canInWithBlock)) {
+
+      // }
+      onlyAllowPatternAst(ast, '赋值表达式左边只能是:')
+      return ast;
     }
   });
 
@@ -1132,12 +1211,45 @@ export default class AST extends SourceCodeHandleApi {
       t = this.getTokenByCallback(2),
       t.is(TOKEN_TYPE.Colon)
     )) {
+      // const restTokens = []
+      // let ret = this[METHOD_TYPE.getExpAst]()
+
+      // if (this.nextTokenIs([
+      //   TOKEN_TYPE.TemplateLiteralStart,
+      //   TOKEN_TYPE.WholeTemplateLiteral,
+      // ])) {
+      //   const quasi = this[METHOD_TYPE.getTemplateLiteralAst]();
+      //   ret = this.createAstItem({
+      //     type: AST_TYPE.TaggedTemplateExpression,
+      //     tag: ret,
+      //     quasi,
+      //     restTokens: [],
+      //   })
+      // }
+      // if (this.nextTokenIs(TOKEN_TYPE.Semicolon)) {
+      //   restTokens.push(this.expectToken(TOKEN_TYPE.Semicolon))
+      // }
+      // return this.createAstItem({
+      //   type: AST_TYPE.ExpressionStatement,
+      //   expression: ret,
+      //   restTokens,
+      // });
       return this[METHOD_TYPE.getExpressionStatementAst]()
     }
     const restTokens = []
     const label = this[METHOD_TYPE.getIdentifierAst]();
     restTokens.push(this.expectToken(TOKEN_TYPE.Colon))
-    const body = this.wrapInDecorator(AstFlagDicts.pushLabelAddToContext, () => this[METHOD_TYPE.getWhileStatementAst](), label.name);
+    const decorators = [AstFlagDicts.pushLabelAddToContext]
+    if (this.nextTokenIs(TOKEN_TYPE.if)) {
+      decorators.push(AstFlagDicts.canBreakable);
+    }
+    const body = this.wrapInDecorator(decorators, () => {
+      // const token = this.nextTokenIs();
+      // if (!token.isOneOf([TOKEN_TYPE.for, TOKEN_TYPE.if, TOKEN_TYPE.while, TOKEN_TYPE.switch, TOKEN_TYPE.do])) {
+      //   throwError('LabeledStatement语法错误', token)
+      // }
+      return this[METHOD_TYPE.getStatementOrExpressionAst]()
+    }, label.name);
     return this.createAstItem({
       type: AST_TYPE.LabeledStatement,
       label,
@@ -1417,6 +1529,25 @@ export default class AST extends SourceCodeHandleApi {
     return this[METHOD_TYPE.getAssignmentExpression]()
   }
 
+  [METHOD_TYPE.getWithStatementAst]() {
+    const restTokens = [this.expectToken(TOKEN_TYPE.with)];
+    restTokens.push(this.expectToken(TOKEN_TYPE.LeftParenthesis));
+    const object = this[METHOD_TYPE.getExpAst]();
+    restTokens.push(this.expectToken(TOKEN_TYPE.RightParenthesis));
+    const body = this.wrapInDecorator([
+      // AstFlagDicts.cannotUsePureObjectPattern,
+      AstFlagDicts.canInWithBlock
+    ], () => {
+      return this[METHOD_TYPE.getStatementOrExpressionAst]()
+    });
+    return this.createAstItem({
+      type: AST_TYPE.WithStatement,
+      object,
+      body,
+      restTokens,
+    })
+  }
+
   [METHOD_TYPE.getStatementOrExpressionAst]() {
     const token = this.nextTokenIs();
     switch (token.type) {
@@ -1427,6 +1558,8 @@ export default class AST extends SourceCodeHandleApi {
         })
       case TOKEN_TYPE.sleep:
         return this[METHOD_TYPE.getSleepStatement]();
+      case TOKEN_TYPE.with:
+        return this[METHOD_TYPE.getWithStatementAst]();
       case TOKEN_TYPE.return:
         return this[METHOD_TYPE.getReturnStatementAst]();
       case TOKEN_TYPE.throw:

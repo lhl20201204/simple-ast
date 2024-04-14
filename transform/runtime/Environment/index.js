@@ -44,10 +44,10 @@ export default class Environment {
   }
 
   copyFromParentEnv(parentEnv) {
-    for(const [x,y] of parentEnv.keyMap) {
+    for (const [x, y] of parentEnv.keyMap) {
       this.keyMap.set(x, y)
     }
-    for(const [x,y] of parentEnv.map) {
+    for (const [x, y] of parentEnv.map) {
       this.map.set(x, y)
     }
   }
@@ -104,7 +104,7 @@ export default class Environment {
 
   addConst(key, value) {
     if (this.keyMap.has(key) && !this.isCacheFromParentEnv()
-  ) {
+    ) {
       throw new Error(`${key} 已被定义`);
     }
     this.checkPlaceHolded(key)
@@ -282,6 +282,31 @@ export default class Environment {
     return this.parent && this.parent.findForEnv()
   }
 
+  pushCurrentWithRuntimeValue(rv) {
+    if (!this._config[ENV_DICTS.currentWithRuntimeValueList]) {
+      this._config[ENV_DICTS.currentWithRuntimeValueList] = []
+    }
+    this._config[ENV_DICTS.currentWithRuntimeValueList].push(rv)
+  }
+
+  popCurrentWithRuntimeValue() {
+    return this._config[ENV_DICTS.currentWithRuntimeValueList].pop()
+  }
+
+  getCurrentWithRuntimeValue() {
+    return this._config[ENV_DICTS.currentWithRuntimeValueList][
+      _.size(this._config[ENV_DICTS.currentWithRuntimeValueList]) - 1
+    ]
+  }
+
+  canYieldAble() {
+    return this.isInGeneratorEnv() || this.canSleepAble()
+  }
+
+  isInWithBlock() {
+    return _.size(this._config[ENV_DICTS.currentWithRuntimeValueList]) > 0
+  }
+
   isForOfEnv() {
     return this._config[ENV_DICTS.isForOfEnv];
   }
@@ -299,10 +324,13 @@ export default class Environment {
       || (this.parent && this.parent.isForEnv())
   }
 
+  isLabeledEnv() {
+    return this._config[ENV_DICTS.isLabelEnv] || (this.parent && this.parent.isLabeledEnv());
+  }
+
   isWhileEnv() {
     return this._config[ENV_DICTS.isWhileEnv]
       || this._config[ENV_DICTS.isDoWhileEnv]
-      || this._config[ENV_DICTS.isLabelEnv]
       || (this.parent && this.parent.isWhileEnv());
   }
 
@@ -379,7 +407,7 @@ export default class Environment {
 
   isInGeneratorEnv() {
     let t = this;
-    while(t && !t.isFunctionEnv()) {
+    while (t && !t.isFunctionEnv()) {
       t = t.parent;
     }
     return t?.currentIsGeneratorFunctionEnv?.();
@@ -414,7 +442,7 @@ export default class Environment {
 
   getNextValue() {
     const g = this.getRunningGenerateConfig();
-    return  g ? g.getNextValue() : getUndefinedValue()
+    return g ? g.getNextValue() : getUndefinedValue()
   }
 
   setYieldValue(rv) {
@@ -429,21 +457,29 @@ export default class Environment {
   }
 
   getNearBreakContinueableEnv() {
+    // console.log(findBreak, this._config[ENV_DICTS.isWhileEnv])
     if ((this._config[ENV_DICTS.isForEnv]
       || this._config[ENV_DICTS.isWhileEnv]
       || this._config[ENV_DICTS.isLabelEnv]
       || this._config[ENV_DICTS.isDoWhileEnv]
       || this._config[ENV_DICTS.isSwitchEnv])
-       && (_.isNil(this._config[ENV_DICTS.currentBreakContinueValue]) || (
-        this._config[ENV_DICTS.isLabelEnv] &&
-        this._config[ENV_DICTS.currentEnvLabelValue] === this._config[ENV_DICTS.currentBreakContinueValue]))) {
+      && (
+        (
+          _.isNil(this._config[ENV_DICTS.currentBreakContinueValue])
+          || (
+            this._config[ENV_DICTS.isLabelEnv] &&
+            this._config[ENV_DICTS.currentEnvLabelValue] === this._config[ENV_DICTS.currentBreakContinueValue]
+          )
+        )
+      )
+    ) {
       return this;
     }
     return this.parent && this.parent.getNearBreakContinueableEnv()
   }
 
   isNoBreackableEnv() {
-    return !this.isForEnv() && !this.isWhileEnv() && !this.isSwitchEnv()
+    return !this.isForEnv() && !this.isWhileEnv() && !this.isSwitchEnv() && !this.isLabeledEnv();
   }
 
   ensureInBreakEnv() {
@@ -455,6 +491,7 @@ export default class Environment {
   setBreakFlag(flag, name) {
     this.ensureInBreakEnv()
     this._config[ENV_DICTS.breakFlag] = flag;
+    this._config[ENV_DICTS.currentBreakContinueValue] = name;
     if (this !== this.getNearBreakContinueableEnv()) {
       this.parent.setBreakFlag(flag, name)
     }

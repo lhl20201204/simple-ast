@@ -32,7 +32,7 @@ export class SourceCodeHandleApi {
 
   expectToken(type) {
     if (_.isNil(type) || !this.nextTokenIs(type)) {
-      console.log(new Error().stack)
+      // console.log(new Error().stack)
       const token = this.eatToken();
       // console.log(type, this.astContext)
       const e = new Error(`${token.startRow}行:${token.startCol}列-${token.endRow}行:${token.endCol}列  预期是${type}`);
@@ -500,7 +500,7 @@ export class SourceCodeHandleApi {
 
         let right =this.wrapInDecorator(AstFlagDicts.cannotUsePureArrowExpression ,() =>this[attr](), 
         astType !== AST_TYPE.AssignmentExpression);
-        checkLeft(left);
+        left = checkLeft(left) ?? left;
         checkRight(right);
         left = this.createAstItem({
           type: astType,

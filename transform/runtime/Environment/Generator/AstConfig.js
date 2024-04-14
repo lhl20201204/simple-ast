@@ -48,6 +48,12 @@ export default class AstConfig{
 
   getPreDeclarationAstConfig = this.getOrNew(AST_DICTS.preDeclarationAstConfig);
 
+  getTaggedTemplateExpressionExectueAstConfig = this.getOrNew(AST_DICTS.TaggedTemplateExpressionExectueAstConfig);
+
+  getTaggedTemplateExpressionReflectAstConfig = this.getOrNew(AST_DICTS.TaggedTemplateExpressionReflectAstConfig);
+
+  getAssignmentExpressionInWithBlockAstConfig = this.getOrNew(AST_DICTS.AssignmentExpressionInWithBlockAstConfig);
+
   resetForOfAwaitInitAstConfig = () => {
     this.map.set(AST_DICTS.forOfAwaitInitAstConfig, new AstConfig())
   }
@@ -123,7 +129,7 @@ export function clearAstConfig(ast) {
 
 
 export function withRecordEnvStack(ast, env, cb) {
-  const isGeneratorEnv = env.canSleepAble() || env.isInGeneratorEnv();
+  const isGeneratorEnv = env.canYieldAble();
   if (isGeneratorEnv) {
     ensureAstHadConfig(ast);
     const astConfig= ast[AST_DICTS._config];

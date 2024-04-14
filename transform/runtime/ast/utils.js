@@ -18,6 +18,15 @@ export function onlyAllowMemberExpressionOrIdentifier(ast, prefixTip) {
   }
 }
 
+export function onlyAllowPatternAst(ast, prefixTip) {
+  if (![AST_TYPE.MemberExpression, AST_TYPE.Identifier, AST_TYPE.ObjectPattern,
+  AST_TYPE.ArrayPattern].includes(ast.type)) {
+    console.warn(ast);
+    throwError(`${prefixTip}${AST_TYPE.MemberExpression}或者${AST_TYPE.Identifier}
+    或者${AST_TYPE.ObjectPattern}或者${ AST_TYPE.ArrayPattern}`, ast.tokens[0])
+  }
+}
+
 export function throwError(errorInfo, token) {
    if (!isInstanceOf(token, Token)) {
     throw 'throwError方法token 漏传'

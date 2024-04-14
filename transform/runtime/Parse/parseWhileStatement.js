@@ -8,14 +8,13 @@ import { ENV_DICTS } from "../constant";
 
 export function innerParseWhileStatement(ast, env, labelName) {
   const { test, body } = ast;
-  const isGeneratorEnv = env.canSleepAble() ||  env.isInGeneratorEnv()
+  const isGeneratorEnv = env.canYieldAble()
 
   while(parseRuntimeValue(parseAst(test, env))) {
     const isLabelEnv =  !!labelName;
     const childEnv = createEnviroment(isLabelEnv ? 'label_body' : 'while_body', env, {
       [ENV_DICTS.noNeedLookUpVar]: true,
-      [ENV_DICTS.isLabelEnv]: isLabelEnv,
-      [ENV_DICTS.currentEnvLabelValue]: labelName ?? null,
+      [ENV_DICTS.isWhileEnv]: true
     }, createEmptyEnviromentExtraConfig({ ast: body }))
     // console.log('while->开始运行body', _.cloneDeep(body))
     parseAst(body, childEnv);

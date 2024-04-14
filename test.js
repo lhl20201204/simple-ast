@@ -139,6 +139,38 @@ console.log('else if')
 console.log('else')
 }`
 export const isProgram = `
+// ({xx} = {xx: 2})
+// console.log(window.xx)
+// const obj = { name : 1, gg: { g: { h: 4 }}}
+// console.log(obj)
+//  with(obj) {
+//   name = 2
+//   gg.g.h = 6
+//   gg.g.ffff = 6
+//  xxx = 5
+//   ({ name } = { name: 7 }) 
+//  }
+
+// console.log(obj)
+
+xx: while(true) {
+  //  while(true) {
+  if (true) {
+    console.log(111);
+    break;
+    console.log(222);
+  }
+// }
+}
+
+function dec(xx) {
+  console.log('-->', xx, xx.raw)
+}
+const a = '1'
+
+;(() => dec)()\`dev\${a}\`
+
+
 // async function * g() {
 //   const x = yield 1;
 //   try {

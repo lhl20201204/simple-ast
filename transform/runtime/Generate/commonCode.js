@@ -422,3 +422,19 @@ export function getGetRuntimeValueCode(ast, config) {
 export function getLabeledStatementCode(ast, config) {
   return `${getAstCode(ast.label, config)}:${getAstCode(ast.body, config)}`
 }
+
+export function getWithStatementCode(ast, config) {
+  return `${purple(RUNTIME_LITERAL.with, config)}(${getAstCode(ast.object, config)}){${
+    getBlockStatementCode(ast.body, config)
+  }}`
+}
+
+export function getTaggedTemplateExpressionCode(ast, config) {
+  return `${purple(ast.tag, config)}${
+    getTemplateLiteralCode(ast.quasi, config)
+  }`
+}
+
+export function getMetaPropertyCode(ast, config) {
+  return getMemberExpressionCode(ast, config);
+}
