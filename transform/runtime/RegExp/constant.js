@@ -11,6 +11,7 @@ export const AST_TYPE = {
   Flags: 'Flags',
   CapturingGroup: 'CapturingGroup',
   Group: 'Group',
+  Backreference: 'Backreference',
 }
 
 // \d、\D、\s、\S、\w、\W（分别代表数字、非数字、空白字符、非空白字符、单词字符、非单词字符）
@@ -19,9 +20,10 @@ export const TOKEN_TYPE = {
    Exclude: '[^ Exclude',
    NotGreedyMatch: '*? NotGreedyMatch',
    Lookahead: '(?= Lookahead',
-   LookAheagNegate: '(?!= LookAheagNegate',
-   Lookbehind: '(?< Lookbehind',
+   LookAheagNegate: '(?! LookAheagNegate',
+   Lookbehind: '(?<= Lookbehind',
    LookbehindNegate: '(?<! LookbehindNegate',
+   GroupPrefix: '(? GroupPrefix',
    Or: '| Or',
    Point: '. Point',
    DNumber: '\\d DNumber',
@@ -39,9 +41,9 @@ export const TOKEN_TYPE = {
    Join: '- Join',
   //  Tab: '\t Tab',
   //  Enter: '\r Enter',
-  //  WrapLine: '\n WrapLine',
+   WrapLine: '\n WrapLine',
    Page: '\\f Page',
-   Command: '\\c Command',
+  //  Command: '\\c Command',
    VerticalTab: '\\v VerticalTab',
    DemarcationLine: '\\b DemarcationLine',
    NotDemarcationLine: '\\B NotDemarcationLine',
@@ -52,6 +54,7 @@ export const TOKEN_TYPE = {
    Question: '? Question',
    Comma: ', Comma',
    Div: '/ Div',
+   Slant: '\\ Slant',
    Character: 'Character',
    Number: 'Number',
 }
@@ -72,6 +75,8 @@ export const METHOD_TYPE = {
   getAssertionAst: 'getAssertionAst',
   getGroupAst: 'getGroupAst',
   getCharacterSetAst: 'getCharacterSetAst',
+  getBackreferenceOrCharacterAst: 'getBackreferenceOrCharacterAst',
+  getMayBeClassRangeOrCharacterSetOrCharacterAst: 'getMayBeClassRangeOrCharacterSetOrCharacterAst'
 }
 
 export const CharacterSetAstTokenList = [
@@ -88,7 +93,11 @@ export const CharacterSetAstTokenList = [
 ]
 
 export const AstFlagDicts = {
-
+  canMatchNum: 'canMatchNum',
+  canUseJoin: 'canUseJoin',
+  canUseSlant: 'canUseSlant',
+  cannotUseSpecialSignExcludeJoin: 'cannotUseSpecialSignExcludeJoin',
+  canUseGroupPrefix: 'canUseGroupPrefix',
 }
 
 export const prefixDicts = {
@@ -99,8 +108,13 @@ export const prefixDicts = {
   reset: 'reset',
 }
 
+export const AST_FLAG_VALUE_LIST = _.keys(AstFlagDicts)
+
 export const AST_TYPE_VALUE_LIST = _.values(AST_TYPE);
 
 export const TOKEN_TYPE_VALUE_LIST = _.values(TOKEN_TYPE);
 
 export const METHOD_TYPE_VALUES_LIST = _.values(METHOD_TYPE);
+
+
+export const Epsilon = 'ε'

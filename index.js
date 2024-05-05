@@ -17,10 +17,66 @@ import parseRuntimeValue from "./transform/runtime/Environment/parseRuntimeValue
 import { innerParseProgram } from "./transform/runtime/Parse/parseProgram";
 import { CookedToRaw, rawToCooked } from "./transform/runtime/ast/utils";
 import RegExpAst from "./transform/runtime/RegExp";
+import RegExpASTItem from "./transform/runtime/RegExp/RegExpASTItem";
+import AstToNFA from "./transform/runtime/RegExp/AstToNfa";
+import { View } from "./transform/runtime/RegExp/view";
+
+let isTestReg = true;
 
 const source = document.getElementById('source');
 const astJsonContainer = document.getElementById('astJsonContainer');
 const envJsonContainer = document.getElementById('envJsonContainer');
+
+
+let globalRange = null;
+if (isTestReg) {
+  const nfaView = document.getElementById('nfaView');
+ // 处理canvas 滚动
+ let startX = null;
+ let startY = null;
+
+ let offsetX = null;
+
+ let offsetY = null;
+
+ let totalTranslateX = 0;
+ let totalTranslateY = 0;
+
+ const ctx = nfaView.getContext('2d');
+
+ const handleMouseMove = _.throttle((e) => {
+  ctx.save();
+  offsetX = e.pageX - startX;
+  offsetY =  e.pageY - startY;
+  ctx.translate(totalTranslateX + offsetX,
+    totalTranslateY + offsetY)
+  if (globalRange) {
+    View(globalRange);
+  }
+  ctx.restore();
+}, 30, {
+  leading: true,
+  trailing: false,
+});
+
+
+  nfaView.addEventListener('mousedown', (e) => {
+    // console.log(e);
+      startX = e.pageX;
+      startY = e.pageY;
+    document.body.addEventListener('mousemove', handleMouseMove)
+  })
+
+  nfaView.addEventListener('mouseup', (e) => {
+    document.body.removeEventListener('mousemove', handleMouseMove)
+    totalTranslateY += offsetY;
+    totalTranslateX += offsetX;
+  })
+
+}
+
+
+
 
 source.addEventListener('scroll', _.throttle((x) => {
   const dom = document.getElementById('currentDebuggerSpan');
@@ -97,7 +153,7 @@ const writeAstAndRun = (ast, noRun) => {
 const astInstance = new Ast()
 
 function omitAttrsDfs(x, attrs, returnAstJson = null) {
-  if (isInstanceOf(x, ASTItem)) {
+  if (isInstanceOf(x, ASTItem) || isInstanceOf(x, RegExpASTItem)) {
     const obj = new AstJSON(returnAstJson)
     for (const t in x) {
       if (attrs.includes(t)) {
@@ -184,10 +240,20 @@ const debounceThrowError = _.debounce((err) => {
 }, 500);
 
 const writeSourceCodeAndRun = (text, shouldNoRun) => {
+  if (isTestReg) {
+    text = _.slice(text,0, _.findIndex(text, c => c === '\n')).join('')
+  }
   astInstance.markSourceCode(text);
   try {
     source_copy.innerHTML = '';
-    const ast = astInstance.getAst();
+    let ast
+    if (!isTestReg) {
+      ast = astInstance.getAst();
+    } else {
+      ast = new RegExpAst().parse(text);
+      globalRange = new AstToNFA().transfrom(ast)
+      View(globalRange)
+    }
     let nextAstWithoutStartEnd = omitAttrsDfs(ast, ['tokens', 'start', 'end']);
     const noRun = shouldNoRun || _.isEqual(
       currentAstWithoutStartEnd,
@@ -197,11 +263,11 @@ const writeSourceCodeAndRun = (text, shouldNoRun) => {
       currentAstWithoutStartEnd = nextAstWithoutStartEnd;
     }
     const generateText = _.map(ast.tokens, 'value').join('')
-    if (text !== generateText) {
+    if ((text !== generateText)) {
       console.warn(astInstance.astContext, ast, text.length, generateText.length, [text, generateText], diffStr(text, generateText))
       throw new Error('token 漏了');
     }
-    if (!noRun || currentSourceCodeStr !== text) {
+    if (!isTestReg && (!noRun || currentSourceCodeStr !== text)) {
       const simpleAst = _.T(ast, true);
       console.log([ast, onlyPickIndentifyDfs(ast), simpleAst])
       const astJson = omitAttrsDfs(ast, ['tokens']);
@@ -209,6 +275,16 @@ const writeSourceCodeAndRun = (text, shouldNoRun) => {
       writeAstAndRun(astJson, noRun);
     }
     currentSourceCodeStr = text;
+
+    if (isTestReg) {
+      console.log(_.T(ast, true));
+      lastAstJSON = omitAttrsDfs(ast, ['tokens']);
+      astJsonContainer.innerHTML = relaceTextToHtml("{\n" + writeJSON(lastAstJSON, 2, {
+        [DEBUGGER_DICTS.isStringTypeUseQuotationMarks]: false,
+        [DEBUGGER_DICTS.isHTMLMode]: true,
+        [DEBUGGER_DICTS.onlyShowAstItemName]: false
+      }).join("") + "}");
+    }
   } catch (err) {
     currentSourceCodeStr = text;
     debounceSaveTokensLineMessage('errorToken')
@@ -435,7 +511,7 @@ const AstJsonIncludesIndex = (astJson, index) => astJson.start <= index && astJs
 const isInAst = (astJson, index) => isInstanceOf(astJson, AstJSON) && AstJsonIncludesIndex(astJson, index)
 const clickIndex = (index) => {
   if (!lastAstJSON || !AstJsonIncludesIndex(lastAstJSON, index)) {
-    console.error('未点击到ast')
+    console.error('未点击到ast', lastAstJSON)
     return;
   }
 
@@ -690,6 +766,7 @@ window.addEventListener("load", () => {
   const methods = Reflect.ownKeys(AST.prototype)
     .reverse()
     .filter((x) => x.startsWith("is")).sort();
+    methods.unshift('REXG')
   const Fragment = document.createDocumentFragment()
 
   let selectedOptions = null
@@ -737,7 +814,7 @@ window.addEventListener('unhandledrejection', (x) => {
 })
 
 // setTimeout(() => {
-//   currentSourceCodeStr = '/^\d{6}$/';
+//   currentSourceCodeStr = '/^g-h[g-]\d{5,99i}$/i';
 //   const ast = new RegExpAst().parse(currentSourceCodeStr);
 //   console.log(_.T(ast, true));
 // }, 500)

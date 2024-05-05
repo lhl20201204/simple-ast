@@ -1,4 +1,6 @@
-import { AstFlagDicts, prefixDicts } from "./constant";
+import { isInstanceOf } from "../../commonApi";
+import RegExpASTItem from "./RegExpASTItem";
+import { AST_TYPE, AstFlagDicts, prefixDicts } from "./constant";
 
 export default class ASTContext {
   constructor() {
@@ -8,6 +10,10 @@ export default class ASTContext {
     this.astItemList = [];
     this.charList = [];
     this.methodStore = {}
+    // 开始处理捕获组的引用
+    this.referencesMap = new Map();
+    // 从1开始
+    this.referenceIndex = 1;
     _.forEach(AstFlagDicts, attr => {
       if (attr.startsWith('can')) {
         this.methodStore[prefixDicts.is + _.upperFirst(attr)] = () => this.config[attr] ?? false;
@@ -36,6 +42,31 @@ export default class ASTContext {
         this.config[attr] =  this.setConfig[attr].pop()
       };
     })
+  }
+
+  getReferencesIndex() {
+    return this.referenceIndex++
+  }
+
+  pushReferences(index, astItem) {
+    if (!isInstanceOf(astItem, RegExpASTItem) || !astItem.is(AST_TYPE.CapturingGroup)) {
+      throw 'error'
+    }
+    this.referencesMap.set(index, astItem);
+  }
+
+  checkBackreferenceByIndex(index) {
+    return this.referencesMap.has(index)
+  }
+
+  pushBackreference(index, astItem) {
+    if (!isInstanceOf(astItem, RegExpASTItem) || !astItem.is(AST_TYPE.Backreference)) {
+      throw 'error'
+    }
+    if (!this.checkBackreferenceByIndex(index)) {
+      return false;
+    }
+    this.referencesMap.get(index).references.push(_.cloneDeep(astItem))
   }
 
   pushToken(token) {

@@ -18,12 +18,27 @@ export function getTotalToken(ast) {
   return flattenToken(ast.tokens)
 }
 
-export default class RegExpASTItem{
+function findMayBeIndexOfTotalBackreference(ast) {
+  const ret = [];
+  for(const attr in ast) {
+    const x = ast[attr]
+    if (isInstanceOf(x, RegExpASTItem)) {
+      if (x.is(AST_TYPE.Backreference)) {
+        ret.push(x.ref)
+      } else {
+        ret.push(...findMayBeIndexOfTotalBackreference(x))
+      }
+    }
+  }
+  return ret;
+}
+
+export default class RegExpASTItem {
   constructor(value) {
     Object.assign(this, value)
     // console.log(this);
-    const tokensList =  flattenToken(this.restTokens ?? []);
-    for(const x in value) {
+    const tokensList = flattenToken(this.restTokens ?? []);
+    for (const x in value) {
       if (['restTokens', 'prefixTokens'].includes(x)) {
         continue;
       }
@@ -32,10 +47,10 @@ export default class RegExpASTItem{
     }
     // console.log('value', _.cloneDeep(value));
     try {
-    this.tokens = (_.uniqBy(_.flatten(tokensList), x => x.start + '#' + x.end)).sort(
-      (a,b) => a.start - b.start
-    );
-    } catch(e){
+      this.tokens = (_.uniqBy(_.flatten(tokensList), x => x.start + '#' + x.end)).sort(
+        (a, b) => a.start - b.start
+      );
+    } catch (e) {
       console.warn(new Error().stack, tokensList)
       throw e;
     }
@@ -45,8 +60,13 @@ export default class RegExpASTItem{
     }
     this.addStarEnd();
     ['type', 'start', 'end'].forEach(f => this.ensureHas(f))
-    if (this.type !== AST_TYPE.Flags) {
-      this.raw = strToRaw(_.map(this.tokens, 'value').join(''))
+    if (this.type !== AST_TYPE.Flags || _.size(this.tokens)) {
+      this.raw = strToRaw(_.map(this.tokens, 'value').join(''), findMayBeIndexOfTotalBackreference(this))
+      if ((this.type === AST_TYPE.Flags && this.raw === '/')
+        || (this.type === AST_TYPE.Alternative && this.raw === '|')) {
+        // TODO 为了flag获取位置时特殊处理，额外添加了一个token
+        this.raw = ''
+      }
     }
   }
 
@@ -55,11 +75,11 @@ export default class RegExpASTItem{
   }
 
   addStarEnd() {
-   this.start = _.first(this.tokens).start;
-   this.end = _.last(this.tokens).end;
-   if (Reflect.has(this, 'restTokens')) {
-    Reflect.deleteProperty(this, 'restTokens')
-   }
+    this.start = _.first(this.tokens).start;
+    this.end = _.last(this.tokens).end;
+    if (Reflect.has(this, 'restTokens')) {
+      Reflect.deleteProperty(this, 'restTokens')
+    }
   }
 
   ensureHas(attr) {
@@ -75,11 +95,11 @@ export default class RegExpASTItem{
   find(cb) {
     if (cb(this)) {
       return this;
-     }
-    for(const attr of _.keys(this)) {
+    }
+    for (const attr of _.keys(this)) {
       const v = this[attr];
       if (isInstanceOf(v, RegExpASTItem)) {
-        const t =  v.find(cb)
+        const t = v.find(cb)
         if (t) {
           return t;
         }

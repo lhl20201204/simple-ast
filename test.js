@@ -138,7 +138,25 @@ console.log('else if')
 } else {
 console.log('else')
 }`
-export const isProgram = `
+export const isProgram = `/a|b(C|(F|jG)j)/
+
+
+// /^([0-9]+|[0-9]{1,3}(,[0-9]{3})*)(.[0-9]{1,2})\\1?$/
+
+///<(\\S*?)[^>]*>.*?<\\/\\1>|<.*? \\/>/
+
+// /^http:\\/\\/([\\\\w-]+\\.)+[\\\\\\w-]+(\\/[\\\\\\\\\\\\a-c/?%&=]*)?$/
+
+// /^http:\\/\\/([\\w-]+\\.)+[\\w-]+(\\/[\\w-./?%&=]*)?$/
+
+// /[^%&',;=?$\\x22]+/
+
+////^[\\u4e00-\\u9fa5]{0,}$/
+
+// /^(\\-)?\\d+(\\.\\d{1,2})?$/
+
+
+// /^(0|[1-9][0-9]*)$/
 // ({xx} = {xx: 2})
 // console.log(window.xx)
 // const obj = { name : 1, gg: { g: { h: 4 }}}
@@ -153,7 +171,7 @@ export const isProgram = `
 
 // console.log(obj)
 
-xx: while(true) {
+/*xx: while(true) {
   //  while(true) {
   if (true) {
     console.log(111);

@@ -5,6 +5,7 @@ import RuntimeValue, { RuntimeRefValue } from "./runtime/Environment/RuntimeValu
 import { getWrapAst } from "./runtime/Environment/WrapAst";
 import parseRuntimeValue from "./runtime/Environment/parseRuntimeValue";
 import { createPropertyDesctiptor, createSimplePropertyDescriptor, isFunctionRuntimeValue } from "./runtime/Environment/utils";
+import { RegExpToken } from "./runtime/RegExp/Token";
 import ASTItem from "./runtime/ast/ASTITem";
 import { DEBUGGER_DICTS, JS_TO_RUNTIME_VALUE_TYPE, PROPERTY_DESCRIPTOR_DICTS, RUNTIME_VALUE_DICTS, RUNTIME_VALUE_TYPE } from "./runtime/constant";
 let envId = 0;
@@ -480,7 +481,9 @@ export default function writeJSON(obj, prefix, config, weakMap = new WeakMap()) 
       // console.error(ret)
       return ret;
     } else if (weakMap.has(obj)) {
-      console.error('未处理的循环引用类型', obj);
+      if (!isInstanceOf(obj, RegExpToken)) {
+        console.error('未处理的循环引用类型', obj, config);
+      }
       // if (isInstanceOf(obj, RuntimeValue)) {
       //   return parseRuntimeValue(obj)
       // }
