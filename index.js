@@ -26,53 +26,104 @@ let isTestReg = true;
 const source = document.getElementById('source');
 const astJsonContainer = document.getElementById('astJsonContainer');
 const envJsonContainer = document.getElementById('envJsonContainer');
-
+const nfaView = document.getElementById('nfaView');
 
 let globalRange = null;
 if (isTestReg) {
-  const nfaView = document.getElementById('nfaView');
- // 处理canvas 滚动
- let startX = null;
- let startY = null;
 
- let offsetX = null;
+  // 处理canvas 滚动
+  let startX = null;
+  let startY = null;
 
- let offsetY = null;
+  let offsetX = null;
 
- let totalTranslateX = 0;
- let totalTranslateY = 0;
+  let offsetY = null;
 
- const ctx = nfaView.getContext('2d');
+  let totalScale = 1;
 
- const handleMouseMove = _.throttle((e) => {
-  ctx.save();
-  offsetX = e.pageX - startX;
-  offsetY =  e.pageY - startY;
-  ctx.translate(totalTranslateX + offsetX,
-    totalTranslateY + offsetY)
-  if (globalRange) {
-    View(globalRange);
-  }
-  ctx.restore();
-}, 30, {
-  leading: true,
-  trailing: false,
-});
+  let minScale = 0.001;
 
+  let stepScale = 0.1
 
+  let maxScale = 100;
+
+  const ctx = nfaView.getContext('2d');
+
+  let totalTranslateX = 0;
+  let totalTranslateY = 0;
+  let moving = false;
+  const handleMouseMove = _.throttle((e) => {
+    ctx.save();
+    moving = true;
+    offsetX = (e.pageX - startX);
+    offsetY = (e.pageY - startY);
+    ctx.translate(totalTranslateX + offsetX, totalTranslateY + offsetY)
+    ctx.scale(totalScale, totalScale)
+    if (globalRange) {
+      View(globalRange);
+    }
+    ctx.restore();
+  }, 50, {
+    leading: true,
+    trailing: false,
+  });
+
+  // canvas 拖拽
   nfaView.addEventListener('mousedown', (e) => {
     // console.log(e);
-      startX = e.pageX;
-      startY = e.pageY;
+    startX = e.pageX;
+    startY = e.pageY;
     document.body.addEventListener('mousemove', handleMouseMove)
   })
 
   nfaView.addEventListener('mouseup', (e) => {
     document.body.removeEventListener('mousemove', handleMouseMove)
-    totalTranslateY += offsetY;
-    totalTranslateX += offsetX;
+    if (moving) {
+      totalTranslateX += offsetX 
+      totalTranslateY += offsetY 
+      moving = false;
+    }
   })
 
+
+
+  nfaView.addEventListener('click', e => {
+    console.log(
+      [
+        e.offsetX / totalScale - totalTranslateX / totalScale,
+        e.offsetY / totalScale - totalTranslateY / totalScale
+      ]);
+  })
+
+  // canvas 缩放
+  nfaView.addEventListener('wheel', (e) => {
+    e.stopPropagation();
+    e.preventDefault()
+    ctx.save()
+
+    let lastScale = totalScale;
+
+    if (e.wheelDelta < 0) {
+      totalScale = Math.max(totalScale - stepScale, minScale);
+    } else {
+      totalScale = Math.min(maxScale, totalScale + stepScale)
+    }
+
+    totalTranslateX = e.offsetX - (e.offsetX - totalTranslateX) / lastScale * totalScale;
+    totalTranslateY = e.offsetY - (e.offsetY - totalTranslateY) / lastScale * totalScale;
+
+    ctx.translate(totalTranslateX, totalTranslateY)
+    ctx.scale(totalScale, totalScale)
+
+
+    if (globalRange) {
+      View(globalRange);
+    }
+    ctx.restore()
+  })
+
+} else {
+  nfaView.style.display = 'none'
 }
 
 
@@ -237,11 +288,14 @@ const debounceThrowError = _.debounce((err) => {
     }
     console.error(err);
   })
-}, 500);
+}, 500, {
+  leading: false,
+  trailing: true,
+});
 
 const writeSourceCodeAndRun = (text, shouldNoRun) => {
   if (isTestReg) {
-    text = _.slice(text,0, _.findIndex(text, c => c === '\n')).join('')
+    text = _.slice(text, 0, _.findIndex(text, c => c === '\n')).join('')
   }
   astInstance.markSourceCode(text);
   try {
@@ -350,8 +404,8 @@ function saveTokensLineMessage(type) {
 
 const debounceSaveTokensLineMessage = _.debounce(saveTokensLineMessage,
   200, {
-  leading: true,
-  trailing: false,
+    leading: false,
+    trailing: true,
 })
 
 let shouldHandleWrapLine = false;
@@ -419,7 +473,10 @@ source.addEventListener(
     writeSourceCodeAndRun(str, true)
     debounceSaveTokensLineMessage('oninput.debounce')
     shouldHandleWrapLine = true;
-  }, 200)
+  }, 200, {
+    leading: false,
+    trailing: true,
+  })
 )
 
 const foldAstJSON = (ASTJSONLIST) => {
@@ -433,7 +490,7 @@ const foldAstJSON = (ASTJSONLIST) => {
 
 const foldAstJSON2 = (ASTJSONLIST) => {
   while (_.size(ASTJSONLIST)) {
-   const current = ASTJSONLIST.shift();
+    const current = ASTJSONLIST.shift();
     const handleAstJSON = (astJSon) => {
       if (astJSon === ASTJSONLIST[0]) {
         return;
@@ -624,7 +681,10 @@ source.addEventListener(
         debounceSaveTokensLineMessage('onblur');
       }
     });
-  }, 200)
+  }, 200, {
+    leading: false,
+    trailing: true,
+  })
 );
 
 source.addEventListener('paste', (e) => {
@@ -766,7 +826,7 @@ window.addEventListener("load", () => {
   const methods = Reflect.ownKeys(AST.prototype)
     .reverse()
     .filter((x) => x.startsWith("is")).sort();
-    methods.unshift('REXG')
+  methods.unshift('REXG')
   const Fragment = document.createDocumentFragment()
 
   let selectedOptions = null

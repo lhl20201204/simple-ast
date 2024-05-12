@@ -138,9 +138,9 @@ console.log('else if')
 } else {
 console.log('else')
 }`
-export const isProgram = `/a|b(C|(F|jG)j)/
+export const isProgram = `/((h)|(f|(p|j)|j|k))(f|h|d|j|e)(x|h|hk)/
 
-
+// /(h|(f|(p|j)))(f|h|(d|j)|e)(x|h|hk)/
 // /^([0-9]+|[0-9]{1,3}(,[0-9]{3})*)(.[0-9]{1,2})\\1?$/
 
 ///<(\\S*?)[^>]*>.*?<\\/\\1>|<.*? \\/>/
