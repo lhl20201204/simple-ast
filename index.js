@@ -28,9 +28,22 @@ const astJsonContainer = document.getElementById('astJsonContainer');
 const envJsonContainer = document.getElementById('envJsonContainer');
 const nfaView = document.getElementById('nfaView');
 
+let canvasWidth = 1350;
+let canvasHeight = 900;
 let globalRange = null;
+let canvasCtx = null;
+let totalScale = 1;
+let totalTranslateX = 0;
+let totalTranslateY = 0;
+let lastScale = totalScale;
 if (isTestReg) {
 
+  nfaView.style.width = canvasWidth + 'px';
+  nfaView.style.height = canvasHeight + 'px';
+  // nfaView.width = canvasWidth + 'px';
+  // nfaView.height = canvasHeight + 'px';
+  nfaView.setAttribute('width', canvasWidth + 'px')
+  nfaView.setAttribute('height', canvasHeight + 'px')
   // 处理canvas 滚动
   let startX = null;
   let startY = null;
@@ -39,18 +52,15 @@ if (isTestReg) {
 
   let offsetY = null;
 
-  let totalScale = 1;
 
   let minScale = 0.001;
 
-  let stepScale = 0.1
+  let stepScale = 0.02
 
   let maxScale = 100;
 
   const ctx = nfaView.getContext('2d');
-
-  let totalTranslateX = 0;
-  let totalTranslateY = 0;
+  canvasCtx = ctx;
   let moving = false;
   const handleMouseMove = _.throttle((e) => {
     ctx.save();
@@ -101,7 +111,7 @@ if (isTestReg) {
     e.preventDefault()
     ctx.save()
 
-    let lastScale = totalScale;
+    lastScale = totalScale;
 
     if (e.wheelDelta < 0) {
       totalScale = Math.max(totalScale - stepScale, minScale);
@@ -306,7 +316,26 @@ const writeSourceCodeAndRun = (text, shouldNoRun) => {
     } else {
       ast = new RegExpAst().parse(text);
       globalRange = new AstToNFA().transfrom(ast)
-      View(globalRange)
+      const [width, height, instanceList] = View(globalRange, true);
+
+      // 算出最小的scale， 让初始化的时候刚好全部看到整个视图
+
+      let canvasRatio = canvasHeight / canvasWidth
+      let viewRatio = height / width;
+
+      totalScale = canvasRatio < viewRatio ? canvasHeight / height : canvasWidth / width
+      canvasCtx.save();
+      totalTranslateX =  0;
+      totalTranslateY =  0;
+  
+      canvasCtx.translate(totalTranslateX, totalTranslateY)
+      canvasCtx.scale(totalScale, totalScale)
+      lastScale = totalScale;
+      // console.log(canvasCtx, width, height, instanceList, totalScale, canvasRatio,viewRatio);
+      for(const c of instanceList) {
+        c.draw(canvasCtx)
+      }
+      canvasCtx.restore();
     }
     let nextAstWithoutStartEnd = omitAttrsDfs(ast, ['tokens', 'start', 'end']);
     const noRun = shouldNoRun || _.isEqual(

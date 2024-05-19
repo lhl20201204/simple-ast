@@ -1,29 +1,49 @@
 import { Edge } from "./Edge";
 
 class Api {
+
+  constructor() {
+    this.tempInList = [];
+    this.tempOutList = [];
+  }
+
   setDir(bol) {
     this.isFromHeadToTail = bol;
   }
 
   copyInList() {
-    this.tempInList = this.inList;
+    this.tempInList.push(this.inList);
     this.inList = [];
   }
 
   copyOutList() {
-    this.tempOutList = this.outList;
+    this.tempOutList.push(this.outList);
     this.outList = []
   }
 
   restoreInList() {
-    this.inList = this.tempInList;
-    Reflect.deleteProperty(this, 'tempInList')
+    // 递归嵌套的时候可能有多层级改动
+    this.inList = this.tempInList.pop();
+    // Reflect.deleteProperty(this, 'tempInList')
   }
 
   restoreOutList() {
-    this.outList = this.tempOutList;
-    Reflect.deleteProperty(this, 'tempOutList')
+    this.outList = this.tempOutList.pop();
+    // Reflect.deleteProperty(this, 'tempOutList')
   }
+
+  // innerOutList = [];
+
+  // get outList() {
+  //   return this.innerOutList;
+  // }
+
+  // set outList(x) {
+  //   if (_.isNil(x)) {
+  //     console.trace()
+  //   }
+  //   this.innerOutList = x;
+  // }
 
   get value() {
     return this.state;
@@ -42,10 +62,15 @@ class Api {
   }
 
   traveseChildren(cb) {
-    for(const edge of this.children) {
-      const node = edge[this.isFromHeadToTail ? 'end' : 'start'];
-      node.setDir(this.isFromHeadToTail);
-      cb(node);
+    try {
+      for(const edge of this.children) {
+        const node = edge[this.isFromHeadToTail ? 'end' : 'start'];
+        node.setDir(this.isFromHeadToTail);
+        cb(node);
+      }
+    } catch(e) {
+      // console.error(this)
+      throw e
     }
   }
 
@@ -61,7 +86,7 @@ class Api {
     // 找到离当前节点最远的反方向并且入度为1的节点
     // children 是相同方向， parent 是相反方向。
     let temp = this;
-    // let index = 0;
+    let index = 0;
     /*
     isReverseCurrentDirection.    isFromHeadToTail
     False, false,   nodeList <-levelNode  <-root   children start
@@ -69,15 +94,28 @@ class Api {
   True, false,       levelNode <- nodeList <- root  parent end
 True, true ,        root  -> nodeList -> levelNode  parent start
 */
-    while(findEndNode ? _.size(isReverseCurrentDirection ? temp.parentList : temp.children) !== 0 :
-    _.size(isReverseCurrentDirection ? temp.parentList : temp.children) === 1) {
+
+    // console.log(_.cloneDeep({
+    //   this: this,
+    //   isReverseCurrentDirection, findEndNode
+    // }));
+
+    while(findEndNode ? 
+      _.size(isReverseCurrentDirection ? temp.parentList : temp.children) !== 0 :
+     _.size(isReverseCurrentDirection ? temp.parentList : temp.children) === 1
+  ) {
+      // console.log('temp', temp.value);
       temp = (isReverseCurrentDirection ? temp.parentList : temp.children)[0][
         ((isReverseCurrentDirection && this.isFromHeadToTail)
         || (!isReverseCurrentDirection && !this.isFromHeadToTail)) ? 'start' : 'end'
       ];
+      temp.setDir(this.isFromHeadToTail);
       // console.log(temp, dir, _.map( dir ? temp.parentList : temp.children, 'key'));
-      // if (index ++ > 10) {
-      //   console.warn(_.cloneDeep(this));
+      // if (index ++ > 25) {
+      //   console.warn(_.cloneDeep({
+      //     this: this,
+      //     isReverseCurrentDirection, findEndNode
+      //   }));
       //   throw '查找反方向最远的出度节点出错'
       // }
     }

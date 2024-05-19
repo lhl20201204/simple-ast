@@ -93,7 +93,7 @@ export function getRestConfigByCharacterSetToken(token) {
 }
 
 export const SpecialSign = [
-  '\\-', '\\.', '\\+', '\\*', '\\?', '\\/', '\\\\',
+  '\\-', '\\.', '\\+', '\\*', '\\?', '\\/', '\\\\', '\\(', '\\)', '\\{', '\\}', '\\[', '\\]',
      // 大写 跳过b 和d 和s w
   ..._.compact(new Array(26).fill(0).map((_c, i) => {
     const c = String.fromCharCode(i + 65)

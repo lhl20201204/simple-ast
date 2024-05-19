@@ -138,7 +138,18 @@ console.log('else if')
 } else {
 console.log('else')
 }`
-export const isProgram = `/((h)|(f|(p|j)|j|k))(f|h|d|j|e)(x|h|hk)/
+export const isProgram = `/(h(f((p|j)|(f|h|(gj|jj)pg))gjl(t|fg)))d|fds(fh(djh)e)|(x(hhfF|FFkh)h|k)/
+
+// /(h|(f|(p|j(f|g))(t|f)))(f|h|(d|j)|e)(x|(h|h|h)|hk)/
+
+
+// /a|b|((c|e(f|g)h|i))|d(j((k((m|(nox)|p|(q|y(z(3|4)w(6|(7|8|9)|u|v))x))2)rs)|1)))t/
+// /ab((ce(f|g)hi))d(j((k((m(n|ox)p(qy(z(34)w(6|7|8|9|u|v))x))2)rs)|1)))t/
+// /ab((ce(f|g)hi))|d|(j((k((m(n|o|x)p(q|y|(z(3|4)w(6|7|8|9|u|v))|x))|2)rs)|1)))t/
+// /(h|(f|((g(g|g|g))|j)))|(f|h|(d|j)|e)(x|h|hk)/
+///(h|(f|(p|j(f|g|j))(t|f)))/
+// /(h|(f|(p|j(f|g))))|(f|h|(d|(f|g|(f|b)))|e)(x|(h|(h|h))|hk)/
+
 
 // /(h|(f|(p|j)))(f|h|(d|j)|e)(x|h|hk)/
 // /^([0-9]+|[0-9]{1,3}(,[0-9]{3})*)(.[0-9]{1,2})\\1?$/
