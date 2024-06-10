@@ -63,19 +63,19 @@ class Api {
 
   traveseChildren(cb) {
     try {
-      for(const edge of this.children) {
+      for (const edge of this.children) {
         const node = edge[this.isFromHeadToTail ? 'end' : 'start'];
         node.setDir(this.isFromHeadToTail);
         cb(node);
       }
-    } catch(e) {
+    } catch (e) {
       // console.error(this)
       throw e
     }
   }
 
   traveseParent(cb) {
-    for(const edge of this.parentList) {
+    for (const edge of this.parentList) {
       const node = edge[this.isFromHeadToTail ? 'start' : 'end'];
       node.setDir(this.isFromHeadToTail);
       cb(node);
@@ -100,14 +100,14 @@ True, true ,        root  -> nodeList -> levelNode  parent start
     //   isReverseCurrentDirection, findEndNode
     // }));
 
-    while(findEndNode ? 
+    while (findEndNode ?
       _.size(isReverseCurrentDirection ? temp.parentList : temp.children) !== 0 :
-     _.size(isReverseCurrentDirection ? temp.parentList : temp.children) === 1
-  ) {
+      _.size(isReverseCurrentDirection ? temp.parentList : temp.children) === 1
+    ) {
       // console.log('temp', temp.value);
       temp = (isReverseCurrentDirection ? temp.parentList : temp.children)[0][
         ((isReverseCurrentDirection && this.isFromHeadToTail)
-        || (!isReverseCurrentDirection && !this.isFromHeadToTail)) ? 'start' : 'end'
+          || (!isReverseCurrentDirection && !this.isFromHeadToTail)) ? 'start' : 'end'
       ];
       temp.setDir(this.isFromHeadToTail);
       // console.log(temp, dir, _.map( dir ? temp.parentList : temp.children, 'key'));
@@ -128,9 +128,9 @@ True, true ,        root  -> nodeList -> levelNode  parent start
     return (cb, defaultValue, isReverseCurrentDirection) => {
       const l = isReverseCurrentDirection ? this.parentList : this.children
       const list = reverse ? [...l].reverse() : l;
-      for(const edge of list) {
+      for (const edge of list) {
         const node = edge[(isReverseCurrentDirection && this.isFromHeadToTail)
-          || (!isReverseCurrentDirection && !this.isFromHeadToTail)?'start': 'end'];
+          || (!isReverseCurrentDirection && !this.isFromHeadToTail) ? 'start' : 'end'];
         node.setDir(this.isFromHeadToTail);
         const ret = cb(node);
         // node.setDir(origin);
@@ -147,9 +147,9 @@ True, true ,        root  -> nodeList -> levelNode  parent start
   reverseChildrenOrderForOrDefault = this.getMapFn(true);
 
   map(cb) {
-    const list =  this.children;
+    const list = this.children;
     const ret = [];
-    for(const edge of list) {
+    for (const edge of list) {
       const node = edge[this.edgeGetNodeAttr];
       node.setDir(this.isFromHeadToTail);
       ret.push(cb(node))
@@ -163,7 +163,7 @@ True, true ,        root  -> nodeList -> levelNode  parent start
 }
 
 export default class NFANode extends Api {
-  constructor (state) {
+  constructor(state) {
     super()
     this.state = state;
     this.inList = []; // 进边
@@ -171,13 +171,14 @@ export default class NFANode extends Api {
     this.isFromHeadToTail = true;
   }
 
-  moveToNext(acceptStr, nextNode) {
+  moveToNext(acceptStr, nextNode, config) {
     if (!(nextNode instanceof NFANode)) {
-      throw 'eee'
+      throw 'error'
     }
-    const edge = new Edge(this, acceptStr, nextNode);
+    const edge = new Edge(this, acceptStr, nextNode, config);
     this.connectOut(edge);
     nextNode.connectIn(edge);
+    return nextNode;
   }
 
   connectIn(edge) {

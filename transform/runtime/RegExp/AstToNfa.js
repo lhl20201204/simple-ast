@@ -1,7 +1,7 @@
 import { AST_TYPE, Epsilon } from "./constant";
 import NFANode from "./NFANode";
 import NFARange from "./NFARange";
-import { createNode } from "./util";
+import { createNode, getBasicEdgeConfig, getNotCurveConfig } from "./util";
 import { View } from "./view";
 
 class Context {
@@ -71,7 +71,9 @@ export default class AstToNFA {
    }
 
    parseQuantifier(ast, ctx) {
-
+      const current = this.parse(ast.element, ctx);
+      current.joinQuantifier(ctx, ast)
+      return current;
    }
 
    parseBackreference(ast, ctx) {
@@ -81,7 +83,7 @@ export default class AstToNFA {
    parseCharacter(ast, ctx) {
       const s = createNode(ctx)
       const e = createNode(ctx)
-      s.moveToNext(ast.raw, e)
+      s.moveToNext(ast.raw, e, getBasicEdgeConfig())
       return this.createRange(s, e);
    }
 
@@ -124,7 +126,6 @@ export default class AstToNFA {
      // flag 应该是在context 挂载的，后续做
      // 拿abc 举例子
 
-   //   console.log(ast);
      return this.parse(ast.pattern, context);
    //   View(this.parse(ast.pattern, context))
    }

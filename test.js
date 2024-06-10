@@ -138,7 +138,12 @@ console.log('else if')
 } else {
 console.log('else')
 }`
-export const isProgram = `/(h(f((p|j)|(f|h|(gj|jj)pg))gjl(t|fg)))d|fds(fh(djh)e)|(x(hhfF|FFkh)h|k)/
+export const isProgram = `/g{0,2}h*|((a|x)?|(fd|tf)+)/
+
+// todo /((pl)*|g+u){1,2}|gh*|((a|x)?|(fd|tf)+){1,2}/
+
+
+// /(h(f((p|j)|(f|h|(gj|jj)pg))gjl(t|fg)))d|fds(fh(djh)e)|(x(hhfF|FFkh)h|k)/
 
 // /(h|(f|(p|j(f|g))(t|f)))(f|h|(d|j)|e)(x|(h|h|h)|hk)/
 

@@ -3,6 +3,7 @@ import { RegExpToken } from "./Token";
 import { TOKEN_TYPE } from "./constant";
 import { isInstanceOf } from "../../commonApi";
 import NFANode from "./NFANode";
+import { EdgeConfig } from "./Edge";
 
 export function throwError(errorInfo, token) {
   if (!isInstanceOf(token, RegExpToken)) {
@@ -140,6 +141,36 @@ export function strToRaw(str, backreferenceIndexArr = []) {
 export function getInfinity() {
   return null;
 }
+
+export function isInfinity(x) {
+  return _.isNull(x);
+}
+
+export function createEdgeConfig(obj) {
+  return new EdgeConfig(obj)
+}
+
+export function getBasicEdgeConfig() {
+  return createEdgeConfig({
+    isCurve: false,
+    isCircular: false
+  })
+}
+
+export function getCurveConfig() {
+  return createEdgeConfig({
+    isCurve: true,
+    isCircular: false,
+  })
+}
+
+export function getCircularConfig() {
+  return createEdgeConfig({
+    isCurve: true,
+    isCircular: true,
+  })
+}
+
 
 export function createNode(ctx) {
   return new NFANode(ctx.getStateIndex())

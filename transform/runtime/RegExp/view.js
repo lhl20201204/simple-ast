@@ -1,4 +1,6 @@
+import { Edge, EdgeConfig } from "./Edge";
 import NFANode from "./NFANode";
+import { Epsilon } from "./constant";
 
 const dom = document.getElementById('nfaView')
 
@@ -9,8 +11,16 @@ let lindId = 0;
 let maxX = -1;
 let maxY = -1;
 
+const RECT_WIDTH = 40;
+
+const COL_GAP = 100;
+const ROW_GAP = 170;
+
+
+let gradient = null;
+
 class Rect {
-  constructor(x, y, text, width = 40, height = 40) {
+  constructor(x, y, text, width = RECT_WIDTH, height = RECT_WIDTH) {
     this.id = recId++;
     this.x = x;
     this.y = y;
@@ -28,6 +38,7 @@ class Rect {
     ctx.strokeStyle = 'green';
     ctx.rect(this.x, this.y, this.width, this.height)//矩形起始点的横纵坐标和宽高
     ctx.font = "20px Georgia";
+    ctx.fillStyle = 'purple'
     ctx.fillText(this.text, this.centerX - 10, this.centerY + 5)
     ctx.stroke();//实际绘制路径
     ctx.restore()
@@ -47,18 +58,21 @@ class Line {
 
   draw(ctx) {
     ctx.save()
+    
     ctx.strokeStyle = 'red';
     ctx.beginPath();//开始绘制新的路径
     ctx.moveTo(this.x1, this.y1)//路径起始坐标
     ctx.lineTo(this.x2, this.y2);//绘制直线到指定坐标点
-    ctx.closePath()//闭合路径
+    // ctx.closePath()//闭合路径
     ctx.stroke();//实际绘制路径
 
     ctx.beginPath();//开始绘制新的路径
     ctx.ellipse(this.x1, this.y1, 3, 3, 0, 0, 2 * Math.PI);
-    ctx.fillStyle = 'blue'
+    ctx.closePath();
     ctx.fill();
-    ctx.font = "20px Georgia";
+
+    ctx.font = this.text === Epsilon ? '20px Georgiag': "30px Georgia";
+    // ctx.restore()
     ctx.save()
     const r = Math.atan((this.y2 - this.y1) / (this.x2 - this.x1))
     const len = Math.sqrt((this.y2 - this.y1) * (this.y2 - this.y1)
@@ -78,9 +92,76 @@ class Line {
     // }
 
     ctx.rotate(r + (isSame ? 0 : Math.PI))
+    // ctx.scale(1, 1);
+    ctx.fillStyle = 'red';
     ctx.fillText('>', 5 * Math.sin(r), 5 * Math.cos(r));
     ctx.restore()
+
+    ctx.fillStyle = 'red';
     ctx.fillText(this.text, (this.x1 + this.x2) / 2, (this.y1 + this.y2) / 2)
+    ctx.restore()
+  }
+}
+
+class CurveLine extends Line {
+
+  constructor(edge, ...args) {
+    if (!(edge instanceof Edge)) {
+      throw '初始化错误'
+    }
+    super(edge.acceptStr, ...args)
+    if (edge.isCurve) {
+      this.strokeStyle = 'orange';
+      this.middleX =  (this.x1 + this.x2) / 2;
+      this.middleY = (this.y1 + this.y2) / 2 - 150;
+    }
+
+    if (edge.isCircular) {
+      this.x2 -= RECT_WIDTH;
+      this.strokeStyle = 'black';
+      this.middleX =  (this.x1 + this.x2) / 2;
+      this.middleY = (this.y1 + this.y2) / 2 + 150;
+    }
+  }
+
+  draw(ctx) {
+    ctx.save()
+    ctx.strokeStyle = this.strokeStyle;
+    ctx.beginPath();//开始绘制新的路径
+    // 改成曲线。
+    ctx.moveTo(this.x1, this.y1)//路径起始坐标
+    const { middleX, middleY } = this
+    ctx.bezierCurveTo(middleX, middleY, middleX, middleY, this.x2, this.y2);
+    // ctx.lineTo(this.x2, this.y2);//绘制直线到指定坐标点
+    // ctx.closePath()//闭合路径
+    ctx.stroke();//实际绘制路径
+
+    ctx.beginPath();//开始绘制新的路径
+    ctx.ellipse(this.x1, this.y1, 3, 3, 0, 0, 2 * Math.PI);
+    ctx.font = this.text === Epsilon ? '20px Georgiag': '30px Georgiag'; 
+    ctx.closePath()//闭合路径
+    ctx.fill();
+
+
+    
+    ctx.save()
+    const r = Math.atan((this.y2 - middleY) / (this.x2 - middleX))
+    const len = Math.sqrt((this.y2 - middleY) * (this.y2 - middleY)
+      + (this.x2 - middleX) * (this.x2 - middleX));
+    const isSame = middleX <= this.x2 // (this.x1 - this.x2) * (this.y1 - this.y2) >= 0;
+    const newLen = len - 8;
+    ctx.translate(
+      (middleX + newLen * Math.cos(r) * (middleX > this.x2 ? -1 : 1)),
+      (middleY + newLen * Math.sin(r) * (isSame ? 1 : -1)));
+
+    ctx.rotate(r + (isSame ? 0 : Math.PI));
+    ctx.fillStyle = this.strokeStyle;
+    ctx.fillText('>', 5 * Math.sin(r), 5 * Math.cos(r));
+    ctx.restore()
+
+
+    ctx.fillStyle = this.strokeStyle;
+    ctx.fillText(this.text, middleX, middleY )
     ctx.restore()
   }
 }
@@ -123,6 +204,10 @@ function dfsFindNodeByNum(node, num) {
     })
     return null
   } catch (e) {
+    if (!(e instanceof NFANode)) {
+      console.warn(e);
+      throw '查找出错'
+    }
     return e;
   }
 }
@@ -415,13 +500,41 @@ function calcY(root, rootEnd, node, isFromHeadToTail) {
 }
 
 
-let debuggering = false
+let debuggering = false;
+
+const visitedMap = new Map();
+
+const curveLines = [];
+
+function excludeCurveLine(root) {
+  if (visitedMap.has(root.state)) {
+    return;
+  }
+  visitedMap.set(root.state, true);
+  const outList = [...root.outList]
+  for (const edge of outList) {
+    if (edge.isCurve) {
+      curveLines.push(edge);
+      edge.removeFromConnectNode();
+    } 
+    excludeCurveLine(edge.end);
+  }
+}
 
 export function View(range, noNeedRender) {
   getYMemoMap.clear();
   getLevelNodeMap.clear();
   getChildrenNodeMap.clear();
-  const ctx = dom.getContext('2d')
+  visitedMap.clear();
+  curveLines.splice(0, curveLines.length);
+  const ctx = dom.getContext('2d');
+  excludeCurveLine(range.start);
+
+
+  gradient = ctx.createLinearGradient(0, 0, 0, 120);
+  gradient.addColorStop(0, 'red');
+  gradient.addColorStop(1, 'green');
+  
 
   let currentList = [[range.start, 0]];
 
@@ -468,8 +581,11 @@ export function View(range, noNeedRender) {
 
   const edgeListMap = new WeakMap();
 
-  function createRect(...args) {
-    const rect = new Rect(...args);
+  const rectMap = new Map();
+
+  function createRect(x, y, state) {
+    const rect = new Rect(x, y, state);
+    rectMap.set(state, rect);
     return rect;
   }
 
@@ -520,8 +636,8 @@ export function View(range, noNeedRender) {
     for (const [current] of list) {
       const ret = calcY(range.start, range.end, current, true);
       const rect = createRect(
-        x + col * 100,
-        y + 120 * ret,
+        x + col * COL_GAP,
+        y + ROW_GAP * ret,
         current.state);
       dfsRemoveAllLineAndRect(current)
       instanceList.push(rect);
@@ -563,6 +679,16 @@ export function View(range, noNeedRender) {
   joinTail(range.end);
   dfsDraw(_.map(range.end.inList, x => [x.start]), maxCol - 1);
 
+  for (const curveLine of curveLines) {
+    const s = rectMap.get(curveLine.start.state);
+    const rect = rectMap.get(curveLine.end.state);
+    const cl = new CurveLine(curveLine, s.x + s.width,
+      s.y + s.height / 2,
+      rect.x + (s.x > rect.x ? rect.width : 0),
+      rect.y + rect.height / 2, `${s.text} -> ${rect.text}`)
+    instanceList.push(cl); 
+    curveLine.appendConnectNode();
+  }
 
   ctx.clearRect(-99999, -99999, 200000, 200000)
   if (!noNeedRender) {
