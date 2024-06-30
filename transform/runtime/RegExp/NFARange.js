@@ -8,6 +8,14 @@ export default class NFARange {
     this.end = endNode;
   }
 
+  changeStart(node) {
+    this.start = node;
+  }
+
+  changeEnd(node) {
+    this.end = node;
+  }
+
   merge(range, ctx) {
     // 如果start， end 都为空
     if (_.isNil(this.start) && _.isNil(this.end)) {
@@ -30,6 +38,10 @@ export default class NFARange {
   rightJoin(acceptStr, node) {
     this.end.moveToNext(acceptStr, node, getBasicEdgeConfig());
     this.end = node;
+  }
+
+  clone() {
+    return new NFARange(this.start, this.end)
   }
 
   deepClone(ctx) {

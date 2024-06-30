@@ -1,4 +1,6 @@
 import { Edge } from "./Edge";
+import { TAG_DICTS } from "./constant";
+import { isInstanceOf } from "./util";
 
 class Api {
 
@@ -165,14 +167,41 @@ True, true ,        root  -> nodeList -> levelNode  parent start
 export default class NFANode extends Api {
   constructor(state) {
     super()
+    this.tag = TAG_DICTS.NORMAL;
     this.state = state;
     this.inList = []; // 进边
     this.outList = []; // 出边
     this.isFromHeadToTail = true;
+    this.range = null;
+  }
+
+  markTag(tag, range) {
+    this.tag = tag;
+    this.range = range;
+  }
+
+  isStartNode() {
+    return this.tag === TAG_DICTS.START;
+  }
+
+  isEndNode() {
+    return this.tag === TAG_DICTS.END;
+  }
+
+  replace(node) {
+    if (this.isStartNode()) {
+      this.range.changeStart(node)
+      return
+    }
+    if (this.isEndNode()) {
+      this.range.changeEnd(node);
+      return
+    }
+     throw '替换错误'
   }
 
   moveToNext(acceptStr, nextNode, config) {
-    if (!(nextNode instanceof NFANode)) {
+    if (!isInstanceOf(nextNode, NFANode)) {
       throw 'error'
     }
     const edge = new Edge(this, acceptStr, nextNode, config);
@@ -182,14 +211,14 @@ export default class NFANode extends Api {
   }
 
   connectIn(edge) {
-    if (!(edge instanceof Edge)) {
+    if (!isInstanceOf(edge, Edge)) {
       throw 'eee'
     }
     this.inList.push(edge)
   }
 
   connectOut(edge) {
-    if (!(edge instanceof Edge)) {
+    if (!isInstanceOf(edge, Edge)) {
       throw 'eee'
     }
     this.outList.push(edge)

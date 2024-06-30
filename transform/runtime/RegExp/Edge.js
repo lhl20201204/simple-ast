@@ -1,3 +1,6 @@
+import AcceptStr from "./AcceptStr";
+import { isInstanceOf } from "./util";
+
 export class EdgeConfig {
   constructor(obj) {
     Object.assign(this, obj);
@@ -10,12 +13,31 @@ export class Edge {
   constructor(start, acceptStr, end, config) {
     this.key = `${start.value} -> ${end.value}`
     this.start  = start;
+    if (!isInstanceOf(acceptStr, AcceptStr)) {
+      throw '传参错误'
+    }
     this.acceptStr = acceptStr;
     this.end = end;
-    if (!(config instanceof EdgeConfig)) {
+    if (!isInstanceOf(config, EdgeConfig)) {
       throw 'config 漏传'
     }
     this.config = config;
+  }
+
+  generateKey() {
+    this.key = `${this.start.value} -> ${this.end.value}`
+  }
+
+  changeEnd(node) {
+    this.end = node;
+    this.generateKey();
+    node.inList.push(this);
+  }
+
+  changeStart(node) {
+    this.start = node;
+    this.generateKey();
+    node.outList.push(this);
   }
 
   get isCurve() {

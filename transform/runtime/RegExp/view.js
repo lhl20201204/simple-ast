@@ -1,6 +1,8 @@
 import { Edge, EdgeConfig } from "./Edge";
 import NFANode from "./NFANode";
 import { Epsilon } from "./constant";
+import { clearTooltipConfig, createTooltipConfig, getTooltipConfig, pushTooltipConfig } from "./tooltipConfig";
+import { isInstanceOf } from "./util";
 
 const dom = document.getElementById('nfaView')
 
@@ -98,29 +100,40 @@ class Line {
     ctx.restore()
 
     ctx.fillStyle = 'red';
-    ctx.fillText(this.text, (this.x1 + this.x2) / 2, (this.y1 + this.y2) / 2)
+    const textX =  (this.x1 + this.x2) / 2;
+    const textY = (this.y1 + this.y2) / 2;
+
+    const { width } = ctx.measureText(this.text.toString())
+    if ( this.text.hadAssertView()) {
+      pushTooltipConfig(createTooltipConfig( textX,textY, width, ctx.font, this.text))
+    }
+    ctx.fillText(this.text, textX - width / 2, textY);
     ctx.restore()
   }
 }
 
 class CurveLine extends Line {
 
-  constructor(edge, ...args) {
-    if (!(edge instanceof Edge)) {
+  constructor(edge, levelNodeStateList, ...args) {
+    if (!isInstanceOf(edge, Edge)) {
       throw '初始化错误'
     }
+    // 现在做的事情是将曲线改为折线，先这样了。。
+    const childLen = _.size(levelNodeStateList);
     super(edge.acceptStr, ...args)
+
+    const offsetY =  (childLen / 2) * ROW_GAP ;
     if (edge.isCurve) {
       this.strokeStyle = 'orange';
       this.middleX =  (this.x1 + this.x2) / 2;
-      this.middleY = (this.y1 + this.y2) / 2 - 150;
+      this.middleY = (this.y1 + this.y2) / 2 - offsetY;
     }
 
     if (edge.isCircular) {
       this.x2 -= RECT_WIDTH;
       this.strokeStyle = 'black';
       this.middleX =  (this.x1 + this.x2) / 2;
-      this.middleY = (this.y1 + this.y2) / 2 + 150;
+      this.middleY = (this.y1 + this.y2) / 2 + offsetY;
     }
   }
 
@@ -131,7 +144,10 @@ class CurveLine extends Line {
     // 改成曲线。
     ctx.moveTo(this.x1, this.y1)//路径起始坐标
     const { middleX, middleY } = this
-    ctx.bezierCurveTo(middleX, middleY, middleX, middleY, this.x2, this.y2);
+    // ctx.bezierCurveTo(middleX, middleY, middleX, middleY, this.x2, this.y2);
+    // ctx.lineTo(this.x1, middleY);
+    ctx.lineTo(middleX, middleY);
+    ctx.lineTo(this.x2, this.y2)
     // ctx.lineTo(this.x2, this.y2);//绘制直线到指定坐标点
     // ctx.closePath()//闭合路径
     ctx.stroke();//实际绘制路径
@@ -204,7 +220,7 @@ function dfsFindNodeByNum(node, num) {
     })
     return null
   } catch (e) {
-    if (!(e instanceof NFANode)) {
+    if (!isInstanceOf(e, NFANode)) {
       console.warn(e);
       throw '查找出错'
     }
@@ -266,7 +282,7 @@ function uniqNodeByMerge(map, nodeValueList) {
 }
 
 function dfsGetInnerY(root, rootEnd, node, isFromHeadToTail) {
-  if (!(node instanceof NFANode)) {
+  if (!isInstanceOf(node, NFANode)) {
     throw ''
   }
   root.setDir(isFromHeadToTail);
@@ -434,8 +450,8 @@ function dfsGetInnerY(root, rootEnd, node, isFromHeadToTail) {
   const [lastLevelNode, notMerge2, dir2] = findLastLevelNode(node, list);
 
 
-  if (!firstLevelNode || !lastLevelNode) {
-    console.warn(_.cloneDeep({ root, rootEnd, node, list, isFromHeadToTail, firstLevelNode, lastLevelNode }))
+  if ((!firstLevelNode || !lastLevelNode)) {
+    console.warn(_.cloneDeep({notMerge, notMerge2, root, rootEnd, node, list, isFromHeadToTail, firstLevelNode, lastLevelNode }))
     throw '运行出错'
   }
 
@@ -527,6 +543,7 @@ export function View(range, noNeedRender) {
   getChildrenNodeMap.clear();
   visitedMap.clear();
   curveLines.splice(0, curveLines.length);
+  clearTooltipConfig();
   const ctx = dom.getContext('2d');
   excludeCurveLine(range.start);
 
@@ -679,13 +696,18 @@ export function View(range, noNeedRender) {
   joinTail(range.end);
   dfsDraw(_.map(range.end.inList, x => [x.start]), maxCol - 1);
 
+  const totalLevelMap = getLevelNodeMap.get('true:' + range.start.state + '->' + range.end.state);
+
   for (const curveLine of curveLines) {
     const s = rectMap.get(curveLine.start.state);
     const rect = rectMap.get(curveLine.end.state);
-    const cl = new CurveLine(curveLine, s.x + s.width,
+    // const firstLevelMap = getLevelNodeMap.get('true:' + range.start.state + '->' + range.end.state);
+    const levelNodeStateList = totalLevelMap.get(curveLine.isCircular ? curveLine.end.state :  curveLine.start.state );
+    const cl = new CurveLine(curveLine, levelNodeStateList, s.x + s.width,
       s.y + s.height / 2,
       rect.x + (s.x > rect.x ? rect.width : 0),
       rect.y + rect.height / 2, `${s.text} -> ${rect.text}`)
+    maxY = Math.max(maxY, cl.middleY)
     instanceList.push(cl); 
     curveLine.appendConnectNode();
   }

@@ -4,6 +4,7 @@ import { TOKEN_TYPE } from "./constant";
 import { isInstanceOf } from "../../commonApi";
 import NFANode from "./NFANode";
 import { EdgeConfig } from "./Edge";
+import AcceptStr from "./AcceptStr";
 
 export function throwError(errorInfo, token) {
   if (!isInstanceOf(token, RegExpToken)) {
@@ -31,6 +32,16 @@ export function getValueByToken(token) {
       return parseInt(_.slice(token.value, -x[1]).join(''), 16)
     }
   }
+
+  const c = _.slice(token.value, 1)
+  if (_.size(token.value) > 1  &&  _.every(c, t => t >= '0' && t <= '7') && +c.join('') <= 377) {
+    let t = 0;
+    while(c.length) {
+      t = t * 8 + Number(c.shift())
+    }
+    return t
+  }
+
   //TODO 慢慢补 看起来没有任何规律，只能手敲了。。。
   const obj = {
     '\\a': '\a',
@@ -175,3 +186,15 @@ export function getCircularConfig() {
 export function createNode(ctx) {
   return new NFANode(ctx.getStateIndex())
 }
+
+export function createAcceptStr(value, negate = false, assertView = null) {
+  return new AcceptStr(value, negate, assertView);
+}
+
+export function transformCharacterSet(ast) {
+  if (ast.raw === '\\w') {
+    return ['a', '..', 'z']
+  }
+}
+
+export { isInstanceOf }

@@ -92,6 +92,26 @@ export default class RegExpAst {
       }
     }
 
+    if (this.proxyMethod(prefixDicts.is, AstFlagDicts.canMacthLT77)) {
+      // '\77'.length === 1
+      // '\78'.length === 2
+      let temp = 0;
+      let index = 1; // 第一个符号一定是 index=0, c = \,所以从1开始
+      while(true) {
+        // 8 进制
+        const c = this.sourceCode[index];
+         temp = temp * 10 + Number(c)
+         // \377 的值是255.破案了，我还好奇为啥是377哈哈哈
+         if ((c >= '0' && c <= '7') && temp <= 377) {
+          index ++
+         } else {
+          break;
+         }
+      }
+      this.proxyMethod(prefixDicts.reset, AstFlagDicts.canMacthLT77)
+      return RegExpToken.createToken(TOKEN_TYPE.Character, this.eat(this.sourceCode.slice(0, index)), prefixTokens)
+    }
+
     for (const x of SpecialSign) { // TODO 慢慢补
       if (this.nextCharIs(x)) {
         return RegExpToken.createToken(TOKEN_TYPE.Character, this.eat(x), prefixTokens)
@@ -316,7 +336,7 @@ export default class RegExpAst {
   [METHOD_TYPE.getCapturingGroupAst]() {
     const restTokens = [this.expectToken(TOKEN_TYPE.LeftParenthesis)];
     // 因为这里获取子组的时候可能也有CapturingGroup, 所以index要先获取，不然顺序会乱
-    const index = this.astContext.getReferencesIndex()
+    const index = this.astContext.createEmptyMaybeReferences()
     const { alternatives, tempRestTokens } = this[METHOD_TYPE.getAlternativeList](
       [TOKEN_TYPE.RightParenthesis]
     );
@@ -460,17 +480,27 @@ export default class RegExpAst {
       , () => this.nextTokenIs()?.is(TOKEN_TYPE.Slant)) ||
       this.wrapInDecorator(AstFlagDicts.canMatchNum, () => {
         const token = this.getTokenByCallback(2);
-        return !token?.is(TOKEN_TYPE.Number) || !this.astContext.checkBackreferenceByIndex(Number(token.value))
+        // 这里就不用判断他是否小于index， 直接占位。
+        const bol = !token?.is(TOKEN_TYPE.Number);
+        if (bol) {
+          return true;
+        }
+        const bol2 = Number(token.value) > this.astContext.maxCanReferenceIndex;
+        if (bol2) {
+          this.proxyMethod(prefixDicts.set, AstFlagDicts.canMacthLT77, true);
+        }
+        return  bol2
+       ;
+        // || !this.astContext.checkBackreferenceByIndex(Number(token.value))
       })) {
       return this[METHOD_TYPE.getCharacterAst]()
     }
-
     const restTokens = [this.wrapInDecorator(AstFlagDicts.canUseSlant, () => this.expectToken(TOKEN_TYPE.Slant)),
      this.wrapInDecorator(AstFlagDicts.canMatchNum, () => this.expectToken(TOKEN_TYPE.Number))];
     const ref = Number(restTokens[1].value);
     const ret = this.createAstItem({
       type: AST_TYPE.Backreference,
-      ref, // TODO 引用数合法问题后续根据CapturingGroup调整
+      ref,
       restTokens
     })
     this.astContext.pushBackreference(ref, ret);
@@ -666,17 +696,18 @@ export default class RegExpAst {
     return this.astContext.pushAstItem(new RegExpASTItem(obj))
   }
 
-  parse(str) {
+  parse(str, { index = 0, row = 0, col = 0, maxCanReferenceIndex = Infinity} = {}) {
     console.log(str)
-    this.index = 0;
-    this.row = 0;
-    this.col = 0;
+    this.index = index;
+    this.row = row;
+    this.col = col;
     this.sourceCode = _.split(str, '');
     this.lastAstContextStack = [];
     this.lastRowColIndexStack = [];
-    this.astContext = new ASTContext();
+    this.astContext = new ASTContext(maxCanReferenceIndex);
     try {
       const ast = this[METHOD_TYPE.getRegExpLiteralAst]();
+      this.astContext.vaildBackReferences()
       if (_.map(ast.tokens, 'value').join('') !== str) {
         console.warn([_.map(ast.tokens, 'value').join(''), str])
         throw 'token 有遗漏'

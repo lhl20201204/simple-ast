@@ -20,8 +20,13 @@ import RegExpAst from "./transform/runtime/RegExp";
 import RegExpASTItem from "./transform/runtime/RegExp/RegExpASTItem";
 import AstToNFA from "./transform/runtime/RegExp/AstToNfa";
 import { View } from "./transform/runtime/RegExp/view";
+import { destroyPopoverCanvas, getGloabalRange, getPopoverCanvas, getTooltipConfig, movePopoverCanvas } from "./transform/runtime/RegExp/tooltipConfig";
 
 let isTestReg = true;
+
+let shouldShowAst = false;
+
+let popoverRangeList = [];
 
 const source = document.getElementById('source');
 const astJsonContainer = document.getElementById('astJsonContainer');
@@ -36,6 +41,11 @@ let totalScale = 1;
 let totalTranslateX = 0;
 let totalTranslateY = 0;
 let lastScale = totalScale;
+
+export function getScale() {
+  return totalScale;
+}
+
 if (isTestReg) {
 
   nfaView.style.width = canvasWidth + 'px';
@@ -67,6 +77,7 @@ if (isTestReg) {
     moving = true;
     offsetX = (e.pageX - startX);
     offsetY = (e.pageY - startY);
+    movePopoverCanvas(offsetX, offsetY);
     ctx.translate(totalTranslateX + offsetX, totalTranslateY + offsetY)
     ctx.scale(totalScale, totalScale)
     if (globalRange) {
@@ -98,11 +109,27 @@ if (isTestReg) {
 
 
   nfaView.addEventListener('click', e => {
-    console.log(
-      [
-        e.offsetX / totalScale - totalTranslateX / totalScale,
-        e.offsetY / totalScale - totalTranslateY / totalScale
-      ]);
+    if (moving) {
+      return;
+    }
+    e.stopPropagation();
+    console.log(e);
+    const x =  e.offsetX / totalScale - totalTranslateX / totalScale;
+    const y =  e.offsetY / totalScale - totalTranslateY / totalScale;
+    let hadClick = false;
+    for(const tooltipConfig of getTooltipConfig()) {
+      if (tooltipConfig.contain(x, y, totalScale)) {
+        tooltipConfig.onClick(e);
+        hadClick = true;
+        break;
+      }
+    }
+
+    if (!hadClick) {
+      if(getPopoverCanvas()) {
+        destroyPopoverCanvas();
+      }
+    }
   })
 
   // canvas 缩放
@@ -119,8 +146,14 @@ if (isTestReg) {
       totalScale = Math.min(maxScale, totalScale + stepScale)
     }
 
+    const lastX = totalTranslateX;
+    const lastY = totalTranslateY;
+
     totalTranslateX = e.offsetX - (e.offsetX - totalTranslateX) / lastScale * totalScale;
     totalTranslateY = e.offsetY - (e.offsetY - totalTranslateY) / lastScale * totalScale;
+
+    console.log(e.offsetX ,totalTranslateX - lastX, totalTranslateY - lastY);
+    // movePopoverCanvas(totalTranslateX - lastX, totalTranslateY - lastY);
 
     ctx.translate(totalTranslateX, totalTranslateY)
     ctx.scale(totalScale, totalScale)
@@ -315,7 +348,7 @@ const writeSourceCodeAndRun = (text, shouldNoRun) => {
       ast = astInstance.getAst();
     } else {
       ast = new RegExpAst().parse(text);
-      globalRange = new AstToNFA().transfrom(ast)
+      globalRange = getGloabalRange(ast)
       const [width, height, instanceList] = View(globalRange, true);
 
       // 算出最小的scale， 让初始化的时候刚好全部看到整个视图
@@ -324,6 +357,7 @@ const writeSourceCodeAndRun = (text, shouldNoRun) => {
       let viewRatio = height / width;
 
       totalScale = canvasRatio < viewRatio ? canvasHeight / height : canvasWidth / width
+      // totalScale = 1 //TODO shandiao
       canvasCtx.save();
       totalTranslateX =  0;
       totalTranslateY =  0;
@@ -337,7 +371,7 @@ const writeSourceCodeAndRun = (text, shouldNoRun) => {
       }
       canvasCtx.restore();
     }
-    let nextAstWithoutStartEnd = omitAttrsDfs(ast, ['tokens', 'start', 'end']);
+    let nextAstWithoutStartEnd = omitAttrsDfs(ast, ['tokens', 'start', 'end', 'parent']);
     const noRun = shouldNoRun || _.isEqual(
       currentAstWithoutStartEnd,
       nextAstWithoutStartEnd
@@ -353,7 +387,7 @@ const writeSourceCodeAndRun = (text, shouldNoRun) => {
     if (!isTestReg && (!noRun || currentSourceCodeStr !== text)) {
       const simpleAst = _.T(ast, true);
       console.log([ast, onlyPickIndentifyDfs(ast), simpleAst])
-      const astJson = omitAttrsDfs(ast, ['tokens']);
+      const astJson = omitAttrsDfs(ast, ['tokens', 'parent']);
       lastAstJSON = astJson;
       writeAstAndRun(astJson, noRun);
     }
@@ -361,7 +395,7 @@ const writeSourceCodeAndRun = (text, shouldNoRun) => {
 
     if (isTestReg) {
       console.log(_.T(ast, true));
-      lastAstJSON = omitAttrsDfs(ast, ['tokens']);
+      lastAstJSON = omitAttrsDfs(ast, ['tokens', 'parent']);
       astJsonContainer.innerHTML = relaceTextToHtml("{\n" + writeJSON(lastAstJSON, 2, {
         [DEBUGGER_DICTS.isStringTypeUseQuotationMarks]: false,
         [DEBUGGER_DICTS.isHTMLMode]: true,
@@ -494,18 +528,23 @@ source.addEventListener('keypress', function (e) {
   }
 })
 
+const inputHandler = _.debounce((e) => {
+  isFocusingAndChange = true;
+  let str = ensureDomOnlyTextAndBr(false)
+  writeSourceCodeAndRun(str, true)
+  debounceSaveTokensLineMessage('oninput.debounce')
+  shouldHandleWrapLine = true;
+}, 200, {
+  leading: false,
+  trailing: true,
+})
+
 source.addEventListener(
   'input',
-  _.debounce((e) => {
-    isFocusingAndChange = true;
-    let str = ensureDomOnlyTextAndBr(false)
-    writeSourceCodeAndRun(str, true)
-    debounceSaveTokensLineMessage('oninput.debounce')
-    shouldHandleWrapLine = true;
-  }, 200, {
-    leading: false,
-    trailing: true,
-  })
+  (e) => {
+    shouldShowAst = false;
+    inputHandler(e)
+  }
 )
 
 const foldAstJSON = (ASTJSONLIST) => {
@@ -623,41 +662,49 @@ const clickIndex = (index) => {
   unFoldAstJSON(target)
 }
 
+
+
 source.addEventListener('click', () => {
-  const range = window.getSelection()?.getRangeAt(0);
-  if (
-    range &&
-    !isFocusingAndChange &&
-    range.startOffset === range.endOffset
-  ) {
-    let t = range.endContainer;
-    const dom = [];
-    if (t === source) {
-      const targetDom = t.childNodes[range.endOffset];
-      if (targetDom instanceof HTMLBRElement) {
-        clickIndex(
-          (targetDom).getAttribute('data-index'),
-        );
-      }
-    } else {
-      while (t && !(t instanceof HTMLBRElement)) {
-        dom.push(t);
-        t = t?.previousSibling;
-      }
-      if (t instanceof HTMLBRElement) {
-        const endIndex = t.getAttribute('data-index');
-        // const totalText = dom.map((x) => x.textContent).join('');
-        const restEndIndex =
-          Number(endIndex) + range.endOffset + 1;
-        if (!_.isNil(endIndex)) {
-          clickIndex(restEndIndex);
+  shouldShowAst = true;
+  setTimeout(() => {
+    if (!shouldShowAst) {
+      return;
+    }
+    const range = window.getSelection()?.getRangeAt(0);
+    if (
+      range &&
+      !isFocusingAndChange &&
+      range.startOffset === range.endOffset
+    ) {
+      let t = range.endContainer;
+      const dom = [];
+      if (t === source) {
+        const targetDom = t.childNodes[range.endOffset];
+        if (targetDom instanceof HTMLBRElement) {
+          clickIndex(
+            (targetDom).getAttribute('data-index'),
+          );
         }
       } else {
-        clickIndex(range.endOffset);
+        while (t && !(t instanceof HTMLBRElement)) {
+          dom.push(t);
+          t = t?.previousSibling;
+        }
+        if (t instanceof HTMLBRElement) {
+          const endIndex = t.getAttribute('data-index');
+          // const totalText = dom.map((x) => x.textContent).join('');
+          const restEndIndex =
+            Number(endIndex) + range.endOffset + 1;
+          if (!_.isNil(endIndex)) {
+            clickIndex(restEndIndex);
+          }
+        } else {
+          clickIndex(range.endOffset);
+        }
       }
     }
-  }
-
+  
+  }, 1000)
 })
 
 function ensureDomOnlyTextAndBr(updateDomFlag, str) {

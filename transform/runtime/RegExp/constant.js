@@ -1,3 +1,5 @@
+import { createAcceptStr } from "./util"
+
 export const AST_TYPE = {
   RegExpLiteral: 'RegExpLiteral',
   Pattern: 'Pattern',
@@ -98,6 +100,7 @@ export const AstFlagDicts = {
   canUseSlant: 'canUseSlant',
   cannotUseSpecialSignExcludeJoin: 'cannotUseSpecialSignExcludeJoin',
   canUseGroupPrefix: 'canUseGroupPrefix',
+  canMacthLT77: 'canMacthLT77',
 }
 
 export const prefixDicts = {
@@ -117,4 +120,10 @@ export const TOKEN_TYPE_VALUE_LIST = _.values(TOKEN_TYPE);
 export const METHOD_TYPE_VALUES_LIST = _.values(METHOD_TYPE);
 
 
-export const Epsilon = 'ε'
+export const Epsilon = createAcceptStr('ε')
+
+export const TAG_DICTS = {
+  NORMAL: 'NORMAL',
+  START: 'START',
+  END: 'END',
+}

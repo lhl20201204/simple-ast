@@ -58,6 +58,7 @@ export default class RegExpASTItem {
       console.warn(this)
       throw new Error('必传token数组')
     }
+    this.parent = null;
     this.addStarEnd();
     ['type', 'start', 'end'].forEach(f => this.ensureHas(f))
     if (this.type !== AST_TYPE.Flags || _.size(this.tokens)) {

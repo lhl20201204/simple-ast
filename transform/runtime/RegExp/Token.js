@@ -1,5 +1,6 @@
 import _ from "lodash";
 import { TOKEN_TYPE_VALUE_LIST } from "./constant";
+import { isInstanceOf } from "./util";
 
 export class TokenChar {
   constructor(value) {
@@ -18,7 +19,7 @@ export class RegExpToken {
     this.endRow = _.last(value).row;
     this.endCol = _.last(value).col;
     this.end = _.last(value).index;
-    if (_.size(prefixTokens) && _.some(prefixTokens, c => !(c instanceof RegExpToken))) {
+    if (_.size(prefixTokens) && _.some(prefixTokens, c => !isInstanceOf(c, RegExpToken))) {
       console.warn(prefixTokens)
       throw new Error('无效相关token');
     }

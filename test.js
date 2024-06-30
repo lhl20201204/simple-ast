@@ -138,8 +138,11 @@ console.log('else if')
 } else {
 console.log('else')
 }`
-export const isProgram = `/g{0,2}h*|((a|x)?|(fd|tf)+)/
+export const isProgram = `/a(?!\\w)b/
 
+
+// todo /(?=^.{5}$)(.*)/
+// todo /(?!.*\d{3}.*)(^.*$)/ // 表示校验位置右侧的内容中不包含三个连续的数字。
 // todo /((pl)*|g+u){1,2}|gh*|((a|x)?|(fd|tf)+){1,2}/
 
 
