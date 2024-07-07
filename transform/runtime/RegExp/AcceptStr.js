@@ -1,22 +1,28 @@
-import { AssertView } from "./AssertView";
+import { SubtreeView } from "./AssertView";
 import { isInstanceOf } from "./util";
 
+let id = 0;
 export default class AcceptStr{
-  constructor(value, negate = false, assertView = null) {
+  constructor(value, negate = false, subtreeView = null) {
     if (!_.isArray(value)) {
       this.list = [value]
     } else {
       this.list = value;
     }
+    this.id = id ++;
     this.negate = negate;
-    if (!_.isNil(assertView) && !isInstanceOf(assertView, AssertView)) {
-      throw 'assertView 类型错误'
+    if (!_.isNil(subtreeView) && !isInstanceOf(subtreeView, SubtreeView)) {
+      throw 'subtreeView 类型错误'
     }
-    this.assertView = assertView;
+    this.subtreeView = subtreeView;
   }
 
-  hadAssertView() {
-    return isInstanceOf(this.assertView, AssertView);
+  hadSubtreeView() {
+    return isInstanceOf(this.subtreeView, SubtreeView);
+  }
+
+  getTooltipConfig() {
+    return this.hadSubtreeView() ? this.subtreeView.getTooltipConfig() :{}
   }
 
   isValid(target, ...rest) {

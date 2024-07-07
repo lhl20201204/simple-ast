@@ -1,38 +1,33 @@
 import { textList } from "./test";
-import transform from "./transform";
 import { AST } from "./transform/getAst";
 import Ast from './transform/runtime/ast/index';
-import parseAst, { setLoop } from "./transform/runtime";
+import { setLoop } from "./transform/runtime";
 import Environment from "./transform/runtime/Environment";
 import { getWindowEnv } from "./transform/runtime/Environment/getWindow";
 import generateCode from "./transform/runtime/Generate";
 import writeJSON, { getRowColBySourceCodeIndex, relaceTextToHtml, selectStartEnd, selectedDom } from "./transform/util";
 import { DEBUGGER_DICTS } from "./transform/runtime/constant";
-import { createPromiseRvAndPromiseResolveCallback } from "./transform/runtime/Environment/utils";
-import { AstJSON, copyToClipboard, debounceCopyToClipboard, diffStr, isInstanceOf } from "./transform/commonApi";
+import { AstJSON, diffStr, isInstanceOf } from "./transform/commonApi";
 import ASTItem from "./transform/runtime/ast/ASTITem";
 import { getYieldValue, isYieldError } from "./transform/runtime/Parse/parseYieldExpression";
 import RuntimeValue, { RuntimeAwaitValue } from "./transform/runtime/Environment/RuntimeValue";
 import parseRuntimeValue from "./transform/runtime/Environment/parseRuntimeValue";
 import { innerParseProgram } from "./transform/runtime/Parse/parseProgram";
-import { CookedToRaw, rawToCooked } from "./transform/runtime/ast/utils";
 import RegExpAst from "./transform/runtime/RegExp";
 import RegExpASTItem from "./transform/runtime/RegExp/RegExpASTItem";
 import AstToNFA from "./transform/runtime/RegExp/AstToNfa";
 import { View } from "./transform/runtime/RegExp/view";
-import { destroyPopoverCanvas, getGloabalRange, getPopoverCanvas, getTooltipConfig, movePopoverCanvas } from "./transform/runtime/RegExp/tooltipConfig";
+import { renderMoveableList } from "./transform/runtime/RegExp/tooltipRender";
 
 let isTestReg = true;
 
 let shouldShowAst = false;
 
-let popoverRangeList = [];
-
 const source = document.getElementById('source');
 const astJsonContainer = document.getElementById('astJsonContainer');
 const envJsonContainer = document.getElementById('envJsonContainer');
 const nfaView = document.getElementById('nfaView');
-
+const nfaViewCopy = document.getElementById('nfaView_copy');
 let canvasWidth = 1350;
 let canvasHeight = 900;
 let globalRange = null;
@@ -40,20 +35,32 @@ let canvasCtx = null;
 let totalScale = 1;
 let totalTranslateX = 0;
 let totalTranslateY = 0;
+let relatimeTotalTranslateX = 0;
+let relatimeTotalTranslateY = 0;
 let lastScale = totalScale;
 
-export function getScale() {
-  return totalScale;
+export function getCanvasTransformConfig() {
+  return {
+    totalScale,
+    totalTranslateX,
+    totalTranslateY,
+    relatimeTotalTranslateX,
+    relatimeTotalTranslateY
+  };
 }
 
 if (isTestReg) {
 
   nfaView.style.width = canvasWidth + 'px';
   nfaView.style.height = canvasHeight + 'px';
-  // nfaView.width = canvasWidth + 'px';
-  // nfaView.height = canvasHeight + 'px';
-  nfaView.setAttribute('width', canvasWidth + 'px')
-  nfaView.setAttribute('height', canvasHeight + 'px')
+  nfaView.setAttribute('width', canvasWidth + 'px');
+  nfaView.setAttribute('height', canvasHeight + 'px');
+  
+  nfaViewCopy.style.width = canvasWidth + 'px';
+  nfaViewCopy.style.height = canvasHeight + 'px';
+  nfaViewCopy.setAttribute('width', canvasWidth + 'px');
+  nfaViewCopy.setAttribute('height', canvasHeight + 'px');
+
   // 处理canvas 滚动
   let startX = null;
   let startY = null;
@@ -77,8 +84,10 @@ if (isTestReg) {
     moving = true;
     offsetX = (e.pageX - startX);
     offsetY = (e.pageY - startY);
-    movePopoverCanvas(offsetX, offsetY);
-    ctx.translate(totalTranslateX + offsetX, totalTranslateY + offsetY)
+    relatimeTotalTranslateX = totalTranslateX + offsetX;
+    relatimeTotalTranslateY = totalTranslateY + offsetY;
+    
+    ctx.translate(relatimeTotalTranslateX, relatimeTotalTranslateY)
     ctx.scale(totalScale, totalScale)
     if (globalRange) {
       View(globalRange);
@@ -112,24 +121,22 @@ if (isTestReg) {
     if (moving) {
       return;
     }
-    e.stopPropagation();
-    console.log(e);
+    // e.stopPropagation();
     const x =  e.offsetX / totalScale - totalTranslateX / totalScale;
     const y =  e.offsetY / totalScale - totalTranslateY / totalScale;
-    let hadClick = false;
-    for(const tooltipConfig of getTooltipConfig()) {
-      if (tooltipConfig.contain(x, y, totalScale)) {
-        tooltipConfig.onClick(e);
-        hadClick = true;
-        break;
-      }
-    }
+    console.log(x, y);
+    // let hadClick = false;
+    // for(const tooltipConfig of getTooltipInstanceList()) {
+    //   if (tooltipConfig.contain(x, y, totalScale)) {
+    //     tooltipConfig.show(totalScale, totalTranslateX, totalTranslateY);
+    //     hadClick = true;
+    //     break;
+    //   }
+    // }
 
-    if (!hadClick) {
-      if(getPopoverCanvas()) {
-        destroyPopoverCanvas();
-      }
-    }
+    // if (!hadClick) {
+    //   hideCurrentMaybeTooltip();
+    // }
   })
 
   // canvas 缩放
@@ -151,9 +158,10 @@ if (isTestReg) {
 
     totalTranslateX = e.offsetX - (e.offsetX - totalTranslateX) / lastScale * totalScale;
     totalTranslateY = e.offsetY - (e.offsetY - totalTranslateY) / lastScale * totalScale;
-
-    console.log(e.offsetX ,totalTranslateX - lastX, totalTranslateY - lastY);
-    // movePopoverCanvas(totalTranslateX - lastX, totalTranslateY - lastY);
+    relatimeTotalTranslateX = totalTranslateX;
+    relatimeTotalTranslateY = totalTranslateY;
+    // console.log(e.offsetX ,totalTranslateX - lastX, totalTranslateY - lastY);
+    // movePopoverDom(totalScale, relatimeTotalTranslateX, relatimeTotalTranslateY);
 
     ctx.translate(totalTranslateX, totalTranslateY)
     ctx.scale(totalScale, totalScale)
@@ -188,7 +196,8 @@ source.addEventListener('scroll', _.throttle((x) => {
 window.mapObj = {
   tokenIndexToDomMap: new Map(),
   domAstWeakMap: new WeakMap(),
-  astDomWeakMap: new WeakMap()
+  astDomWeakMap: new WeakMap(),
+  tooltipMap: new Map(),
 }
 
 debuggerBtn.onclick = () => {
@@ -348,7 +357,8 @@ const writeSourceCodeAndRun = (text, shouldNoRun) => {
       ast = astInstance.getAst();
     } else {
       ast = new RegExpAst().parse(text);
-      globalRange = getGloabalRange(ast)
+      window.mapObj.tooltipMap.clear()
+      globalRange = new AstToNFA().transfrom(ast)
       const [width, height, instanceList] = View(globalRange, true);
 
       // 算出最小的scale， 让初始化的时候刚好全部看到整个视图
@@ -357,18 +367,20 @@ const writeSourceCodeAndRun = (text, shouldNoRun) => {
       let viewRatio = height / width;
 
       totalScale = canvasRatio < viewRatio ? canvasHeight / height : canvasWidth / width
-      // totalScale = 1 //TODO shandiao
       canvasCtx.save();
       totalTranslateX =  0;
       totalTranslateY =  0;
+
+      relatimeTotalTranslateX = 0;
+      relatimeTotalTranslateY = 0;
   
       canvasCtx.translate(totalTranslateX, totalTranslateY)
       canvasCtx.scale(totalScale, totalScale)
       lastScale = totalScale;
-      // console.log(canvasCtx, width, height, instanceList, totalScale, canvasRatio,viewRatio);
       for(const c of instanceList) {
         c.draw(canvasCtx)
       }
+      renderMoveableList()
       canvasCtx.restore();
     }
     let nextAstWithoutStartEnd = omitAttrsDfs(ast, ['tokens', 'start', 'end', 'parent']);

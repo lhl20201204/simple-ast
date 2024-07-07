@@ -138,7 +138,8 @@ console.log('else if')
 } else {
 console.log('else')
 }`
-export const isProgram = `/a(?!\\w)b/
+export const isProgram = `/a(?!\\w)b(?<=fff)f/
+
 
 
 // todo /(?=^.{5}$)(.*)/

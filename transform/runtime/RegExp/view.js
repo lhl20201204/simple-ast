@@ -1,14 +1,13 @@
-import { Edge, EdgeConfig } from "./Edge";
+import { Edge } from "./Edge";
 import NFANode from "./NFANode";
 import { Epsilon } from "./constant";
-import { clearTooltipConfig, createTooltipConfig, getTooltipConfig, pushTooltipConfig } from "./tooltipConfig";
+import { clearMoveableList, createTooltip, renderMoveableList } from "./tooltipRender";
 import { isInstanceOf } from "./util";
-
 const dom = document.getElementById('nfaView')
 
 
 let recId = 0;
-let lindId = 0;
+let lineId = 0;
 
 let maxX = -1;
 let maxY = -1;
@@ -49,7 +48,7 @@ class Rect {
 
 class Line {
   constructor(text, x1, y1, x2, y2, key) {
-    this.id = lindId++;
+    this.id = lineId++;
     this.key = key;
     this.text = text;
     this.x1 = x1;
@@ -104,8 +103,10 @@ class Line {
     const textY = (this.y1 + this.y2) / 2;
 
     const { width } = ctx.measureText(this.text.toString())
-    if ( this.text.hadAssertView()) {
-      pushTooltipConfig(createTooltipConfig( textX,textY, width, ctx.font, this.text))
+    if ( this.text.hadSubtreeView()) {
+      // pushTooltipInstance(createTooltipInstance(textX, textY, width, ctx.font, this.text))
+      // addMoveable()
+      createTooltip(textX, textY, width, parseInt(ctx.font), this.text)
     }
     ctx.fillText(this.text, textX - width / 2, textY);
     ctx.restore()
@@ -543,7 +544,7 @@ export function View(range, noNeedRender) {
   getChildrenNodeMap.clear();
   visitedMap.clear();
   curveLines.splice(0, curveLines.length);
-  clearTooltipConfig();
+  clearMoveableList();
   const ctx = dom.getContext('2d');
   excludeCurveLine(range.start);
 
@@ -717,6 +718,7 @@ export function View(range, noNeedRender) {
     for (const x of instanceList) {
       x.draw(ctx)
     }
+    renderMoveableList()
   }
   return [maxX, maxY, instanceList]
 }

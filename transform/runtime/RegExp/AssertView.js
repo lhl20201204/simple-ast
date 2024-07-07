@@ -1,9 +1,19 @@
-export class AssertView {
-  constructor(ast) {
+export class SubtreeView {
+  constructor(ast, config) {
     this.ast = ast;
+    this.config = config;
+  }
+
+  getTooltipConfig() {
+    const dom = document.createElement('div');
+    dom.innerHTML = this.config.text;
+    return {
+      dom,
+      ...this.config,
+    }
   }
 }
 
-export function createAssertView(ast) {
-  return new AssertView(ast);
+export function createSubtreeView(ast, obj) {
+  return new SubtreeView(ast, obj);
 }

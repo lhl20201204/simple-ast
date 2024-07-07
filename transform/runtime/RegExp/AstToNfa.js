@@ -1,4 +1,4 @@
-import { createAssertView } from "./AssertView";
+import { createSubtreeView } from "./AssertView";
 import { AST_TYPE, Epsilon, TAG_DICTS } from "./constant";
 import NFANode from "./NFANode";
 import NFARange from "./NFARange";
@@ -13,6 +13,19 @@ class AstToNFAContext {
       this.tempPlaceholderMap = new Map();
       this.fixRangeRelationTaskList = [];
       this.assertionAstList = [];
+      this.negateList = [true]
+   }
+
+   pushNegate(bol) {
+      this.negateList.push(bol)
+   }
+
+   popNegate() {
+      return this.negateList.pop()
+   }
+
+   getNegate() {
+      return _.last(this.negateList);
    }
 
    pushAssertionAst(ast) {
@@ -101,7 +114,16 @@ export default class AstToNFA {
    createAssertionRange(ctx, ast) {
       const s = createNode(ctx);
       const e = createNode(ctx);
-      s.moveToNext(createAcceptStr('点击', ast.negate, createAssertView(ast)), e, getBasicEdgeConfig());
+      const text = ['hover', 'click'][Number(Math.random() < 0.5)]
+      s.moveToNext(
+         createAcceptStr(text, ctx.getNegate(), createSubtreeView(ast, {
+            triggerType: text,
+            text: '这是一个断言' + ast.raw,
+            width: 300,
+            height: 80,
+         })),
+          e, 
+         getBasicEdgeConfig());
       return this.createRange(s, e);
    }
 

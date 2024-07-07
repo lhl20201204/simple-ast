@@ -15,7 +15,10 @@
     </select>
     <button id="closeOrOpenDiffJson"></button>
   </div>
-  <canvas id="nfaView" ></canvas>
+  <div id="nfaViewWrap">
+    <div id="nfaView_copy" ></div>
+    <canvas id="nfaView" ></canvas>
+  </div>
   <div id="container">
     <div id="source_copy_wrap">
       <div id="source_copy" contenteditable="true"></div>
@@ -41,9 +44,23 @@
     margin: 0;
   }
 
+  #nfaViewWrap{
+    position: relative;
+  }
+
+  #nfaView_copy{
+    position: absolute;
+    left: 0;
+    top: 0;
+    margin-left: 50px;
+    border: 1px solid gray;
+    pointer-events: none;
+  }
+
   #nfaView {
     margin-left: 50px;
     border: 1px solid gray;
+    position: relative;
   }
 
   #paste {
