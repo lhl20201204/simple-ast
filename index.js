@@ -18,6 +18,9 @@ import RegExpASTItem from "./transform/runtime/RegExp/RegExpASTItem";
 import AstToNFA from "./transform/runtime/RegExp/AstToNfa";
 import { View } from "./transform/runtime/RegExp/view";
 import { renderMoveableList } from "./transform/runtime/RegExp/tooltipRender";
+import { renderDom } from "./transform/Test";
+
+renderDom()
 
 let isTestReg = true;
 
@@ -28,6 +31,7 @@ const astJsonContainer = document.getElementById('astJsonContainer');
 const envJsonContainer = document.getElementById('envJsonContainer');
 const nfaView = document.getElementById('nfaView');
 const nfaViewCopy = document.getElementById('nfaView_copy');
+const domTest = document.getElementById('domTest');
 let canvasWidth = 1350;
 let canvasHeight = 900;
 let globalRange = null;
@@ -51,15 +55,17 @@ export function getCanvasTransformConfig() {
 
 if (isTestReg) {
 
-  nfaView.style.width = canvasWidth + 'px';
-  nfaView.style.height = canvasHeight + 'px';
-  nfaView.setAttribute('width', canvasWidth + 'px');
-  nfaView.setAttribute('height', canvasHeight + 'px');
-  
-  nfaViewCopy.style.width = canvasWidth + 'px';
-  nfaViewCopy.style.height = canvasHeight + 'px';
-  nfaViewCopy.setAttribute('width', canvasWidth + 'px');
-  nfaViewCopy.setAttribute('height', canvasHeight + 'px');
+  function setWh(target) {
+    target.style.width = canvasWidth + 'px';
+    target.style.height = canvasHeight + 'px';
+    target.setAttribute('width', canvasWidth + 'px');
+    target.setAttribute('height', canvasHeight + 'px');
+  }
+
+  setWh(nfaView)
+  setWh(nfaViewCopy)
+  setWh(domTest)
+
 
   // 处理canvas 滚动
   let startX = null;
