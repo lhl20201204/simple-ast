@@ -3,13 +3,14 @@ import { Collectable } from "./Collectable";
 import { isInstanceOf } from "./util";
 import { Watchable } from "./Watchable";
 import { FLAG } from "./constant";
+import CanvasContext from "./CanvasContext";
 
 export class DomLike extends Collectable {
 
   constructor(styleConfig) {
     super();
     this.style = isInstanceOf(styleConfig, Watchable) ? styleConfig : new Watchable(styleConfig, this.id);
-    this.style.on(() => {
+    this.style.onAfter(() => {
       this.updater.addFlag(FLAG.UpdateStyle);
     })
   }
@@ -20,10 +21,23 @@ export class DomLike extends Collectable {
 
   render(ctx) {
     if (this.updater.containFlag(FLAG.UpdateStyle)) {
+      if (!this.mounted) {
+        this.style.onBefore(() => {
+           CanvasContext.runInRemove(() => {
+            ctx.save();
+            this.update(ctx);
+            ctx.restore();
+           }, this.id)
+        })
+      }
       this.disposer()
       this.disposer = autorun(() => {
         if (this.updater.containFlag(FLAG.UpdateStyle)) {
-          this.update(ctx);
+          CanvasContext.runInContext(() => {
+            ctx.save();
+            this.update(ctx);
+            ctx.restore();
+          }, this.id)
           this.updater.removeFlag(FLAG.UpdateStyle)
         }
       }, '组件' + this.id + '_style')

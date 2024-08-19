@@ -1,10 +1,12 @@
 import { DivLike } from "../Dom";
+import CanvasContext from "../Dom/CanvasContext";
 import { totalReactionList } from "../Dom/observer";
 import { runInAction } from "../Dom/Reaction";
 import { nextTick } from "../Dom/util";
 
 const container = document.getElementById('domTest');
 const ctx = container.getContext('2d');
+// 后续改成witdh 100%； 监听watchable 让他响应式布局
 const documentBody = new DivLike({
   width: 100,
   height: 100,
@@ -47,7 +49,7 @@ export function waitFor(cb, time = 1000) {
 }
 
 export function renderDom() {
-  documentBody.render(ctx);
+  documentBody.render(new CanvasContext(ctx));
   const child = new DivLike({
     left: 80,
     top: 90,
@@ -85,10 +87,15 @@ export function renderDom() {
   child3.appendChild(child4)
   child3.removeChild(child4)
   child3.appendChild(child4)
-  debuggerTree();
+  // debuggerTree();
   waitFor(() => {
     documentBody.style.left = 200;
     documentBody.style.height = 300;
+    // 直到下个微任务开始前， 实际的数据还没变更。
+    container.scrollIntoView()
+    // setInterval(() => {
+      // documentBody.style.left += 20;
+    // }, 200)
   })
     // .waitFor(() => {
     //   documentBody.style.left = 400;
@@ -97,11 +104,11 @@ export function renderDom() {
     // .waitFor(() => {
     //   documentBody.style.left = 700;
     // })
-    .waitFor(() => {
-      documentBody.style.background = 'yellow'
-      documentBody.appendChild(child, child2)
-      debuggerTree()
-    })
+    // .waitFor(() => {
+    //   documentBody.style.background = 'yellow'
+    //   documentBody.appendChild(child, child2)
+    //   debuggerTree()
+    // })
     // .waitFor(() => {
     //   child.appendChild(child2)
     //   debuggerTree()
@@ -126,24 +133,24 @@ export function renderDom() {
     //   debuggerTree()
     //   // 没有重新渲染。。。
     // })
-    .waitFor(() => {
-      child4.style.left -= 100;
-      child2.appendChild(child4);
-      debuggerTree()
-    })
-    .waitFor(() => {
-      child3.style.left -= 100;
-    })
-    .waitFor(() => {
-      documentBody.style.top += 100;
-      child.style.height = 90;
-      child2.style.top += 5;
-      child3.style.width -= 80
-      child4.style.background = 'green'
-    })
-    .waitFor(() => {
-      child3.style.width += 280
-    })
+    // .waitFor(() => {
+    //   child4.style.left -= 100;
+    //   child2.appendChild(child4);
+    //   debuggerTree()
+    // })
+    // .waitFor(() => {
+    //   child3.style.left -= 100;
+    // })
+    // .waitFor(() => {
+    //   documentBody.style.top += 100;
+    //   child.style.height = 90;
+    //   child2.style.top += 5;
+    //   child3.style.width -= 80
+    //   child4.style.background = 'green'
+    // })
+    // .waitFor(() => {
+    //   child3.style.width += 280
+    // })
     .waitFor(() => {
       console.log([...totalReactionList], documentBody);
     })

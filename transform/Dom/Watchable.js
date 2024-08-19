@@ -41,15 +41,24 @@ export class Watchable {
     }
   }
 
-  callbackList = [];
+  beforeHookList = [];
 
+  afterHookList = [];
 
-  on(cb) {
-    this.callbackList.push(cb);
+  onBefore(cb) {
+    this.beforeHookList.push(cb)
   }
 
-  emit(totalData) {
-    this.callbackList.forEach(cb => cb(totalData))
+  emitBefore(totalData) {
+    this.beforeHookList.forEach(cb => cb(totalData));
+  }
+
+  onAfter(cb) {
+    this.afterHookList.push(cb);
+  }
+
+  emitAfter(totalData) {
+    this.afterHookList.forEach(cb => cb(totalData))
   }
 
   constructor(data = {}, debuggerKey = id++) {
@@ -120,7 +129,7 @@ export class Watchable {
 
   notify() {
     Watchable.#penddingUpdateList.push(...this.#reactionList);
-    this.emit(this.#data);
+    this.emitAfter(this.#data);
     // console.log('待处理', [...this.#reactionList])
     Promise.resolve().then(() => {
       if (!Watchable.#penddingUpdateList.length) {
@@ -142,8 +151,12 @@ export class Watchable {
     Promise.resolve().then(() => {
       const len = this.#readyList.length;
       const temp = ([...this.#readyList])
+      if (len > 0) {
+        this.emitBefore(this.#data);
+      }
       while (this.#readyList.length) {
         const [task] = this.#readyList.shift();
+        // 到这里的时候数据才开始更新。
         task();
       }
       if (len) {

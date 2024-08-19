@@ -39,6 +39,8 @@ export class Collectable extends DomEventTarget {
 
   updater = new Updater();
 
+  mounted = false;
+
   get flag() {
     return this.updater.getFlag();
   }
@@ -60,7 +62,9 @@ export class Collectable extends DomEventTarget {
     _.forEach(temp, q => BubbleAddFlag(q, FLAG.UpdateChildren))
   }
 
-  disposer = () => { };
+  disposer = () => { 
+    this.mounted = true;
+  };
 
   disposerChildren = () => {};
 
