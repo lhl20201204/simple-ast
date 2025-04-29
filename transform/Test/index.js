@@ -49,6 +49,8 @@ export function waitFor(cb, time = 1000) {
 }
 
 export function renderDom() {
+  container.style.display = 'none';
+  return 
   documentBody.render(new CanvasContext(ctx));
   const child = new DivLike({
     left: 80,

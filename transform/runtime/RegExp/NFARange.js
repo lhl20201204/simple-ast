@@ -71,14 +71,14 @@ export default class NFARange {
   }
 
   joinQuantifier(ctx, ast) {
-    if (ast.min === 0 && ast.max === 1 && ast.greedy) {
+    if (ast.min === 0 && ast.max === 1) {
       this.leftJoin(Epsilon, createNode(ctx))
       this.rightJoin(Epsilon, createNode(ctx));
       this.start.moveToNext(Epsilon, this.end, getCurveConfig());
       return;
     }
 
-    if (ast.min === 0 && isInfinity(ast.max) && ast.greedy) {
+    if (ast.min === 0 && isInfinity(ast.max)) {
       // console.warn('*', ast);
       this.leftJoin(Epsilon, createNode(ctx))
       this.rightJoin(Epsilon, createNode(ctx));
@@ -87,7 +87,7 @@ export default class NFARange {
       return;
     }
 
-    if (ast.min === 1 && isInfinity(ast.max) && ast.greedy) {
+    if (ast.min === 1 && isInfinity(ast.max)) {
       this.leftJoin(Epsilon, createNode(ctx))
       this.rightJoin(Epsilon, createNode(ctx));
       this.end.moveToNext(Epsilon, this.start, getCircularConfig());
@@ -95,7 +95,7 @@ export default class NFARange {
       return;
     }
 
-    if (ast.min >= 0 && ast.greedy) {
+    if (ast.min >= 0) {
       let x = 0;
       const origin = _.cloneDeep(this);
       let temp = this.start;
@@ -108,7 +108,9 @@ export default class NFARange {
         this.end.moveToNext(Epsilon, next.start, getBasicEdgeConfig());
         this.end = next.end;
       }
-      temp.moveToNext(Epsilon, this.end, getCurveConfig());
+      if (ast.min !== ast.max) {
+        temp.moveToNext(Epsilon, this.end, getCurveConfig());
+      }
       // console.warn(`{${ast.min},${ast.max}}`, ast, _.cloneDeep(this));
       return
     }

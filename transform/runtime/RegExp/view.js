@@ -302,6 +302,9 @@ function dfsGetInnerY(root, rootEnd, node, isFromHeadToTail) {
     const edgelist = node.children;
     const childrenLen = _.size(edgelist)
     if (!childrenLen) {
+      if (level === 1) {
+        return [node.value]
+      }
       return []
     }
     const mayBeRet = [];
@@ -452,7 +455,10 @@ function dfsGetInnerY(root, rootEnd, node, isFromHeadToTail) {
 
 
   if ((!firstLevelNode || !lastLevelNode)) {
-    console.warn(_.cloneDeep({notMerge, notMerge2, root, rootEnd, node, list, isFromHeadToTail, firstLevelNode, lastLevelNode }))
+    console.warn(_.cloneDeep({
+      getLevelNodeMap,
+      getChildrenNodeMap,
+      notMerge, notMerge2, root, rootEnd, node, list, isFromHeadToTail, firstLevelNode, lastLevelNode }))
     throw '运行出错'
   }
 

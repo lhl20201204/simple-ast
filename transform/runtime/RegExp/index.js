@@ -558,6 +558,7 @@ export default class RegExpAst {
     }
     if (token.is(TOKEN_TYPE.LeftBrace)) {
       this.save();
+      let jump = false;
       try {
         return this.wrapInDecorator(AstFlagDicts.canMatchNum, () => {
           restTokens.push(this.eatToken());
@@ -571,31 +572,65 @@ export default class RegExpAst {
               n = this.expectToken(TOKEN_TYPE.Number);
               restTokens.push(n)
               max = Number(n.value);
+              if (max < min) {
+                jump = true;
+                throwError('range start>end', n)
+              }
             } else if (this.nextTokenIs(TOKEN_TYPE.RightBrace)) {
               max = getInfinity()
             }
           }
           restTokens.push(this.expectToken(TOKEN_TYPE.RightBrace))
+          let greedy = true;
+          if (this.nextTokenIs(TOKEN_TYPE.Question)) {
+            restTokens.push(this.eatToken());
+            greedy = false;
+          }
           this.consume()
           return this.createAstItem({
             type: AST_TYPE.Quantifier,
             min,
             max,
-            greedy: true,
+            greedy,
             element: atom,
             restTokens,
           })
         })
       } catch (e) {
-        this.restore()
+        if (!jump) {
+          this.restore()
+        }
+        throw e;
       }
     }
-    if (token.is(TOKEN_TYPE.NotGreedyMatch)) {
+    if (token.is(TOKEN_TYPE.NotGreedyStarMatch)) {
       restTokens.push(this.eatToken());
       return this.createAstItem({
         type: AST_TYPE.Quantifier,
         min: 0,
         max: getInfinity(),
+        greedy: false,
+        element: atom,
+        restTokens,
+      })
+    }
+    if (token.is(TOKEN_TYPE.NotGreedyPlusMatch)) {
+      restTokens.push(this.eatToken());
+      return this.createAstItem({
+        type: AST_TYPE.Quantifier,
+        min: 1,
+        max: getInfinity(),
+        greedy: false,
+        element: atom,
+        restTokens,
+      })
+    }
+    if (token.is(TOKEN_TYPE.NotGreedyQuestionMatch)) {
+      restTokens.push(this.eatToken());
+      return this.createAstItem({
+        type: AST_TYPE.Quantifier,
+        min: 0,
+        max: 1,
         greedy: false,
         element: atom,
         restTokens,

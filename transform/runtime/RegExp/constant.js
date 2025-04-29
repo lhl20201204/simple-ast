@@ -20,7 +20,9 @@ export const AST_TYPE = {
 export const TOKEN_TYPE = {
    Group: '(?: Group',
    Exclude: '[^ Exclude',
-   NotGreedyMatch: '*? NotGreedyMatch',
+   NotGreedyStarMatch: '*? NotGreedyStarMatch',
+   NotGreedyPlusMatch: '+? NotGreedyPlusMatch',
+   NotGreedyQuestionMatch: '?? NotGreedyQuestionMatch',
    Lookahead: '(?= Lookahead',
    LookAheagNegate: '(?! LookAheagNegate',
    Lookbehind: '(?<= Lookbehind',

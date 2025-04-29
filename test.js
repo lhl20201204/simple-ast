@@ -138,7 +138,7 @@ console.log('else if')
 } else {
 console.log('else')
 }`
-export const isProgram = `/a(?!\\w)b(?<=fff)f/
+export const isProgram = `/H(?!a)(?!v)N/
 
 
 

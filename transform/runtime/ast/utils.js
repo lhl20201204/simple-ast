@@ -73,6 +73,7 @@ _.T = (xx, bol) => {
     const c = omitAttr(xx);
     if (!_.isEqual(tempSelfResult, c)) {
       console.error('不匹配')
+      console.log(tempSelfResult)
       return c;
     } else {
       return '跟正宗的一模一样'
